@@ -1,0 +1,36 @@
+{
+  "id": "cv.standard/end/endless-cycle-move-limit",
+  "description": "After 99 moves without a capture, South's quiet move is the 100th, so the game ends as an endless cycle; each player collects their own side: 24-24 draw.",
+  "variants": [
+    { "id": "cv.standard", "version": 1 }
+  ],
+  "source": "docs/game/variants/cape-verde/standard.md#decisions-without-a-source",
+  "tags": [
+    "end",
+    "endless-cycle",
+    "app-decision"
+  ],
+  "setup": {
+    "pits": [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1],
+    "stores": [23, 23],
+    "to_move": "south",
+    "moves_since_capture": 99
+  },
+  "steps": [
+    {
+      "expect_legal_moves": [4],
+      "move": 4,
+      "expect": {
+        "pits": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "stores": [24, 24],
+        "status": "draw",
+        "events": [
+          { "type": "sow", "pit": 5 },
+          { "type": "collect_remaining", "player": "south", "seeds": 1 },
+          { "type": "collect_remaining", "player": "north", "seeds": 1 },
+          { "type": "game_over", "result": "draw", "reason": "endless_cycle" }
+        ]
+      }
+    }
+  ]
+}

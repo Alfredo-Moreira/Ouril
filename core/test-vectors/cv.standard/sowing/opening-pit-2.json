@@ -1,0 +1,35 @@
+{
+  "id": "cv.standard/sowing/opening-pit-2",
+  "description": "Opening move from pit 2 sows one seed into each of pits 3-6; no capture.",
+  "variants": [
+    { "id": "cv.standard", "version": 1 }
+  ],
+  "source": "docs/game/rules.md#1-simple-sowing",
+  "tags": [
+    "sowing"
+  ],
+  "setup": {
+    "pits": [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+    "stores": [0, 0],
+    "to_move": "south",
+    "moves_since_capture": 0
+  },
+  "steps": [
+    {
+      "expect_legal_moves": [0, 1, 2, 3, 4, 5],
+      "move": 2,
+      "expect": {
+        "pits": [4, 4, 0, 5, 5, 5, 5, 4, 4, 4, 4, 4],
+        "stores": [0, 0],
+        "to_move": "north",
+        "status": "playing",
+        "events": [
+          { "type": "sow", "pit": 3 },
+          { "type": "sow", "pit": 4 },
+          { "type": "sow", "pit": 5 },
+          { "type": "sow", "pit": 6 }
+        ]
+      }
+    }
+  ]
+}

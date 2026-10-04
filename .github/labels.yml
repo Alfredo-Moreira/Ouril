@@ -1,0 +1,100 @@
+# Issue and PR labels. Source of truth for the repo's label set.
+# Not applied automatically: create them once with the GitHub CLI, for example
+#   gh label create "area: engine" --color 1d76db --description "Rules engine (core/engine)" --force
+# or sync this file with an action such as crazy-max/ghaction-github-labeler.
+# Issue forms in .github/ISSUE_TEMPLATE/ use: bug, enhancement, documentation, rules, variant, needs-triage.
+
+# Type
+- name: bug
+  color: d73a4a
+  description: Something doesn't work as expected
+- name: enhancement
+  color: a2eeef
+  description: New feature or improvement
+- name: documentation
+  color: 0075ca
+  description: Docs are wrong, unclear or missing
+- name: rules
+  color: 5319e7
+  description: Game rules differ from a spec, or a spec is wrong
+- name: variant
+  color: 8a63d2
+  description: Adding or researching a country or regional variant
+- name: to-confirm
+  color: fbca04
+  description: Rule behaviour not yet confirmed by sources or players
+- name: adr
+  color: c5def5
+  description: Needs or changes an Architecture Decision Record
+- name: breaking
+  color: b60205
+  description: Breaks a public contract (API, protocol, sync, game record, vectors)
+- name: dependencies
+  color: 0366d6
+  description: Dependency updates
+
+# Area (matches Conventional Commit scopes)
+- name: "area: engine"
+  color: 1d76db
+  description: Rules engine (core/engine)
+- name: "area: ai"
+  color: 1d76db
+  description: Computer opponent (core/ai)
+- name: "area: sync"
+  color: 1d76db
+  description: Offline-first sync (core/sync)
+- name: "area: protocol"
+  color: 1d76db
+  description: API and realtime message types (core/protocol)
+- name: "area: ios"
+  color: 0e8a16
+  description: iOS app (apps/ios)
+- name: "area: android"
+  color: 0e8a16
+  description: Android app (apps/android)
+- name: "area: web"
+  color: 0e8a16
+  description: Web app (apps/web)
+- name: "area: server"
+  color: 0e8a16
+  description: Rust server (apps/server)
+- name: "area: docs"
+  color: 0075ca
+  description: Documentation (docs/)
+- name: "area: ci"
+  color: ededed
+  description: CI, tooling and repo config
+
+# Cross-cutting
+- name: accessibility
+  color: f9d0c4
+  description: Screen readers, contrast, tap targets
+- name: i18n
+  color: f9d0c4
+  description: Translations and localization (shared/i18n)
+- name: privacy
+  color: f9d0c4
+  description: Personal data, telemetry consent, guest no-network rule
+- name: security
+  color: b60205
+  description: Security hardening (report vulnerabilities privately, see SECURITY.md)
+
+# Triage and status
+- name: needs-triage
+  color: ededed
+  description: Not yet reviewed by a maintainer
+- name: good first issue
+  color: 7057ff
+  description: Good for newcomers
+- name: help wanted
+  color: 008672
+  description: Extra attention is needed
+- name: question
+  color: d876e3
+  description: Further information is requested
+- name: duplicate
+  color: cfd3d7
+  description: This issue or PR already exists
+- name: wontfix
+  color: ffffff
+  description: This will not be worked on

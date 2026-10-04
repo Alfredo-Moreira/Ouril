@@ -1,0 +1,38 @@
+{
+  "id": "cv.standard/grand-slam/extra-turn-cannot-feed-draw",
+  "description": "Grand slam leaves South at 23; the extra turn cannot feed (only pit 0 → pit 1), so the game ends, South collects its 1 seed: 24-24 draw.",
+  "variants": [
+    { "id": "cv.standard", "version": 1 }
+  ],
+  "source": "docs/game/variants/cape-verde/standard.md#rule-interactions",
+  "tags": [
+    "grand-slam",
+    "feeding",
+    "end"
+  ],
+  "setup": {
+    "pits": [1, 0, 0, 0, 0, 2, 1, 2, 0, 0, 0, 0],
+    "stores": [18, 24],
+    "to_move": "south"
+  },
+  "steps": [
+    {
+      "expect_legal_moves": [5],
+      "move": 5,
+      "expect": {
+        "pits": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "stores": [24, 24],
+        "status": "draw",
+        "events": [
+          { "type": "sow", "pit": 6 },
+          { "type": "sow", "pit": 7 },
+          { "type": "capture", "pit": 7, "seeds": 3 },
+          { "type": "capture", "pit": 6, "seeds": 2 },
+          { "type": "grand_slam" },
+          { "type": "collect_remaining", "player": "south", "seeds": 1 },
+          { "type": "game_over", "result": "draw", "reason": "no_feed" }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "id": "cv.standard/single-seed/singles-legal-when-no-larger",
+  "description": "When no own pit holds two or more, single-seed pits are legal.",
+  "variants": [
+    { "id": "cv.standard", "version": 1 }
+  ],
+  "source": "docs/game/rules.md#4-single-seed-rule",
+  "tags": [
+    "single-seed"
+  ],
+  "setup": {
+    "pits": [1, 0, 0, 1, 0, 1, 4, 4, 4, 4, 4, 4],
+    "stores": [11, 10],
+    "to_move": "south"
+  },
+  "steps": [
+    {
+      "expect_legal_moves": [0, 3, 5]
+    }
+  ]
+}

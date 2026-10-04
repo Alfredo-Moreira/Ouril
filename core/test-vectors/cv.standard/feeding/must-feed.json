@@ -1,0 +1,37 @@
+{
+  "id": "cv.standard/feeding/must-feed",
+  "description": "North has no seeds: pit 1 (2 seeds) can't reach North, so only pit 5 is legal even though it holds a single seed (feeding beats the single-seed rule).",
+  "variants": [
+    { "id": "cv.standard", "version": 1 }
+  ],
+  "source": "docs/game/rules.md#6-must-feed",
+  "tags": [
+    "feeding",
+    "single-seed",
+    "app-decision"
+  ],
+  "setup": {
+    "pits": [0, 2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+    "stores": [23, 22],
+    "to_move": "south"
+  },
+  "steps": [
+    {
+      "expect_legal_moves": [5],
+      "move": 1,
+      "expect_error": "must_feed"
+    },
+    {
+      "move": 5,
+      "expect": {
+        "pits": [0, 2, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+        "stores": [23, 22],
+        "to_move": "north",
+        "status": "playing",
+        "events": [
+          { "type": "sow", "pit": 6 }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "id": "cv.standard/feeding/no-feed-ends-game",
+  "description": "North's last seed lands in South's pit 0 (making 4, so no capture) and leaves North empty. South (pit 0 = 4) can't feed, so the game ends and South collects its 4 seeds: 25-23.",
+  "variants": [
+    { "id": "cv.standard", "version": 1 }
+  ],
+  "source": "docs/game/rules.md#feeding",
+  "tags": [
+    "feeding",
+    "end"
+  ],
+  "setup": {
+    "pits": [3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+    "stores": [21, 23],
+    "to_move": "north"
+  },
+  "steps": [
+    {
+      "expect_legal_moves": [11],
+      "move": 11,
+      "expect": {
+        "pits": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "stores": [25, 23],
+        "status": "south_wins",
+        "events": [
+          { "type": "sow", "pit": 0 },
+          { "type": "collect_remaining", "player": "south", "seeds": 4 },
+          { "type": "game_over", "result": "south_wins", "reason": "no_feed" }
+        ]
+      }
+    }
+  ]
+}

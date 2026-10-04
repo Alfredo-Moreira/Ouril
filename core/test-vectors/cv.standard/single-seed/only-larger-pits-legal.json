@@ -1,0 +1,23 @@
+{
+  "id": "cv.standard/single-seed/only-larger-pits-legal",
+  "description": "Pits holding one seed are illegal while any own pit holds two or more.",
+  "variants": [
+    { "id": "cv.standard", "version": 1 }
+  ],
+  "source": "docs/game/rules.md#4-single-seed-rule",
+  "tags": [
+    "single-seed"
+  ],
+  "setup": {
+    "pits": [1, 0, 3, 1, 0, 2, 4, 4, 4, 4, 4, 4],
+    "stores": [9, 8],
+    "to_move": "south"
+  },
+  "steps": [
+    {
+      "expect_legal_moves": [2, 5],
+      "move": 0,
+      "expect_error": "single_seed_rule"
+    }
+  ]
+}

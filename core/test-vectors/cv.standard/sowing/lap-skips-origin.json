@@ -1,0 +1,44 @@
+{
+  "id": "cv.standard/sowing/lap-skips-origin",
+  "description": "Sowing 12 seeds laps the board, skips the origin pit 0 and drops the 12th seed in pit 1; last seed on own side, no capture.",
+  "variants": [
+    { "id": "cv.standard", "version": 1 }
+  ],
+  "source": "docs/game/rules.md#3-lap-with-12-seeds",
+  "tags": [
+    "sowing",
+    "lap"
+  ],
+  "setup": {
+    "pits": [12, 0, 0, 0, 0, 0, 9, 9, 9, 9, 0, 0],
+    "stores": [0, 0],
+    "to_move": "south"
+  },
+  "steps": [
+    {
+      "expect_legal_moves": [0],
+      "move": 0,
+      "expect": {
+        "pits": [0, 2, 1, 1, 1, 1, 10, 10, 10, 10, 1, 1],
+        "stores": [0, 0],
+        "to_move": "north",
+        "status": "playing",
+        "events": [
+          { "type": "sow", "pit": 1 },
+          { "type": "sow", "pit": 2 },
+          { "type": "sow", "pit": 3 },
+          { "type": "sow", "pit": 4 },
+          { "type": "sow", "pit": 5 },
+          { "type": "sow", "pit": 6 },
+          { "type": "sow", "pit": 7 },
+          { "type": "sow", "pit": 8 },
+          { "type": "sow", "pit": 9 },
+          { "type": "sow", "pit": 10 },
+          { "type": "sow", "pit": 11 },
+          { "type": "skip_origin", "pit": 0 },
+          { "type": "sow", "pit": 1 }
+        ]
+      }
+    }
+  ]
+}

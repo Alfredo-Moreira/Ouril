@@ -1,0 +1,90 @@
+# --- Secrets and local config ---------------------------------------------
+.env
+.env.*
+!.env.example
+.claude/settings.local.json
+*.p8
+*.p12
+*.mobileprovision
+*.keystore
+*.jks
+google-services.json
+GoogleService-Info.plist
+
+# --- OS / editors -----------------------------------------------------------
+.DS_Store
+Thumbs.db
+.idea/
+*.swp
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# --- Rust -------------------------------------------------------------------
+/target/
+**/*.rs.bk
+
+# --- Generated code (ADR 0015, ADR 0016): regenerate with `just bindings` / `just i18n`
+/core/ffi/generated/
+/core/wasm/pkg/
+/apps/ios/**/Generated/
+/apps/android/**/generated/i18n/
+/apps/web/src/generated/
+
+# --- Node / web -------------------------------------------------------------
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo
+coverage/
+
+# --- iOS / Xcode ------------------------------------------------------------
+DerivedData/
+xcuserdata/
+*.xcuserstate
+build/
+.swiftpm/
+*.xcframework
+
+# --- Android / Gradle ---------------------------------------------------------
+.gradle/
+local.properties
+/apps/android/**/build/
+*.apk
+*.aab
+captures/
+
+# --- Docker / local data ------------------------------------------------------
+docker-data/
+
+# --- Logs -------------------------------------------------------------------
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# --- Claude Code: third-party skills -----------------------------------------
+# Third-party Claude Code skills (installed with `npx skills`, no licence files).
+# Not committed: restore them from skills-lock.json with `npx skills experimental_install`.
+# Keep this list in sync with skills-lock.json.
+/.claude/skills/architecture-patterns/
+/.claude/skills/compose-animations/
+/.claude/skills/compose-component-design/
+/.claude/skills/compose-focus-navigation/
+/.claude/skills/compose-performance/
+/.claude/skills/compose-state-and-effects/
+/.claude/skills/compose-ui-testing-patterns/
+/.claude/skills/find-skills/
+/.claude/skills/improve-codebase-architecture/
+/.claude/skills/kotlin-concurrency-and-flow/
+/.claude/skills/kotlin-control-flow/
+/.claude/skills/kotlin-coroutines-flows/
+/.claude/skills/kotlin-patterns/
+/.claude/skills/mobile-android-design/
+/.claude/skills/rust-async-patterns/
+/.claude/skills/rust-patterns/
+/.claude/skills/rust-testing/
+/.claude/skills/security-and-hardening/
+/.claude/skills/supabase-postgres-best-practices/
+/.claude/skills/swift-concurrency/
+/.claude/skills/swiftui-expert-skill/
+/.claude/skills/swiftui-pro/

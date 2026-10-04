@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question or idea to discuss
+    url: https://github.com/Alfredo-Moreira/Ouril/discussions
+    about: Ask questions and discuss ideas before opening an issue.
+  - name: Report a security vulnerability
+    url: https://github.com/Alfredo-Moreira/Ouril/security/advisories/new
+    about: Please report vulnerabilities privately, not in a public issue. See SECURITY.md.
