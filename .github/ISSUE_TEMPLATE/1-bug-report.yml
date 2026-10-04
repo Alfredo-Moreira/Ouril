@@ -1,0 +1,85 @@
+name: Bug report
+description: Something doesn't work as expected (crash, wrong behaviour, broken screen).
+title: "bug: "
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report! If the game follows a rule differently from how you play it, use **Rule or variant report** instead.
+        Security issues: please don't file them here. See [SECURITY.md](https://github.com/Alfredo-Moreira/Ouril/blob/main/SECURITY.md).
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      multiple: true
+      options:
+        - iOS
+        - Android
+        - Web
+        - Server / online features
+        - Not sure
+    validations:
+      required: true
+  - type: input
+    id: app-version
+    attributes:
+      label: App version
+      description: Shown in Settings, for example `1.4.0 (52)`. For web, the browser and its version.
+      placeholder: "1.4.0 (52)"
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device and OS
+      placeholder: "iPhone 15, iOS 18.1 / Pixel 8, Android 15 / Firefox 131 on macOS"
+  - type: input
+    id: variant
+    attributes:
+      label: Variant
+      description: The variant being played, as `id@version` if you know it (shown in game info).
+      placeholder: "cv.standard@1"
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Mode
+      options:
+        - Against the computer
+        - Two players on one device
+        - Online (live)
+        - Online (turn-by-turn)
+        - Not in a game
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Start a game against the computer (hard)
+        2. Play pit 4
+        3. …
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: extra
+    attributes:
+      label: Screenshots, logs or game record
+      description: A screenshot, video, or the exported game record helps a lot. Remove any personal data.
+  - type: checkboxes
+    id: account
+    attributes:
+      label: Account
+      options:
+        - label: I was signed in (Google or Apple) when this happened.

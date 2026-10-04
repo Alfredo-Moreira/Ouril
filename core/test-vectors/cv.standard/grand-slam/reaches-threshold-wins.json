@@ -1,0 +1,38 @@
+{
+  "id": "cv.standard/grand-slam/reaches-threshold-wins",
+  "description": "A grand slam that brings South to 25 wins at once (no extra turn); South's 2 remaining seeds are collected: 27-21.",
+  "variants": [
+    { "id": "cv.standard", "version": 1 }
+  ],
+  "source": "docs/game/rules.md#grand-slam",
+  "tags": [
+    "grand-slam",
+    "end",
+    "app-decision"
+  ],
+  "setup": {
+    "pits": [0, 0, 0, 1, 3, 0, 1, 2, 0, 0, 0, 0],
+    "stores": [20, 21],
+    "to_move": "south"
+  },
+  "steps": [
+    {
+      "move": 4,
+      "expect": {
+        "pits": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "stores": [27, 21],
+        "status": "south_wins",
+        "events": [
+          { "type": "sow", "pit": 5 },
+          { "type": "sow", "pit": 6 },
+          { "type": "sow", "pit": 7 },
+          { "type": "capture", "pit": 7, "seeds": 3 },
+          { "type": "capture", "pit": 6, "seeds": 2 },
+          { "type": "grand_slam" },
+          { "type": "collect_remaining", "player": "south", "seeds": 2 },
+          { "type": "game_over", "result": "south_wins", "reason": "threshold" }
+        ]
+      }
+    }
+  ]
+}

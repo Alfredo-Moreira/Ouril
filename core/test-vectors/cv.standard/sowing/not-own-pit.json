@@ -1,0 +1,22 @@
+{
+  "id": "cv.standard/sowing/not-own-pit",
+  "description": "South may not sow from a North pit.",
+  "variants": [
+    { "id": "cv.standard", "version": 1 }
+  ],
+  "source": "docs/game/rules.md#playing-a-move-sowing",
+  "tags": [
+    "error"
+  ],
+  "setup": {
+    "pits": [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+    "stores": [0, 0],
+    "to_move": "south"
+  },
+  "steps": [
+    {
+      "move": 7,
+      "expect_error": "not_own_pit"
+    }
+  ]
+}

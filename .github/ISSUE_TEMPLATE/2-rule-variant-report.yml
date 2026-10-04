@@ -1,0 +1,90 @@
+name: Rule or variant report
+description: 'Report a rule difference ("that''s not how we play it here"), a regional variant, or a source.'
+title: "rules: "
+labels: ["rules", "variant", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ouril only implements rules from researched variant specs ([variants](https://github.com/Alfredo-Moreira/Ouril/blob/main/docs/game/variants/README.md)). Reports from players are how we find mistakes and new variants, so thank you.
+        We'll use your report as evidence when researching or updating the spec. Changes to a released variant create a new version; existing games are not affected.
+  - type: input
+    id: country
+    attributes:
+      label: Country
+      placeholder: "Cape Verde"
+    validations:
+      required: true
+  - type: input
+    id: region
+    attributes:
+      label: Island, region, city or community
+      description: Where is it played this way? Leave empty if it's the same across the country.
+      placeholder: "Brava / São Vicente / Cape Verdean diaspora in Lisbon"
+  - type: input
+    id: variant
+    attributes:
+      label: Variant in the app
+      description: The variant you compared against, as `id@version` if you know it. Leave empty if it's a variant we don't have yet.
+      placeholder: "cv.standard@1"
+  - type: input
+    id: local-name
+    attributes:
+      label: Local name of the game
+      placeholder: "Ouril, Uril, Ouri, …"
+  - type: dropdown
+    id: report-type
+    attributes:
+      label: What are you reporting?
+      options:
+        - A rule in the app differs from how we play
+        - A regional variant that's missing
+        - The wrong default variant for a country
+        - A source (book, paper, video, federation rules)
+        - Something else
+    validations:
+      required: true
+  - type: dropdown
+    id: rule
+    attributes:
+      label: Which rule?
+      multiple: true
+      options:
+        - Board size or starting seeds
+        - Sowing direction or skipping the starting pit
+        - Moving from a pit with a single seed
+        - Captures (which counts capture, chains)
+        - Grand slam (capturing every opponent pit)
+        - Feeding the opponent
+        - End of game and scoring
+        - Who starts
+        - Match or multi-round scoring
+        - Other
+  - type: textarea
+    id: local-rule
+    attributes:
+      label: How it's played locally
+      description: Describe the rule as you play it. A short example position or sequence of moves helps a lot.
+    validations:
+      required: true
+  - type: textarea
+    id: app-rule
+    attributes:
+      label: What the app does instead
+      description: If it's a difference with the app. A screenshot or game record is welcome.
+  - type: textarea
+    id: sources
+    attributes:
+      label: Sources, and who plays it this way
+      description: |
+        Books, papers, videos, websites, or people. For example "my grandparents on Fogo, 1970s to today" or "the Ouri school league in Portugal".
+        Don't share other people's personal details without their consent.
+    validations:
+      required: true
+  - type: checkboxes
+    id: contact
+    attributes:
+      label: Follow-up
+      options:
+        - label: I'm happy to answer follow-up questions about this rule.
+        - label: I can put you in touch with other players from this community.

@@ -1,0 +1,20 @@
+# Code owners: requested automatically as reviewers on PRs that touch these paths.
+# Later rules override earlier ones. Syntax: https://docs.github.com/articles/about-code-owners
+#
+# Optional: enable "Require review from Code Owners" in branch protection.
+
+*                         @Alfredo-Moreira
+
+# Game rules: specs, rules doc and test vectors need an extra careful review.
+/docs/game/               @Alfredo-Moreira
+/core/engine/             @Alfredo-Moreira
+/core/test-vectors/       @Alfredo-Moreira
+
+# Public contracts and security-sensitive code.
+/core/protocol/           @Alfredo-Moreira
+/core/sync/               @Alfredo-Moreira
+/apps/server/             @Alfredo-Moreira
+/docs/decisions/          @Alfredo-Moreira
+
+# Repo health and CI.
+/.github/                 @Alfredo-Moreira

@@ -1,0 +1,37 @@
+{
+  "id": "cv.standard/end/threshold-win",
+  "description": "A capture that brings South to 25 ends the game; remaining seeds go to each side's owner (South 1, North 21): 26-22.",
+  "variants": [
+    { "id": "cv.standard", "version": 1 }
+  ],
+  "source": "docs/game/rules.md#end-of-the-game",
+  "tags": [
+    "end",
+    "capture",
+    "app-decision"
+  ],
+  "setup": {
+    "pits": [0, 0, 0, 0, 3, 0, 4, 1, 4, 4, 4, 4],
+    "stores": [23, 1],
+    "to_move": "south"
+  },
+  "steps": [
+    {
+      "move": 4,
+      "expect": {
+        "pits": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "stores": [26, 22],
+        "status": "south_wins",
+        "events": [
+          { "type": "sow", "pit": 5 },
+          { "type": "sow", "pit": 6 },
+          { "type": "sow", "pit": 7 },
+          { "type": "capture", "pit": 7, "seeds": 2 },
+          { "type": "collect_remaining", "player": "south", "seeds": 1 },
+          { "type": "collect_remaining", "player": "north", "seeds": 21 },
+          { "type": "game_over", "result": "south_wins", "reason": "threshold" }
+        ]
+      }
+    }
+  ]
+}

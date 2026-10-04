@@ -1,0 +1,33 @@
+{
+  "id": "cv.standard/capture/no-capture-on-four",
+  "description": "Last seed makes 4 in an opponent pit; nothing is captured.",
+  "variants": [
+    { "id": "cv.standard", "version": 1 }
+  ],
+  "source": "docs/game/rules.md#capturing",
+  "tags": [
+    "capture"
+  ],
+  "setup": {
+    "pits": [4, 4, 4, 4, 4, 4, 4, 3, 4, 4, 4, 4],
+    "stores": [1, 0],
+    "to_move": "south"
+  },
+  "steps": [
+    {
+      "move": 3,
+      "expect": {
+        "pits": [4, 4, 4, 0, 5, 5, 5, 4, 4, 4, 4, 4],
+        "stores": [1, 0],
+        "to_move": "north",
+        "status": "playing",
+        "events": [
+          { "type": "sow", "pit": 4 },
+          { "type": "sow", "pit": 5 },
+          { "type": "sow", "pit": 6 },
+          { "type": "sow", "pit": 7 }
+        ]
+      }
+    }
+  ]
+}

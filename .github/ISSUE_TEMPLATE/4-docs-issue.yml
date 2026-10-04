@@ -1,0 +1,33 @@
+name: Documentation issue
+description: Something in the docs is wrong, unclear, out of date or missing.
+title: "docs: "
+labels: ["documentation", "needs-triage"]
+body:
+  - type: input
+    id: page
+    attributes:
+      label: Page
+      description: Path or link to the document (and section).
+      placeholder: "docs/architecture/engine.md#variant-configuration"
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind of problem
+      options:
+        - Incorrect
+        - Unclear
+        - Out of date
+        - Missing
+        - Broken link or diagram
+        - Contradicts another doc or an ADR
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What's wrong, and what should it say?
+      description: For game rules, please use **Rule or variant report** instead.
+    validations:
+      required: true

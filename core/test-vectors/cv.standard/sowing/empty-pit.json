@@ -1,0 +1,22 @@
+{
+  "id": "cv.standard/sowing/empty-pit",
+  "description": "South may not sow from an empty pit.",
+  "variants": [
+    { "id": "cv.standard", "version": 1 }
+  ],
+  "source": "docs/game/rules.md#playing-a-move-sowing",
+  "tags": [
+    "error"
+  ],
+  "setup": {
+    "pits": [4, 4, 4, 4, 3, 0, 1, 2, 4, 4, 4, 4],
+    "stores": [5, 5],
+    "to_move": "south"
+  },
+  "steps": [
+    {
+      "move": 5,
+      "expect_error": "empty_pit"
+    }
+  ]
+}

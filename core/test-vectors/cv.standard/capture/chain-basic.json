@@ -1,0 +1,37 @@
+{
+  "id": "cv.standard/capture/chain-basic",
+  "description": "Last seed makes 3 in pit 7; chain captures 2 in pit 6; stops at own side.",
+  "variants": [
+    { "id": "cv.standard", "version": 1 }
+  ],
+  "source": "docs/game/rules.md#2-capture-with-a-chain",
+  "tags": [
+    "capture",
+    "chain"
+  ],
+  "setup": {
+    "pits": [4, 4, 4, 4, 3, 0, 1, 2, 4, 4, 4, 4],
+    "stores": [5, 5],
+    "to_move": "south",
+    "moves_since_capture": 0
+  },
+  "steps": [
+    {
+      "expect_legal_moves": [0, 1, 2, 3, 4],
+      "move": 4,
+      "expect": {
+        "pits": [4, 4, 4, 4, 0, 1, 0, 0, 4, 4, 4, 4],
+        "stores": [10, 5],
+        "to_move": "north",
+        "status": "playing",
+        "events": [
+          { "type": "sow", "pit": 5 },
+          { "type": "sow", "pit": 6 },
+          { "type": "sow", "pit": 7 },
+          { "type": "capture", "pit": 7, "seeds": 3 },
+          { "type": "capture", "pit": 6, "seeds": 2 }
+        ]
+      }
+    }
+  ]
+}

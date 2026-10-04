@@ -1,0 +1,49 @@
+name: Feature request
+description: Suggest a new feature or an improvement.
+title: "feat: "
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Check the [roadmap](https://github.com/Alfredo-Moreira/Ouril/blob/main/docs/product/roadmap.md) first, it may already be planned. For a missing variant or a rule difference, use **Rule or variant report**.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What are you trying to do, and what gets in the way?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: What would you like to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: dropdown
+    id: areas
+    attributes:
+      label: Affected areas
+      multiple: true
+      options:
+        - Gameplay / rules engine
+        - Computer opponent (AI)
+        - iOS app
+        - Android app
+        - Web app
+        - Accounts and sync
+        - Online play
+        - Leaderboards
+        - Languages and localization
+        - Accessibility
+        - Not sure
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Mockups, screenshots, examples from other apps.

@@ -1,0 +1,31 @@
+{
+  "id": "cv.standard/capture/no-capture-own-side",
+  "description": "Last seed makes 2 in the mover's own pit; captures happen only on the opponent's side.",
+  "variants": [
+    { "id": "cv.standard", "version": 1 }
+  ],
+  "source": "docs/game/rules.md#capturing",
+  "tags": [
+    "capture"
+  ],
+  "setup": {
+    "pits": [2, 4, 1, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+    "stores": [3, 2],
+    "to_move": "south"
+  },
+  "steps": [
+    {
+      "move": 0,
+      "expect": {
+        "pits": [0, 5, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+        "stores": [3, 2],
+        "to_move": "north",
+        "status": "playing",
+        "events": [
+          { "type": "sow", "pit": 1 },
+          { "type": "sow", "pit": 2 }
+        ]
+      }
+    }
+  ]
+}
