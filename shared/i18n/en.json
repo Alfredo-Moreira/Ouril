@@ -1,0 +1,1538 @@
+{
+  "app.title": {
+    "message": "Ouril",
+    "description": "App name shown in the header and browser tab"
+  },
+  "menu.play": {
+    "message": "Play vs computer",
+    "description": "Main menu button that starts a game against the AI"
+  },
+  "menu.stats": {
+    "message": "Stats",
+    "description": "Main menu link to the local stats and history screen"
+  },
+  "menu.rules": {
+    "message": "Rules",
+    "description": "Main menu link to the rules reference"
+  },
+  "menu.settings": {
+    "message": "Settings",
+    "description": "Main menu link to settings"
+  },
+  "game.level.easy": {
+    "message": "Easy",
+    "description": "AI difficulty level"
+  },
+  "game.level.medium": {
+    "message": "Medium",
+    "description": "AI difficulty level"
+  },
+  "game.level.hard": {
+    "message": "Hard",
+    "description": "AI difficulty level"
+  },
+  "game.captured": {
+    "message": "{count, plural, one {You captured # seed} other {You captured # seeds}}",
+    "description": "Toast after a capture; count = seeds captured"
+  },
+  "account.guest": {
+    "message": "Playing as a guest",
+    "description": "Shown when not signed in; guests play fully offline"
+  },
+  "account.sign_in": {
+    "message": "Sign in",
+    "description": "Optional sign-in entry point (never required to play)"
+  },
+  "account.sign_in.google": {
+    "message": "Sign in with Google",
+    "description": "Google sign-in button"
+  },
+  "account.sign_in.apple": {
+    "message": "Sign in with Apple",
+    "description": "Apple sign-in button"
+  },
+  "account.sign_in.unavailable": {
+    "message": "Sign-in isn't available yet. You can keep playing as a guest.",
+    "description": "Shown under disabled sign-in buttons while OAuth is not configured"
+  },
+  "common.not_found": {
+    "message": "Page not found",
+    "description": "Shown for unknown routes"
+  },
+  "menu.label": {
+    "message": "Main menu",
+    "description": "Accessible name of the main navigation"
+  },
+  "menu.game": {
+    "message": "Game",
+    "description": "Header link to the current game"
+  },
+  "menu.tutorial": {
+    "message": "Tutorial",
+    "description": "Link to the interactive tutorial"
+  },
+  "menu.account": {
+    "message": "Account",
+    "description": "Header link to the account when the display name is unknown"
+  },
+  "home.tagline": {
+    "message": "The Cape Verdean seed-sowing game",
+    "description": "Subtitle on the home screen"
+  },
+  "home.level": {
+    "message": "Difficulty",
+    "description": "Legend for the AI difficulty choice on the home screen"
+  },
+  "home.starter": {
+    "message": "Who starts?",
+    "description": "Legend for choosing who makes the first move"
+  },
+  "home.starter.me": {
+    "message": "Me",
+    "description": "Option: the player makes the first move"
+  },
+  "home.starter.ai": {
+    "message": "Computer",
+    "description": "Option: the computer makes the first move"
+  },
+  "home.starter.random": {
+    "message": "Random",
+    "description": "Option: pick the first player at random"
+  },
+  "home.start": {
+    "message": "Start game",
+    "description": "Button that starts a new game vs the computer"
+  },
+  "home.resume": {
+    "message": "Resume game",
+    "description": "Button that continues the unfinished game"
+  },
+  "home.resume.body": {
+    "message": "You have an unfinished game ({level}).",
+    "description": "Shown on home when a game is in progress; level = difficulty name"
+  },
+  "home.replace_warning": {
+    "message": "Starting a new game forfeits the unfinished one: it counts as a loss.",
+    "description": "Warning under the new-game form when a game is in progress"
+  },
+  "home.more": {
+    "message": "More",
+    "description": "Accessible name of the secondary links on the home screen"
+  },
+  "account.signed_in_as": {
+    "message": "Signed in as {name}",
+    "description": "Shown when signed in; name = display name"
+  },
+  "account.sign_in.why": {
+    "message": "Signing in is optional. It backs up your games and stats and syncs them across your devices.",
+    "description": "Explains sign-in on the sign-in page"
+  },
+  "account.sign_in.dev": {
+    "message": "Dev sign-in",
+    "description": "Development-only sign-in button (never shown in production builds)"
+  },
+  "account.sign_in.dev.note": {
+    "message": "Development build: sign in as a local test user.",
+    "description": "Note above the development-only sign-in button"
+  },
+  "account.keep_playing": {
+    "message": "Keep playing as a guest",
+    "description": "Link back to the game from the sign-in page"
+  },
+  "account.sign_out": {
+    "message": "Sign out",
+    "description": "Button that signs out (local data stays on the device)"
+  },
+  "account.expired": {
+    "message": "Your session expired. Your games are saved on this device and will sync after you sign in again.",
+    "description": "Shown when the session can no longer be refreshed"
+  },
+  "account.delete": {
+    "message": "Delete account",
+    "description": "Button that starts account deletion"
+  },
+  "account.delete.confirm": {
+    "message": "This permanently deletes your account and its synced data. Games stored only on this device are removed too.",
+    "description": "Confirmation text before deleting the account"
+  },
+  "account.delete.yes": {
+    "message": "Yes, delete my account",
+    "description": "Confirms account deletion"
+  },
+  "common.loading": {
+    "message": "Loading…",
+    "description": "Shown while something loads"
+  },
+  "common.cancel": {
+    "message": "Cancel",
+    "description": "Generic cancel button"
+  },
+  "common.coming_soon": {
+    "message": "Coming soon",
+    "description": "Badge on features that are not available yet"
+  },
+  "common.engine_failed": {
+    "message": "The game engine could not be loaded. Please reload the page.",
+    "description": "Shown if the WebAssembly game engine fails to load"
+  },
+  "common.go_home": {
+    "message": "Back to home",
+    "description": "Link to the home screen"
+  },
+  "common.skip_to_content": {
+    "message": "Skip to content",
+    "description": "Keyboard skip link at the top of every page"
+  },
+  "board.label": {
+    "message": "Game board",
+    "description": "Accessible name of the board"
+  },
+  "board.pit.yours": {
+    "message": "Your pit {number}, {count, plural, one {# seed} other {# seeds}}",
+    "description": "Accessible label of one of the player’s pits; number = 1-6 from the left"
+  },
+  "board.pit.opponent": {
+    "message": "Opponent pit {number}, {count, plural, one {# seed} other {# seeds}}",
+    "description": "Accessible label of an opponent pit; number = 1-6 from the opponent’s left"
+  },
+  "board.pit.not_playable": {
+    "message": "{label} (cannot be played now)",
+    "description": "Accessible label of a pit that is not a legal move; label = the pit label"
+  },
+  "board.store": {
+    "message": "{name}: {count, plural, one {# seed captured} other {# seeds captured}}",
+    "description": "Accessible label of a store; name = side name"
+  },
+  "game.title": {
+    "message": "Game vs computer",
+    "description": "Visually hidden heading of the game screen"
+  },
+  "game.side.you": {
+    "message": "You",
+    "description": "Name of the player’s side"
+  },
+  "game.side.ai": {
+    "message": "Computer ({level})",
+    "description": "Name of the computer’s side; level = difficulty name"
+  },
+  "game.score.label": {
+    "message": "Score",
+    "description": "Accessible name of the scoreboard"
+  },
+  "game.status.your_turn": {
+    "message": "Your turn",
+    "description": "Game status"
+  },
+  "game.status.ai_turn": {
+    "message": "Computer’s turn",
+    "description": "Game status"
+  },
+  "game.status.ai_thinking": {
+    "message": "Computer is thinking…",
+    "description": "Game status while the AI searches"
+  },
+  "game.status.sowing": {
+    "message": "Sowing…",
+    "description": "Game status while a move is animated"
+  },
+  "game.status.over": {
+    "message": "Game over",
+    "description": "Game status after the end"
+  },
+  "game.ai_captured": {
+    "message": "{count, plural, one {The computer captured # seed} other {The computer captured # seeds}}",
+    "description": "Message after the computer captures; count = seeds captured"
+  },
+  "game.event.skip_origin": {
+    "message": "The sowing lapped the board and skipped the starting pit.",
+    "description": "Message after a sowing of 12+ seeds"
+  },
+  "game.event.grand_slam": {
+    "message": "Grand slam! Every opponent seed was captured.",
+    "description": "Message after a grand slam"
+  },
+  "game.event.extra_turn_you": {
+    "message": "You play again, and this move must give the opponent a seed.",
+    "description": "Message after the player’s grand slam gives an extra move"
+  },
+  "game.event.extra_turn_ai": {
+    "message": "The computer plays again.",
+    "description": "Message after the computer’s grand slam gives it an extra move"
+  },
+  "game.undo": {
+    "message": "Undo",
+    "description": "Undo the player’s last move (and the computer’s reply)"
+  },
+  "game.hint": {
+    "message": "Hint",
+    "description": "Ask for a suggested move"
+  },
+  "game.leave": {
+    "message": "Menu",
+    "description": "Leave the game screen (the game is saved)"
+  },
+  "game.autosave": {
+    "message": "Your game is saved automatically. You can leave and resume it later.",
+    "description": "Note under the game"
+  },
+  "game.error": {
+    "message": "Something went wrong ({code}).",
+    "description": "Shown if the engine rejects a move; code = machine-readable error"
+  },
+  "game.none.title": {
+    "message": "No game in progress",
+    "description": "Shown on the game screen when there is nothing to resume"
+  },
+  "game.none.body": {
+    "message": "No game in progress. Choose how you want to play and start.",
+    "description": "Shown above the new-game options on the game screen when nothing can be resumed"
+  },
+  "game.new": {
+    "message": "New game",
+    "description": "Link to start a new game"
+  },
+  "game.over.win": {
+    "message": "You won!",
+    "description": "End-of-game dialog title"
+  },
+  "game.over.loss": {
+    "message": "You lost",
+    "description": "End-of-game dialog title"
+  },
+  "game.over.draw": {
+    "message": "It’s a draw",
+    "description": "End-of-game dialog title"
+  },
+  "game.over.score": {
+    "message": "Final score: you {you}, computer {ai}.",
+    "description": "End-of-game score line"
+  },
+  "game.over.reason.threshold": {
+    "message": "A player captured more than half of the seeds.",
+    "description": "End reason: someone reached the winning threshold"
+  },
+  "game.over.reason.no_feed": {
+    "message": "The opponent had no seeds and no move could give them any.",
+    "description": "End reason: a starving opponent could not be fed"
+  },
+  "game.over.reason.endless_cycle": {
+    "message": "The seeds were going round without captures, so each player took the seeds on their side.",
+    "description": "End reason: endless cycle"
+  },
+  "game.over.reason.no_moves": {
+    "message": "No moves were left.",
+    "description": "End reason: no legal moves"
+  },
+  "game.over.play_again": {
+    "message": "Play again",
+    "description": "End-of-game dialog button"
+  },
+  "game.over.home": {
+    "message": "Home",
+    "description": "End-of-game dialog link to the home screen"
+  },
+  "stats.title": {
+    "message": "Stats and history",
+    "description": "Stats screen title"
+  },
+  "stats.guest_note": {
+    "message": "Your stats are stored on this device. Sign in to back them up.",
+    "description": "Shown on the stats screen to guests"
+  },
+  "stats.empty": {
+    "message": "No finished games yet. Play a game to see your stats.",
+    "description": "Stats screen with no games"
+  },
+  "stats.played": {
+    "message": "Played",
+    "description": "Games played"
+  },
+  "stats.wins": {
+    "message": "Wins",
+    "description": "Games won"
+  },
+  "stats.losses": {
+    "message": "Losses",
+    "description": "Games lost"
+  },
+  "stats.draws": {
+    "message": "Draws",
+    "description": "Games drawn"
+  },
+  "stats.current_streak": {
+    "message": "Current streak",
+    "description": "Consecutive wins ending with the latest game"
+  },
+  "stats.best_streak": {
+    "message": "Best streak",
+    "description": "Longest run of consecutive wins"
+  },
+  "stats.by_level": {
+    "message": "By difficulty",
+    "description": "Heading of the per-difficulty table"
+  },
+  "stats.level": {
+    "message": "Difficulty",
+    "description": "Column header"
+  },
+  "stats.recent": {
+    "message": "Recent games",
+    "description": "Heading of the game history list"
+  },
+  "stats.result.win": {
+    "message": "Win",
+    "description": "History result label"
+  },
+  "stats.result.loss": {
+    "message": "Loss",
+    "description": "History result label"
+  },
+  "stats.result.draw": {
+    "message": "Draw",
+    "description": "History result label"
+  },
+  "stats.score": {
+    "message": "{you}–{ai}",
+    "description": "History score: your seeds, then the computer’s"
+  },
+  "stats.not_backed_up": {
+    "message": "Not backed up",
+    "description": "Shown on a game the server refused to store"
+  },
+  "settings.title": {
+    "message": "Settings",
+    "description": "Settings screen title"
+  },
+  "settings.game": {
+    "message": "Game",
+    "description": "Settings group"
+  },
+  "settings.sound": {
+    "message": "Sound effects",
+    "description": "Toggle for sounds"
+  },
+  "settings.hints": {
+    "message": "Show the hint button",
+    "description": "Toggle for move hints for beginners"
+  },
+  "settings.language": {
+    "message": "Language",
+    "description": "Language picker label"
+  },
+  "settings.language.en": {
+    "message": "English",
+    "description": "Language name in the picker"
+  },
+  "settings.privacy": {
+    "message": "Privacy",
+    "description": "Settings group for telemetry choices"
+  },
+  "settings.reset_install_id": {
+    "message": "Reset anonymous ID",
+    "description": "Button that resets the random telemetry install ID"
+  },
+  "settings.account": {
+    "message": "Account",
+    "description": "Settings group for sign-in"
+  },
+  "sync.status.idle": {
+    "message": "Synced",
+    "description": "Sync status"
+  },
+  "sync.status.syncing": {
+    "message": "Syncing…",
+    "description": "Sync status"
+  },
+  "sync.status.offline": {
+    "message": "Offline. Changes will sync when you are back online.",
+    "description": "Sync status"
+  },
+  "sync.status.error": {
+    "message": "Sync failed. It will retry automatically.",
+    "description": "Sync status"
+  },
+  "sync.status.auth_required": {
+    "message": "Sign in again to keep syncing.",
+    "description": "Sync status"
+  },
+  "error.internal": {
+    "message": "Something went wrong. Please try again.",
+    "description": "Generic error"
+  },
+  "error.network": {
+    "message": "Could not reach the server. Check your connection and try again.",
+    "description": "Network error"
+  },
+  "error.not_configured": {
+    "message": "This sign-in method isn’t available yet.",
+    "description": "Server answered not_configured"
+  },
+  "error.not_found": {
+    "message": "This isn’t available on this server.",
+    "description": "Server answered not_found (e.g. dev sign-in disabled)"
+  },
+  "error.unauthorized": {
+    "message": "Please sign in again.",
+    "description": "Server answered unauthorized"
+  },
+  "error.rate_limited": {
+    "message": "Too many attempts. Please wait a moment.",
+    "description": "Server answered rate_limited"
+  },
+  "error.upgrade_required": {
+    "message": "Please reload to get the latest version.",
+    "description": "Server answered upgrade_required"
+  },
+  "telemetry.prompt.title": {
+    "message": "Help improve Ouril?",
+    "description": "First-launch telemetry prompt title"
+  },
+  "telemetry.prompt.body": {
+    "message": "You can share anonymous data to help us fix problems. Both options are off unless you turn them on.",
+    "description": "First-launch telemetry prompt text"
+  },
+  "telemetry.prompt.later": {
+    "message": "You can change this at any time in Settings.",
+    "description": "Note in the telemetry prompt"
+  },
+  "telemetry.prompt.decline": {
+    "message": "No thanks",
+    "description": "Declines all telemetry (as prominent as saving)"
+  },
+  "telemetry.prompt.save": {
+    "message": "Save choices",
+    "description": "Saves the selected telemetry choices"
+  },
+  "telemetry.crash.title": {
+    "message": "Crash reports",
+    "description": "Telemetry option name"
+  },
+  "telemetry.crash.body": {
+    "message": "Anonymous reports when something breaks.",
+    "description": "Telemetry option description"
+  },
+  "telemetry.usage.title": {
+    "message": "Usage statistics",
+    "description": "Telemetry option name"
+  },
+  "telemetry.usage.body": {
+    "message": "Anonymous counts like games finished and difficulty. Never your name, location or moves.",
+    "description": "Telemetry option description"
+  },
+  "rules.title": {
+    "message": "Rules",
+    "description": "Rules screen title"
+  },
+  "rules.intro": {
+    "message": "The Cape Verdean rules the app uses by default.",
+    "description": "Rules intro"
+  },
+  "rules.try_tutorial": {
+    "message": "Learn by playing: try the tutorial",
+    "description": "Link from the rules to the tutorial"
+  },
+  "rules.setup.title": {
+    "message": "Setup",
+    "description": "Rules section heading"
+  },
+  "rules.setup.1": {
+    "message": "The board has two rows of six pits. Each player owns the row nearest to them.",
+    "description": "Rules section \"Setup\", paragraph 1"
+  },
+  "rules.setup.2": {
+    "message": "Each pit starts with 4 seeds, 48 in total. Each player has a store for captured seeds, which starts empty.",
+    "description": "Rules section \"Setup\", paragraph 2"
+  },
+  "rules.setup.3": {
+    "message": "The first player is chosen at random. In a series, the loser of the previous game starts.",
+    "description": "Rules section \"Setup\", paragraph 3"
+  },
+  "rules.sowing.title": {
+    "message": "Playing a move",
+    "description": "Rules section heading"
+  },
+  "rules.sowing.1": {
+    "message": "On your turn, pick one of your own pits that has seeds.",
+    "description": "Rules section \"Playing a move\", paragraph 1"
+  },
+  "rules.sowing.2": {
+    "message": "Take all of its seeds and drop them one at a time into each following pit, counter-clockwise: along your row to the right, then along your opponent’s row.",
+    "description": "Rules section \"Playing a move\", paragraph 2"
+  },
+  "rules.sowing.3": {
+    "message": "Your pits are numbered 1 to 6 from your left.",
+    "description": "Rules section \"Playing a move\", paragraph 3"
+  },
+  "rules.single_seed.title": {
+    "message": "Single-seed rule",
+    "description": "Rules section heading"
+  },
+  "rules.single_seed.1": {
+    "message": "You may not play a pit holding just 1 seed while any of your pits holds 2 or more.",
+    "description": "Rules section \"Single-seed rule\", paragraph 1"
+  },
+  "rules.lap.title": {
+    "message": "Sowing 12 or more seeds",
+    "description": "Rules section heading"
+  },
+  "rules.lap.1": {
+    "message": "With 12 or more seeds, the sowing laps the board and skips the pit you started from, which stays empty.",
+    "description": "Rules section \"Sowing 12 or more seeds\", paragraph 1"
+  },
+  "rules.capture.title": {
+    "message": "Capturing",
+    "description": "Rules section heading"
+  },
+  "rules.capture.1": {
+    "message": "If your last seed lands in an opponent’s pit and leaves it with exactly 2 or 3 seeds, you capture those seeds.",
+    "description": "Rules section \"Capturing\", paragraph 1"
+  },
+  "rules.capture.2": {
+    "message": "Chain capture: then check the pit just before it. If it is also on the opponent’s side and holds 2 or 3 seeds, capture it too. Keep going backwards until a pit doesn’t hold 2 or 3, or you reach your own side.",
+    "description": "Rules section \"Capturing\", paragraph 2"
+  },
+  "rules.capture.3": {
+    "message": "Captures are made whenever possible. A pit with 4 or more seeds is never captured.",
+    "description": "Rules section \"Capturing\", paragraph 3"
+  },
+  "rules.feeding.title": {
+    "message": "Feeding",
+    "description": "Rules section heading"
+  },
+  "rules.feeding.1": {
+    "message": "If your opponent has no seeds on their side, you must make a move that gives them at least one seed.",
+    "description": "Rules section \"Feeding\", paragraph 1"
+  },
+  "rules.feeding.2": {
+    "message": "If no move can feed them, the game ends and you collect the seeds left on your side.",
+    "description": "Rules section \"Feeding\", paragraph 2"
+  },
+  "rules.feeding.3": {
+    "message": "If the only move that feeds them is from a single-seed pit, feeding comes first and that move is allowed.",
+    "description": "Rules section \"Feeding\", paragraph 3"
+  },
+  "rules.grand_slam.title": {
+    "message": "Grand slam",
+    "description": "Rules section heading"
+  },
+  "rules.grand_slam.1": {
+    "message": "A grand slam is a move that captures every seed on the opponent’s side. It is allowed, and you keep the seeds.",
+    "description": "Rules section \"Grand slam\", paragraph 1"
+  },
+  "rules.grand_slam.2": {
+    "message": "You then play again immediately, and that extra move must leave the opponent at least one seed.",
+    "description": "Rules section \"Grand slam\", paragraph 2"
+  },
+  "rules.grand_slam.3": {
+    "message": "If the grand slam already gives you 25 or more, you win at once.",
+    "description": "Rules section \"Grand slam\", paragraph 3"
+  },
+  "rules.grand_slam.4": {
+    "message": "If the extra move can’t feed the opponent, the game ends and you collect the seeds on your side.",
+    "description": "Rules section \"Grand slam\", paragraph 4"
+  },
+  "rules.end.title": {
+    "message": "End of the game",
+    "description": "Rules section heading"
+  },
+  "rules.end.1": {
+    "message": "A player who has captured 25 or more seeds wins at once. Seeds still on the board go to the player on whose side they are.",
+    "description": "Rules section \"End of the game\", paragraph 1"
+  },
+  "rules.end.2": {
+    "message": "The game also ends when no move can feed a starving opponent.",
+    "description": "Rules section \"End of the game\", paragraph 2"
+  },
+  "rules.end.3": {
+    "message": "Endless cycle: when a position repeats, or after 100 moves in a row without a capture, each player collects the seeds on their own side.",
+    "description": "Rules section \"End of the game\", paragraph 3"
+  },
+  "rules.end.4": {
+    "message": "Whoever has captured more seeds wins. 24–24 is a draw.",
+    "description": "Rules section \"End of the game\", paragraph 4"
+  },
+  "rules.end.5": {
+    "message": "Match play (optional): in a series, capturing 36 or more counts as a 2–0 win.",
+    "description": "Rules section \"End of the game\", paragraph 5"
+  },
+  "tutorial.title": {
+    "message": "Tutorial",
+    "description": "Tutorial screen title"
+  },
+  "tutorial.progress": {
+    "message": "Step {step} of {total}",
+    "description": "Tutorial progress"
+  },
+  "tutorial.opponent": {
+    "message": "Opponent",
+    "description": "Name of the opponent side in the tutorial"
+  },
+  "tutorial.retry": {
+    "message": "Try again",
+    "description": "Restart the current tutorial step"
+  },
+  "tutorial.back": {
+    "message": "Previous",
+    "description": "Go to the previous tutorial step"
+  },
+  "tutorial.continue": {
+    "message": "Next",
+    "description": "Go to the next tutorial step"
+  },
+  "tutorial.finish": {
+    "message": "Done: play a game",
+    "description": "Finish the tutorial"
+  },
+  "tutorial.sowing.title": {
+    "message": "Sowing",
+    "description": "Tutorial step title"
+  },
+  "tutorial.sowing.intro": {
+    "message": "You play the bottom row. Tap your pit 3 (4 seeds) to sow its seeds one by one, counter-clockwise.",
+    "description": "Tutorial step instruction before the move"
+  },
+  "tutorial.sowing.done": {
+    "message": "Each seed went into the next pit. The last one landed in the opponent’s pit 1, which now has 5, so nothing was captured.",
+    "description": "Tutorial step explanation after the move"
+  },
+  "tutorial.capture.title": {
+    "message": "Capturing",
+    "description": "Tutorial step title"
+  },
+  "tutorial.capture.intro": {
+    "message": "Play your pit 5. Its last seed will land in the opponent’s pit 1, which holds 1 seed.",
+    "description": "Tutorial step instruction before the move"
+  },
+  "tutorial.capture.done": {
+    "message": "The opponent’s pit ended with exactly 2 seeds, so you captured them. Pits ending with 2 or 3 are captured.",
+    "description": "Tutorial step explanation after the move"
+  },
+  "tutorial.chain.title": {
+    "message": "Chain capture",
+    "description": "Tutorial step title"
+  },
+  "tutorial.chain.intro": {
+    "message": "Play your pit 5 (3 seeds). Watch the opponent’s pits 1 and 2.",
+    "description": "Tutorial step instruction before the move"
+  },
+  "tutorial.chain.done": {
+    "message": "The last pit had 3, so it was captured, then the pit before it had 2, so it was captured too: 5 seeds in one move. The chain stops at your own side.",
+    "description": "Tutorial step explanation after the move"
+  },
+  "tutorial.lap.title": {
+    "message": "Big sowings",
+    "description": "Tutorial step title"
+  },
+  "tutorial.lap.intro": {
+    "message": "Your pit 1 has 12 seeds. Play it and watch what happens to the starting pit.",
+    "description": "Tutorial step instruction before the move"
+  },
+  "tutorial.lap.done": {
+    "message": "The sowing went all the way round and skipped the pit it started from, which stays empty.",
+    "description": "Tutorial step explanation after the move"
+  },
+  "tutorial.single_seed.title": {
+    "message": "Single-seed rule",
+    "description": "Tutorial step title"
+  },
+  "tutorial.single_seed.intro": {
+    "message": "Your pits 1 and 4 hold just 1 seed while others hold more, so they can’t be played. Play one of the highlighted pits.",
+    "description": "Tutorial step instruction before the move"
+  },
+  "tutorial.single_seed.done": {
+    "message": "Right. A pit with a single seed can only be played when none of your pits holds 2 or more.",
+    "description": "Tutorial step explanation after the move"
+  },
+  "tutorial.feeding.title": {
+    "message": "Feeding",
+    "description": "Tutorial step title"
+  },
+  "tutorial.feeding.intro": {
+    "message": "Your opponent has no seeds. You must give them at least one. Only one pit can reach their side: play it.",
+    "description": "Tutorial step instruction before the move"
+  },
+  "tutorial.feeding.done": {
+    "message": "Your pit 6 fed the opponent. Your pit 2 couldn’t reach their side, so it wasn’t allowed. Feeding even beats the single-seed rule.",
+    "description": "Tutorial step explanation after the move"
+  },
+  "tutorial.grand_slam.title": {
+    "message": "Grand slam",
+    "description": "Tutorial step title"
+  },
+  "tutorial.grand_slam.intro": {
+    "message": "Play your pit 5 to capture every seed on the opponent’s side.",
+    "description": "Tutorial step instruction before the move"
+  },
+  "tutorial.grand_slam.done": {
+    "message": "After a grand slam the extra move had to feed the opponent, so only your pit 6 was allowed.",
+    "description": "Tutorial step explanation after the move"
+  },
+  "tutorial.grand_slam.next": {
+    "message": "Grand slam! You play again, and this move must give the opponent a seed. Pits 4 and 6 both hold 1 seed: which one reaches their side?",
+    "description": "Tutorial: between the grand slam and the extra move"
+  },
+  "update.required": {
+    "message": "This version of Ouril is too old for online features. Reload to get the latest version. You can keep playing offline.",
+    "description": "Banner when the server requires a newer app (426 / min_supported)"
+  },
+  "update.recommended": {
+    "message": "A new version of Ouril is available.",
+    "description": "Banner when a newer app version is recommended"
+  },
+  "update.reload": {
+    "message": "Reload",
+    "description": "Button that reloads the app to pick up the new version"
+  },
+  "sync.status.upgrade_required": {
+    "message": "Update needed to sync",
+    "description": "Sync status when the app is too old for the server"
+  },
+  "profile.title": {
+    "message": "Profile",
+    "description": "Heading of the profile form in Settings"
+  },
+  "profile.display_name": {
+    "message": "Display name",
+    "description": "Profile form label"
+  },
+  "profile.handle": {
+    "message": "Handle",
+    "description": "Profile form label: the unique @name"
+  },
+  "profile.handle.help": {
+    "message": "3 to 20 characters: lowercase letters, numbers and _. Must be unique.",
+    "description": "Help text under the handle field"
+  },
+  "profile.save": {
+    "message": "Save profile",
+    "description": "Profile form submit button"
+  },
+  "profile.saved": {
+    "message": "Saved. Changes sync when you're online.",
+    "description": "Shown after saving the profile"
+  },
+  "profile.invalid": {
+    "message": "Check the fields: the display name must be 1 to 50 characters, and the handle 3 to 20 lowercase letters, numbers or _.",
+    "description": "Validation error in the profile form"
+  },
+  "profile.handle.pending": {
+    "message": "Requested @{handle}. Waiting for the server to confirm it's free.",
+    "description": "Shown while a handle change is pending; handle = requested handle"
+  },
+  "profile.handle.taken": {
+    "message": "That handle is already taken. Try another one.",
+    "description": "Shown when the server rejects a handle as taken"
+  },
+  "profile.rejected": {
+    "message": "The server didn't accept that profile change.",
+    "description": "Shown when the server rejects a profile change as invalid"
+  },
+  "replay.open": {
+    "message": "Replay",
+    "description": "Link from a finished game in the history to its replay"
+  },
+  "replay.title": {
+    "message": "Replay",
+    "description": "Heading of the replay screen"
+  },
+  "replay.ply": {
+    "message": "Move {ply} of {total}",
+    "description": "Replay position; ply = current move number, total = moves in the game"
+  },
+  "replay.pit": {
+    "message": "pit {pit}",
+    "description": "Replay: which pit was played (1-based)"
+  },
+  "replay.start": {
+    "message": "Starting position",
+    "description": "Replay: shown before the first move"
+  },
+  "replay.first": {
+    "message": "First",
+    "description": "Replay control: go to the start"
+  },
+  "replay.prev": {
+    "message": "Previous",
+    "description": "Replay control: one move back"
+  },
+  "replay.next": {
+    "message": "Next",
+    "description": "Replay control: one move forward"
+  },
+  "replay.last": {
+    "message": "Last",
+    "description": "Replay control: go to the end"
+  },
+  "replay.controls": {
+    "message": "Replay controls",
+    "description": "Accessible label of the replay control group"
+  },
+  "replay.back": {
+    "message": "Back to stats",
+    "description": "Link from the replay back to the stats screen"
+  },
+  "replay.not_found": {
+    "message": "This game isn't on this device.",
+    "description": "Replay of an unknown game id"
+  },
+  "replay.unavailable": {
+    "message": "This game can't be replayed with this version of the app.",
+    "description": "Replay failed (e.g. a newer variant version)"
+  },
+  "replay.opponent": {
+    "message": "Opponent",
+    "description": "Replay label for the other side when no AI level is recorded"
+  },
+  "home.hero.lede": {
+    "message": "Sow seeds, capture your opponent's and outplay the computer in the game Cape Verdeans have played for generations. Works offline, no account needed.",
+    "description": "Home hero paragraph under the title"
+  },
+  "home.tile.tutorial": {
+    "message": "Learn to play in a few minutes",
+    "description": "Home tile description for the tutorial"
+  },
+  "home.tile.rules": {
+    "message": "Every rule, with examples",
+    "description": "Home tile description for the rules"
+  },
+  "home.tile.stats": {
+    "message": "Your wins, streaks and replays",
+    "description": "Home tile description for stats"
+  },
+  "home.tile.settings": {
+    "message": "Sound, board style and privacy",
+    "description": "Home tile description for settings"
+  },
+  "board.loading": {
+    "message": "Loading the board…",
+    "description": "Screen-reader status while the 3D board loads"
+  },
+  "game.fullscreen.enter": {
+    "message": "Full screen",
+    "description": "Button: show the game in full screen"
+  },
+  "game.fullscreen.exit": {
+    "message": "Exit full screen",
+    "description": "Button: leave full screen"
+  },
+  "game.score.gained": {
+    "message": "+{count}",
+    "description": "Seeds just captured, shown briefly next to a score"
+  },
+  "game.over.tagline.win": {
+    "message": "Well sown! The board is yours.",
+    "description": "End-of-game line under the title, after a win"
+  },
+  "game.over.tagline.loss": {
+    "message": "The computer took this one. Every game teaches you the board.",
+    "description": "End-of-game line under the title, after a loss"
+  },
+  "game.over.tagline.draw": {
+    "message": "An even split: 24 seeds each.",
+    "description": "End-of-game line under the title, after a draw"
+  },
+  "game.over.rematch": {
+    "message": "Rematch",
+    "description": "End-of-game button after a loss: play again at the same level"
+  },
+  "game.over.you": {
+    "message": "You",
+    "description": "End-of-game score label for the player"
+  },
+  "game.over.ai": {
+    "message": "Computer",
+    "description": "End-of-game score label for the computer"
+  },
+  "home.cta.play": {
+    "message": "Play now",
+    "description": "Landing page main button: start a game right away"
+  },
+  "home.cta.learn": {
+    "message": "Learn to play",
+    "description": "Landing page button: open the tutorial"
+  },
+  "home.quick.title": {
+    "message": "Choose your game",
+    "description": "Heading of the new-game card on the landing page"
+  },
+  "home.steps.title": {
+    "message": "How to play",
+    "description": "Landing page section title"
+  },
+  "home.steps.1.title": {
+    "message": "Pick a pit",
+    "description": "Landing page how-to step 1 title"
+  },
+  "home.steps.1.body": {
+    "message": "Choose one of your six pits and scoop up all its seeds.",
+    "description": "Landing page how-to step 1"
+  },
+  "home.steps.2.title": {
+    "message": "Sow",
+    "description": "Landing page how-to step 2 title"
+  },
+  "home.steps.2.body": {
+    "message": "Drop them one by one into the next pits, going counter-clockwise.",
+    "description": "Landing page how-to step 2"
+  },
+  "home.steps.3.title": {
+    "message": "Capture",
+    "description": "Landing page how-to step 3 title"
+  },
+  "home.steps.3.body": {
+    "message": "If your last seed leaves 2 or 3 in an opponent’s pit, those seeds are yours.",
+    "description": "Landing page how-to step 3"
+  },
+  "home.steps.4.title": {
+    "message": "Win",
+    "description": "Landing page how-to step 4 title"
+  },
+  "home.steps.4.body": {
+    "message": "Capture 25 of the 48 seeds and the game is yours.",
+    "description": "Landing page how-to step 4"
+  },
+  "home.heritage.kicker": {
+    "message": "From the islands",
+    "description": "Landing page heritage section label"
+  },
+  "home.heritage.title": {
+    "message": "Ten islands, one board",
+    "description": "Landing page heritage section title; the flag's ten stars are the ten islands"
+  },
+  "home.heritage.body": {
+    "message": "Ouril came to Cape Verde from the west coast of Africa centuries ago and is played across the islands, from Santiago to São Vicente. Its seeds, the ouris, come from the ourinzeira shrub.",
+    "description": "Landing page heritage paragraph"
+  },
+  "home.features.title": {
+    "message": "Made to play anywhere",
+    "description": "Landing page features section title"
+  },
+  "home.features.offline.title": {
+    "message": "Plays offline",
+    "description": "Feature title"
+  },
+  "home.features.offline.body": {
+    "message": "Once it’s loaded, no connection is needed.",
+    "description": "Feature description"
+  },
+  "home.features.levels.title": {
+    "message": "Three levels",
+    "description": "Feature title"
+  },
+  "home.features.levels.body": {
+    "message": "From a gentle start to a real challenge.",
+    "description": "Feature description"
+  },
+  "home.features.guest.title": {
+    "message": "No account needed",
+    "description": "Feature title"
+  },
+  "home.features.guest.body": {
+    "message": "Just open it and play.",
+    "description": "Feature description"
+  },
+  "game.menu.open": {
+    "message": "Game menu",
+    "description": "Button in the game bar: opens the pause menu (keep playing, save and exit, forfeit)"
+  },
+  "game.menu.title": {
+    "message": "Game paused",
+    "description": "Title of the in-game menu"
+  },
+  "game.menu.body": {
+    "message": "Your game is saved after every move. Leave any time and pick it up again from the home screen.",
+    "description": "In-game menu text"
+  },
+  "game.menu.resume": {
+    "message": "Keep playing",
+    "description": "In-game menu button: close the menu"
+  },
+  "game.menu.save_exit": {
+    "message": "Save and exit",
+    "description": "In-game menu button: go home; the game can be resumed later"
+  },
+  "game.menu.forfeit": {
+    "message": "Forfeit game",
+    "description": "In-game menu button: give up this game"
+  },
+  "game.forfeit.title": {
+    "message": "Forfeit this game?",
+    "description": "Forfeit confirmation title"
+  },
+  "game.forfeit.body": {
+    "message": "The computer wins, and the game counts as a loss in your stats. This can’t be undone.",
+    "description": "Forfeit confirmation text"
+  },
+  "game.forfeit.confirm": {
+    "message": "Forfeit",
+    "description": "Forfeit confirmation button"
+  },
+  "game.over.reason.resigned": {
+    "message": "You forfeited the game.",
+    "description": "End reason: the player forfeited"
+  },
+  "home.cta.resume": {
+    "message": "Continue your game",
+    "description": "Landing page main button when a game is in progress"
+  },
+  "board.error": {
+    "message": "The 3D board couldn’t start on this device.",
+    "description": "Shown in the board's place when the 3D board fails"
+  },
+  "board.no_webgl": {
+    "message": "This browser can’t show the board: it needs WebGL2. Try an up-to-date browser.",
+    "description": "Shown in the board's place when WebGL2 isn't available"
+  },
+  "board.retry": {
+    "message": "Try again",
+    "description": "Button: reload the page to start the 3D board again"
+  },
+  "board.pit.hint": {
+    "message": "{label}, suggested move",
+    "description": "Accessible label of the pit the hint suggests; label = the pit's usual label"
+  },
+  "home.forfeited": {
+    "message": "Game forfeited. It counts as a loss.",
+    "description": "Shown on the home page after forfeiting the game in progress; followed by a link to Stats"
+  },
+  "game.forfeit.cancel": {
+    "message": "Keep the game",
+    "description": "Forfeit confirmation: don't forfeit"
+  },
+  "error.forbidden": {
+    "message": "The server refused this request from this address.",
+    "description": "Error: the server rejected the request (e.g. the page's address isn't an allowed origin)"
+  },
+  "menu.about": {
+    "message": "About",
+    "description": "Navigation: the About the developer page"
+  },
+  "home.tile.about": {
+    "message": "Who makes Ouril, and how to support it",
+    "description": "Home tile description for About"
+  },
+  "about.title": {
+    "message": "About the developer",
+    "description": "Page title of the About page"
+  },
+  "about.kicker": {
+    "message": "Made by",
+    "description": "Small label above the developer's name"
+  },
+  "about.photo_alt": {
+    "message": "Photo of {name}",
+    "description": "Alt text of the developer's photo; name = the developer's name"
+  },
+  "about.intro": {
+    "message": "Hi! I’m Alfredo, a Senior Operations Engineer at Airbnb. I grew up in Cape Verde and came to the US at 19 to study computer science at the University of Wyoming. Ouril is my way of sharing a game from home with anyone, anywhere.",
+    "description": "About page introduction (from alfredomoreira.dev)"
+  },
+  "about.find_me": {
+    "message": "Find me online",
+    "description": "About page: heading of the social links"
+  },
+  "about.social.website": {
+    "message": "Website",
+    "description": "Social link label"
+  },
+  "about.social.github": {
+    "message": "GitHub",
+    "description": "Social link label"
+  },
+  "about.social.linkedin": {
+    "message": "LinkedIn",
+    "description": "Social link label"
+  },
+  "about.social.instagram": {
+    "message": "Instagram",
+    "description": "Social link label"
+  },
+  "about.social.x": {
+    "message": "X",
+    "description": "Social link label"
+  },
+  "about.social.email": {
+    "message": "Email",
+    "description": "Social link label"
+  },
+  "about.placeholder": {
+    "message": "Username needed",
+    "description": "Development only: a link or payment option not filled in yet (content/developer.ts)"
+  },
+  "about.coffee.title": {
+    "message": "Buy me a coffee",
+    "description": "About page: support section heading"
+  },
+  "about.coffee.body": {
+    "message": "Ouril is free and has no ads. If you enjoy it, a coffee helps keep it going.",
+    "description": "About page: support section text"
+  },
+  "about.coffee.paypal": {
+    "message": "PayPal",
+    "description": "Payment option name"
+  },
+  "about.coffee.venmo": {
+    "message": "Venmo",
+    "description": "Payment option name"
+  },
+  "about.coffee.zelle": {
+    "message": "Zelle",
+    "description": "Payment option name"
+  },
+  "about.coffee.copy": {
+    "message": "Copy",
+    "description": "Button: copy the Zelle email or phone"
+  },
+  "about.coffee.copied": {
+    "message": "Copied",
+    "description": "Shown after copying the Zelle email or phone"
+  },
+  "home.soon.title": {
+    "message": "Coming soon",
+    "description": "Landing page section title: upcoming features"
+  },
+  "home.soon.placeholder.title": {
+    "message": "Something new",
+    "description": "Development only: placeholder card in Coming soon"
+  },
+  "home.soon.placeholder.body": {
+    "message": "Add upcoming features in src/content/comingSoon.ts.",
+    "description": "Development only: placeholder card text in Coming soon"
+  },
+  "home.soon.accounts.title": {
+    "message": "Your own account",
+    "description": "Coming soon: account creation"
+  },
+  "home.soon.accounts.body": {
+    "message": "Create an account to keep your games and stats on every device.",
+    "description": "Coming soon: account creation"
+  },
+  "home.soon.leaderboards.title": {
+    "message": "Leaderboards",
+    "description": "Coming soon: leaderboards"
+  },
+  "home.soon.leaderboards.body": {
+    "message": "See how you rank against players around the world and in your own country.",
+    "description": "Coming soon: leaderboards"
+  },
+  "home.soon.online.title": {
+    "message": "Play with your friends",
+    "description": "Coming soon: online games"
+  },
+  "home.soon.online.body": {
+    "message": "Challenge friends to online games, live or one move at a time.",
+    "description": "Coming soon: online games (real-time and turn-based)"
+  },
+  "about.social.facebook": {
+    "message": "Facebook",
+    "description": "Social link label"
+  },
+  "about.social.twitch": {
+    "message": "Twitch",
+    "description": "Social link label"
+  },
+  "about.more": {
+    "message": "Away from the keyboard you’ll find me in the mountains hiking, rafting or snowboarding, working out, or deep in a JRPG.",
+    "description": "About page: second paragraph, hobbies (from alfredomoreira.dev)"
+  },
+  "about.coffee.cashapp": {
+    "message": "Cash App",
+    "description": "Payment option name"
+  },
+  "about.coffee.amount": {
+    "message": "${amount}",
+    "description": "A US-dollar amount; amount = a number, e.g. 5"
+  },
+  "about.coffee.send": {
+    "message": "Send {amount}",
+    "description": "On each payment option: the suggested amount; amount = e.g. $5"
+  },
+  "about.coffee.note": {
+    "message": "A coffee for Ouril",
+    "description": "Payment note pre-filled where the service supports it (Venmo)"
+  },
+  "home.variant": {
+    "message": "Rules",
+    "description": "New-game form: which rules (variant) to play"
+  },
+  "variant.cv.standard.short": {
+    "message": "Standard",
+    "description": "Rules option: standard Cape Verdean Ouril"
+  },
+  "variant.cv.standard.about": {
+    "message": "The classic Cape Verdean rules: one lap per move.",
+    "description": "Rules option description: standard"
+  },
+  "variant.cv.continuous.short": {
+    "message": "Continuous sowing",
+    "description": "Rules option: the continuous sowing (relay sowing)"
+  },
+  "variant.cv.continuous.about": {
+    "message": "When your last seed lands in one of your pits that already has seeds, pick them all up and keep sowing. You stop on an empty pit of yours or on your opponent’s side.",
+    "description": "Rules option description: continuous sowing"
+  },
+  "game.event.relay": {
+    "message": "{count, plural, one {The sowing carried on once from an occupied pit.} other {The sowing carried on # times from occupied pits.}}",
+    "description": "Announcement: relay sowing happened during the move (count = number of relays)"
+  },
+  "rules.continuous.intro": {
+    "message": "Plays like Standard, except that sowing continues while your last seed lands in one of your own occupied pits.",
+    "description": "Rules: introduction of the continuous sowing variant"
+  },
+  "rules.based_on": {
+    "message": "Everything else follows {name}.",
+    "description": "Rules: a variant that only lists its differences; name = the base variant's name"
+  },
+  "rules.show_variant": {
+    "message": "See the {name} rules",
+    "description": "Rules: button that switches to the base variant's rules"
+  },
+  "rules.expand_all": {
+    "message": "Expand all",
+    "description": "Rules: open every section"
+  },
+  "rules.collapse_all": {
+    "message": "Collapse all",
+    "description": "Rules: close every section"
+  },
+  "rules.continuous_relay.title": {
+    "message": "Relay sowing",
+    "description": "Rules: continuous sowing section title"
+  },
+  "rules.continuous_relay.1": {
+    "message": "If your last seed lands in one of your own pits that already had seeds, pick up everything in it and keep sowing from the next pit.",
+    "description": "Rules: continuous sowing"
+  },
+  "rules.continuous_relay.2": {
+    "message": "This can happen several times in one move, even in the pit you started from.",
+    "description": "Rules: continuous sowing"
+  },
+  "rules.continuous_stop.title": {
+    "message": "When the move ends",
+    "description": "Rules: continuous sowing section title"
+  },
+  "rules.continuous_stop.1": {
+    "message": "The move ends when your last seed lands in an empty pit on your side, or anywhere on your opponent’s side, where the usual captures apply.",
+    "description": "Rules: continuous sowing move end"
+  },
+  "rules.continuous_other.title": {
+    "message": "Other differences",
+    "description": "Rules: continuous sowing section title"
+  },
+  "rules.continuous_other.1": {
+    "message": "No pit is ever skipped, not even the one you started from, however many seeds you sow.",
+    "description": "Rules: continuous sowing other differences"
+  },
+  "rules.continuous_other.2": {
+    "message": "A lone seed can always be played.",
+    "description": "Rules: continuous sowing other differences"
+  },
+  "rules.continuous_other.3": {
+    "message": "If your opponent has no seeds, your move must give them some during any lap. It still counts even if you then capture them all back.",
+    "description": "Rules: continuous sowing other differences"
+  },
+  "game.rules": {
+    "message": "Rules",
+    "description": "Game top bar button: show the rules of the variant being played"
+  },
+  "game.rules.title": {
+    "message": "Rules: {name}",
+    "description": "Title of the in-game rules dialog; name = the variant's name"
+  },
+  "game.rules.close": {
+    "message": "Back to the game",
+    "description": "Button closing the in-game rules dialog"
+  },
+  "game.rules.all": {
+    "message": "All rules",
+    "description": "In-game rules dialog: link to the full Rules page (leaves the game; it's saved)"
+  },
+  "tutorial.continuous.title": {
+    "message": "New rules: continuous sowing",
+    "description": "Tutorial step title (continuous sowing variant)"
+  },
+  "tutorial.continuous.intro": {
+    "message": "With the Continuous sowing rules, sowing can carry on. Play your pit 1 and watch where your last seed lands.",
+    "description": "Tutorial step instruction before the move"
+  },
+  "tutorial.continuous.done": {
+    "message": "Your last seed landed in your pit 5, which already had seeds, so you picked them all up and kept sowing until a seed landed on the opponent’s side.",
+    "description": "Tutorial step explanation after the move"
+  },
+  "tutorial.continuous_capture.title": {
+    "message": "Carry on, then capture",
+    "description": "Tutorial step title (continuous sowing variant)"
+  },
+  "tutorial.continuous_capture.intro": {
+    "message": "Play the single seed in your pit 4. With these rules a lone seed can always be played.",
+    "description": "Tutorial step instruction before the move"
+  },
+  "tutorial.continuous_capture.done": {
+    "message": "It landed in your pit 5, which had a seed, so the sowing carried on into the opponent’s pit 1 and made 2: you captured them.",
+    "description": "Tutorial step explanation after the move"
+  },
+  "game.unplayable": {
+    "message": "Your unfinished game used rules this version of the app doesn’t have, so it was set aside. Start a new game below.",
+    "description": "Game screen: the saved game's variant is unknown to this app"
+  },
+  "error.screen.title": {
+    "message": "Something went wrong",
+    "description": "Title shown when a screen crashes"
+  },
+  "error.screen.body": {
+    "message": "This screen hit an unexpected problem. Reloading usually fixes it; your saved game is safe.",
+    "description": "Text shown when a screen crashes"
+  },
+  "error.screen.home": {
+    "message": "Go to the home page",
+    "description": "Button shown when a screen crashes"
+  },
+  "home.heritage.world_cup": {
+    "message": "In 2026 the world met Cape Verde: on their World Cup debut, the Blue Sharks went unbeaten through their group, held Spain to a draw and took Argentina to extra time in the knockout round. Now it’s time to show the world more of our culture, starting with Ouril.",
+    "description": "Landing page heritage paragraph about Cape Verde's 2026 FIFA World Cup debut (facts checked July 2026: group draws with Spain 0-0, Uruguay 2-2, Saudi Arabia 0-0; lost 3-2 to Argentina after extra time in the round of 32)"
+  },
+  "variant.cv.across.short": {
+    "message": "Capture across",
+    "description": "Rules option: capture across"
+  },
+  "variant.cv.across.about": {
+    "message": "You capture from the pit across from an empty pit of yours where your last seed lands, with a chain. Nothing is captured on your opponent’s side.",
+    "description": "Rules option description: capture across"
+  },
+  "variant.cv.across-continuous.short": {
+    "message": "Capture across + continuous",
+    "description": "Rules option: capture across with continuous sowing"
+  },
+  "variant.cv.across-continuous.about": {
+    "message": "Capture across, with continuous sowing: sowing carries on from your occupied pits, and ends with a capture across when your last seed lands in an empty pit of yours.",
+    "description": "Rules option description: capture across + continuous"
+  },
+  "rules.across.intro": {
+    "message": "Plays like Standard, except for how you capture.",
+    "description": "Rules: capture across introduction"
+  },
+  "rules.across_continuous.intro": {
+    "message": "Plays like Continuous sowing, except that you capture across.",
+    "description": "Rules: capture across + continuous introduction"
+  },
+  "rules.across_capture.title": {
+    "message": "Capturing across",
+    "description": "Rules: capture across section title"
+  },
+  "rules.across_capture.1": {
+    "message": "If your last seed lands in an empty pit on your side and the pit across from it has seeds, you capture all of them, however many there are. The seed you dropped stays.",
+    "description": "Rules: capture across"
+  },
+  "rules.across_capture.2": {
+    "message": "Then look at the pit you sowed just before. If it was empty too and the pit across has seeds, capture those as well, and keep going back until a pit doesn’t qualify or your row ends.",
+    "description": "Rules: capture across chain"
+  },
+  "rules.across_capture.3": {
+    "message": "You never capture on your opponent’s side, not even on 2 or 3.",
+    "description": "Rules: capture across"
+  },
+  "rules.across_continuous_end.title": {
+    "message": "How a move ends",
+    "description": "Rules: capture across + continuous section title"
+  },
+  "rules.across_continuous_end.1": {
+    "message": "Sowing carries on from your occupied pits, so a move ends either in an empty pit of yours, where you can capture across, or on your opponent’s side, where nothing is captured.",
+    "description": "Rules: capture across + continuous"
+  },
+  "rules.across_strategy.title": {
+    "message": "Strategy",
+    "description": "Rules: capture across section title"
+  },
+  "rules.across_strategy.1": {
+    "message": "Don’t pile many seeds into one pit, because they can all be taken at once, and try to keep your opponent’s pits from running empty.",
+    "description": "Rules: capture across strategy"
+  },
+  "tutorial.across.title": {
+    "message": "New rules: capture across",
+    "description": "Tutorial step title (capture across variant)"
+  },
+  "tutorial.across.intro": {
+    "message": "With the Capture across rules, you capture from your opponent’s pits facing yours. Play your pit 1 and drop a seed into each of your empty pits.",
+    "description": "Tutorial step instruction before the move"
+  },
+  "tutorial.across.done": {
+    "message": "Your last seed landed in your empty pit 4, so you captured the seeds across from it. Pits 3 and 2 had been empty too, so the chain captured across from them as well. You’ve finished the tutorial!",
+    "description": "Tutorial step explanation after the move"
+  },
+  "menu.shop": {
+    "message": "Buy a board",
+    "description": "Header button: go to the recommended physical boards (About page)"
+  },
+  "shop.title": {
+    "message": "Play on a real board",
+    "description": "Section title: recommended physical mancala boards"
+  },
+  "shop.body": {
+    "message": "Ouril is even better with real seeds in your hands. These are the boards I recommend.",
+    "description": "Section text above the board recommendations"
+  },
+  "shop.classic.title": {
+    "message": "Classic board",
+    "description": "Recommended board: the default option"
+  },
+  "shop.classic.body": {
+    "message": "The classic mancala board: an easy, affordable way to play at home.",
+    "description": "Recommended board description: default"
+  },
+  "shop.premium.title": {
+    "message": "Premium board",
+    "description": "Recommended board: the premium option"
+  },
+  "shop.premium.body": {
+    "message": "An African Oware board played with real seeds, closest to the Ouril boards of Cape Verde.",
+    "description": "Recommended board description: premium"
+  },
+  "shop.cta": {
+    "message": "View on Amazon",
+    "description": "Button: opens the board on Amazon in a new tab"
+  },
+  "shop.disclosure": {
+    "message": "As an Amazon Associate I earn from qualifying purchases.",
+    "description": "Required disclosure shown when the board links are Amazon affiliate links"
+  },
+  "shop.placeholder": {
+    "message": "Link needed",
+    "description": "Development only: a board recommendation without its Amazon link yet (content/boards.ts)"
+  },
+  "app.description": {
+    "message": "Ouril, the Cape Verdean seed-sowing game. Play offline against the computer.",
+    "description": "Page description for search engines and link previews (the <meta name=\"description\"> tag)"
+  },
+  "settings.music": {
+    "message": "Music",
+    "description": "Settings section: background music"
+  },
+  "settings.music.game": {
+    "message": "Music during games",
+    "description": "Settings toggle: background music while playing"
+  },
+  "settings.music.volume": {
+    "message": "Music volume",
+    "description": "Settings slider: background music volume"
+  },
+  "settings.music.note": {
+    "message": "A random track plays during games; pause or skip it from the game’s top bar. Music starts after your first tap or click and pauses when you switch tabs. Saved on this device.",
+    "description": "Settings note under the music options"
+  },
+  "settings.music.none": {
+    "message": "No music has been added yet.",
+    "description": "Settings note when the app has no game music files"
+  },
+  "game.music.pause": {
+    "message": "Pause music",
+    "description": "Game top bar button: pause the background music"
+  },
+  "game.music.play": {
+    "message": "Play music",
+    "description": "Game top bar button: resume the background music"
+  },
+  "game.music.skip": {
+    "message": "Next track",
+    "description": "Game top bar button: skip to another random music track"
+  }
+}

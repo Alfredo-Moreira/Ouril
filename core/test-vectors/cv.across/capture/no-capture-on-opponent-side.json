@@ -1,0 +1,82 @@
+{
+  "id": "cv.across/capture/no-capture-on-opponent-side",
+  "description": "The last seed lands in North pit 2, making 3: with capture across, nothing is captured on the opponent\u2019s side.",
+  "variants": [
+    {
+      "id": "cv.across",
+      "version": 1
+    }
+  ],
+  "source": "docs/game/variants/cape-verde/across.md#rules-at-a-glance",
+  "tags": [
+    "capture",
+    "to-confirm"
+  ],
+  "setup": {
+    "pits": [
+      4,
+      4,
+      4,
+      4,
+      3,
+      2,
+      1,
+      2,
+      4,
+      4,
+      4,
+      4
+    ],
+    "stores": [
+      4,
+      4
+    ],
+    "to_move": "south",
+    "moves_since_capture": 0
+  },
+  "steps": [
+    {
+      "expect_legal_moves": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "move": 5,
+      "expect": {
+        "pits": [
+          4,
+          4,
+          4,
+          4,
+          3,
+          0,
+          2,
+          3,
+          4,
+          4,
+          4,
+          4
+        ],
+        "stores": [
+          4,
+          4
+        ],
+        "to_move": "north",
+        "status": "playing",
+        "events": [
+          {
+            "type": "sow",
+            "pit": 6
+          },
+          {
+            "type": "sow",
+            "pit": 7
+          }
+        ]
+      }
+    }
+  ]
+}

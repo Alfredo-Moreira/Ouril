@@ -47,6 +47,8 @@ These are the fields of the engine's `VariantConfig`. This list is the **single 
 | `endless_cycle_move_limit` | integer: moves in a row without a capture before the cycle rule applies (a repeated position also triggers it) | `100` |
 | `first_player` | `random` \| `loser_starts_next` | `random` |
 | `match_scoring` | optional, for example `{ big_win_threshold: 36, big_win_points: 2 }` | none |
+| `relay_sowing` | `none` \| `own_side_occupied`: when the last seed of a lap lands in an occupied pit on the mover's own side, pick up its seeds and keep sowing ([ADR 0023](../../decisions/0023-relay-sowing.md)) | `none` |
+| `capture_mode` | `opponent_side` \| `across_from_empty_own_pit`: capture from the pit across an empty own pit where the last seed lands, with `chain_capture` going back through own pits ([ADR 0024](../../decisions/0024-capture-across.md)) | `opponent_side` |
 
 ## Catalog
 
@@ -57,6 +59,9 @@ These are the fields of the engine's `VariantConfig`. This list is the **single 
 | 🇨🇻 Cape Verde | `cv.standard` | Ouril (standard) | ⭐ | researched | [cape-verde/standard.md](cape-verde/standard.md) |
 | 🇨🇻 Cape Verde | `cv.brava` | Ouril of Brava (2×7 board) | | lead | |
 | 🇨🇻 Cape Verde | `cv.sao-vicente` | Uril of São Vicente | | lead | |
+| 🇨🇻 Cape Verde | `cv.continuous` | Ouril with continuous sowing (relay sowing; reported as a family rule from Santiago) | | implemented | [cape-verde/continuous.md](cape-verde/continuous.md) |
+| 🇨🇻 Cape Verde | `cv.across` | Ouril with capture across (a family rule) | | implemented | [cape-verde/across.md](cape-verde/across.md) |
+| 🇨🇻 Cape Verde | `cv.across-continuous` | Ouril with capture across and continuous sowing (a family rule) | | implemented | [cape-verde/across-continuous.md](cape-verde/across-continuous.md) |
 | 🇵🇹 Portugal | `pt.ouri` | Ouri (school and competition rules, derived from Cape Verde) | ⭐ | lead | |
 | 🇸🇹 São Tomé and Príncipe | `st.ouri` | Ouri | ⭐ | lead | |
 | 🇬🇭 Ghana | `gh.abapa` | Abapa (international tournament standard) | ⭐ | lead | |
@@ -78,4 +83,4 @@ The defaults for countries that haven't been researched are **provisional**. Res
 ## Open questions
 
 - Should rated online play be available for every variant, or only country defaults? Many small rating pools would be thin.
-- Do any variants need mechanics the parameters can't express (relay sowing, captures during sowing in Anan-anan, multi-round pit loss)? If so, the engine needs per-variant rule hooks, not just more flags.
+- Do any variants need mechanics the parameters can't express (captures during sowing in Anan-anan; multi-round pit loss)? Relay sowing is now a parameter (`relay_sowing`, for [cv.continuous](cape-verde/continuous.md)); other relay styles (stop on any empty pit, relay on either side) would be new values. If so, the engine needs per-variant rule hooks, not just more flags.

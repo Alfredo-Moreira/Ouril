@@ -1,0 +1,93 @@
+{
+  "id": "cv.continuous/single-seed/lone-seed-allowed",
+  "description": "A single seed may be played even though another South pit holds more (here it starts a relay).",
+  "variants": [
+    {
+      "id": "cv.continuous",
+      "version": 1
+    }
+  ],
+  "source": "docs/game/variants/cape-verde/continuous.md#evidence-by-parameter",
+  "tags": [
+    "single-seed",
+    "relay",
+    "to-confirm"
+  ],
+  "setup": {
+    "pits": [
+      1,
+      2,
+      6,
+      0,
+      0,
+      0,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4
+    ],
+    "stores": [
+      7,
+      8
+    ],
+    "to_move": "south",
+    "moves_since_capture": 0
+  },
+  "steps": [
+    {
+      "expect_legal_moves": [
+        0,
+        1,
+        2
+      ],
+      "move": 0,
+      "expect": {
+        "pits": [
+          0,
+          0,
+          7,
+          1,
+          1,
+          0,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4
+        ],
+        "stores": [
+          7,
+          8
+        ],
+        "to_move": "north",
+        "status": "playing",
+        "events": [
+          {
+            "type": "sow",
+            "pit": 1
+          },
+          {
+            "type": "relay",
+            "pit": 1,
+            "seeds": 3
+          },
+          {
+            "type": "sow",
+            "pit": 2
+          },
+          {
+            "type": "sow",
+            "pit": 3
+          },
+          {
+            "type": "sow",
+            "pit": 4
+          }
+        ]
+      }
+    }
+  ]
+}

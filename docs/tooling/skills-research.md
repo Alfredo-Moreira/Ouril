@@ -55,9 +55,9 @@ Ouril is a docs-first, rules-critical, polyglot project. Its expensive mistakes 
 | 16 | `store-release` | MVP (launch) | M | App Store and Play submission checklist, privacy questionnaires consistent with ADR 0014, `min_supported` and release notes. Manual-only. |
 | 17 | `tutorial-lesson` | MVP | M | Authors data-driven tutorial lessons validated like vectors. Needs a lesson-format decision first. |
 | 18 | `ai-tuning` | MVP | M | Runs the seeded AI-vs-AI harness, reads win rates and time budgets, and records tuning in `ai.md`. |
-| 19 | `platform-parity` | MVP/Phase 2 | S | Read-only matrix: does feature X exist on iOS, Android and web with strings, accessibility and tests? |
-| 20 | `translation-review` | Phase 2 | S | Prepares PT and Kriolu (`kea`, ALUPEC) review packets for native speakers and checks ICU validity. Never ships machine-translated Kriolu as final. |
-| 21 | `variant-report-triage` | Phase 2 | S | Turns "rule or variant report" issues into spec evidence and open questions (feeds `variant-research` or `rule-change`). |
+| 19 | `platform-parity` | Phase 5 | S | Read-only matrix: does feature X exist on iOS, Android and web with strings, accessibility and tests? |
+| 20 | `translation-review` | Ongoing (languages) | S | Prepares PT and Kriolu (`kea`, ALUPEC) review packets for native speakers and checks ICU validity. Never ships machine-translated Kriolu as final. |
+| 21 | `variant-report-triage` | Ongoing (variants) | S | Turns "rule or variant report" issues into spec evidence and open questions (feeds `variant-research` or `rule-change`). |
 
 **Start with:** `adr`, `docs-audit` (+ hook), `test-vectors`, then `rule-change` and `rules-audit`. Small upgrades to the existing `variant-research` skill are in §4.0.
 
@@ -325,7 +325,7 @@ It is already high quality. Small improvements:
 - **Special behaviour:** with a project skill named `verify` that Claude can invoke, Claude Code's commit instructions tell Claude to run it before each commit (code changes only; **v2.1.286+**, local is 2.1.285).
 - **Guardrail:** keep it fast (<2–3 min for the common path). Put the full cross-binding matrix in CI.
 
-### 4.8 `variant-implement` (MVP/Phase 2 · M · needs `core/engine` and its registry)
+### 4.8 `variant-implement` (Ongoing · M · needs `core/engine` and its registry)
 
 - **Purpose:** Turn a reviewed spec into an implemented variant:
   1. Write `core/engine/variants/<id>.toml` from `resolved` (keys only from the parameters table).
@@ -466,15 +466,15 @@ It is already high quality. Small improvements:
 - **Purpose:** Run a seeded tournament harness, e.g. `just ai-bench --levels easy,medium,hard --games N --seed S`, plus a time-budget probe on reference devices. Interpret win rates (Easy beatable by beginners; Hard <1 s on a mid-range phone per the MVP criteria) and record parameter changes and results in `docs/architecture/ai.md`. Bug-report reproduction relies on the seeded RNG.
 - **Guardrail:** tuning never touches rules. The AI only calls `legal_moves`/`apply_move`.
 
-### 4.19 `platform-parity` (MVP/Phase 2 · S · forked read-only)
+### 4.19 `platform-parity` (Phase 5 · S · forked read-only)
 
 - **Purpose:** For a feature name, find its implementation on iOS, Android and web. Build a matrix of present, strings, accessibility, tests and offline behaviour, and list gaps. Run it before each release, since the UI is built three times (ADR 0008).
 
-### 4.20 `translation-review` (Phase 2 · S)
+### 4.20 `translation-review` (Ongoing · S)
 
 - **Purpose:** Produce a review packet per language (PT, `kea`) for native speakers: source text, context, screenshot reference, glossary terms, ICU placeholders and plural categories, and ALUPEC spelling notes. Validate the returned files (ICU syntax, placeholder parity, length). Kriolu translations are **never** finalized by the model. The glossary's "To confirm" Kriolu terms feed in.
 
-### 4.21 `variant-report-triage` (Phase 2 · S)
+### 4.21 `variant-report-triage` (Ongoing · S)
 
 - **Purpose:** Read issues from the "rule or variant report" form (`gh issue view`). Classify each as a new variant lead, a rule difference or a source. Add `lead` catalog rows or spec evidence/open questions, and hand off to `variant-research` or `rule-change`.
 - **Guardrail:** don't copy reporters' personal details into specs (the form itself warns about this).
@@ -820,7 +820,7 @@ The bundled `invariants.md` (draft, first version):
 | Custom security-review skill | Bundled `/security-review`, `security-guidance`, `claude-security` and Trail of Bits' `rust-review` cover it. Project-specific privacy concerns are in `privacy-review`. |
 | Commit or changelog skill | CLAUDE.md forbids committing unless asked. Changelogs belong in CI tooling (e.g. git-cliff or release-please from Conventional Commits). Store release notes are part of `store-release`. |
 | Dependency-update skill | Dependabot is already configured. Add `cargo deny` in CI. |
-| Glicko-2 / leaderboard / matchmaking skills | One-time implementations, years away (Phase 4–5), designed through ADR 0006. Revisit only if seasonal resets or rating recalcs become a recurring ops task. |
+| Glicko-2 / leaderboard / matchmaking skills | One-time implementations, years away (Phases 6–7), designed through ADR 0006. Revisit only if seasonal resets or rating recalcs become a recurring ops task. |
 | Generic Rust, Swift, Kotlin or TS style skills (custom) | Better third-party and first-party skills exist (§3.2), and linters enforce style. |
 | `glossary-sync` skill | Folded into `docs-audit` (invariants) and `translation-review`. |
 | Separate `bump-variant-version` skill | Folded into `rule-change`. The bump is a branch of the same decision tree. |

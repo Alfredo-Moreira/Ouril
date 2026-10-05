@@ -1,0 +1,20 @@
+{
+  "name": "Ouril toolbox",
+  "dockerComposeFile": ["../compose.yaml"],
+  "service": "toolbox",
+  "runServices": ["db", "toolbox"],
+  "workspaceFolder": "/workspace",
+  "overrideCommand": true,
+  "shutdownAction": "stopCompose",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "rust-lang.rust-analyzer",
+        "tamasfe.even-better-toml",
+        "skellock.just",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode"
+      ]
+    }
+  }
+}

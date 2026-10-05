@@ -1,0 +1,12 @@
+# Keep build contexts small (named volumes hold these locally).
+.git
+target
+**/node_modules
+core/wasm/pkg
+apps/web/dist
+apps/web/src/generated
+.env
+.env.*
+!.env.example
+*.p8
+docs

@@ -1,0 +1,34 @@
+# cv.across-continuous@1 — copied from the `resolved` block of
+# docs/game/variants/cape-verde/across-continuous.md (the source of truth). Do not edit rules
+# here without changing the spec first (/rule-change), and bump `version` once released.
+# Every rule key is listed (equal to the spec's `resolved`). A test checks this file against
+# the spec. Capture across: ADR 0024.
+id = "cv.across-continuous"
+version = 1
+name = "Ouril (capture across, continuous sowing)"
+country = "cv"
+default_for_country = false
+extends = "cv.continuous"
+
+pits_per_side = 6
+seeds_per_pit = 4
+direction = "ccw"
+skip_origin_on_lap = false
+single_seed_rule = "allowed"
+capture_counts = [2, 3]
+capture_mandatory = true
+chain_capture = "backward"
+grand_slam = "captures_all_extra_turn_must_feed"
+must_feed = true
+feeding_overrides_single_seed_rule = true
+no_feed_outcome = "mover_takes_own_side"
+win_threshold = 25
+endless_cycle_outcome = "each_takes_own_side"
+endless_cycle_move_limit = 100
+first_player = "loser_starts_next"
+relay_sowing = "own_side_occupied"
+capture_mode = "across_from_empty_own_pit"
+
+[match_scoring]
+big_win_threshold = 36
+big_win_points = 2

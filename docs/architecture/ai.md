@@ -24,6 +24,20 @@ Randomness uses a seed passed in by the caller, so a game vs AI can be reproduce
 
 Levels are tuned by playtesting. Track win rates per level and aim for Easy to be beatable by beginners.
 
+## As built
+
+`core/ai` (`ouril-ai`) implements the approach above, with one change: **the search is bounded by a node budget, not a time budget.** Node counts are the same on every platform, so `(variant, state, level, seed)` always gives the same move, which wall-clock time can't guarantee. The budgets below are placeholders until playtesting.
+
+| Level | Max depth | Node budget | Randomness |
+|---|---|---|---|
+| Easy | 2 | 2,000 | A random legal move 1 time in 5. Otherwise random among moves within 1.5 seeds of the best. |
+| Medium | 6 | 50,000 | Random among moves within 0.3 seeds of the best |
+| Hard | 64 | 1,000,000 | None. Measured: about 275 ms native and 345 ms as WASM in Node on a laptop |
+
+- **Search:** iterative-deepening negamax with alpha-beta, captures searched first, and a small transposition table that only stores best moves, for move ordering. A grand-slam extra turn (same player to move again) is handled without negating the score.
+- **Evaluation:** scores are in hundredths of a seed: `100 × (my store − their store) + 5 × (seeds on my side − seeds on theirs) + 15 × (my threats − their threats)`. A threat is a pit whose last seed would land on an opponent pit holding 1–2 seeds. There's no mobility term yet.
+- **API:** `choose_move(v, state, level, seed)` returns `None` only when there's no legal move. `search()` and `SearchParams` are public, so hints reuse them. The web app calls `aiMove` from a module Web Worker, and its hint button runs the same search for the player's side.
+
 ## Later
 
 - **Hints and analysis:** reuse the search to suggest a move or rate past moves.
@@ -32,5 +46,5 @@ Levels are tuned by playtesting. Track win rates per level and aim for Easy to b
 
 ## Open questions
 
-- Time budget per level on low-end Android devices.
+- Node budget per level on low-end Android devices. Hard has to answer in under 1 s on a mid-range phone, and a time cap could be added on top of the node budget, at the cost of reproducibility.
 - Should Hard be "strong" or "near-perfect"? Oware can be played very strongly by computers, which may not be fun.

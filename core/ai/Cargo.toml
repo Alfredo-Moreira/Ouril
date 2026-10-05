@@ -1,0 +1,20 @@
+[package]
+name = "ouril-ai"
+description = "Ouril computer opponent: deterministic alpha-beta search over ouril-engine."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+ouril-engine = { path = "../engine" }
+serde = { version = "1", features = ["derive"] }
+ts-rs = { version = "12", optional = true }
+
+[dev-dependencies]
+# Property-based tests (docs/architecture/engine.md "Testing strategy"). No fork/timeout.
+proptest = { version = "1", default-features = false, features = ["std"] }
+
+[features]
+ts = ["dep:ts-rs", "ouril-engine/ts"]

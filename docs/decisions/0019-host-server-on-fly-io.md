@@ -4,7 +4,7 @@
 - **Date:** 2026-10-03
 
 ## Context
-[ADR 0017](0017-local-first-development.md) deferred hosting to a later decision. The Rust server (`apps/server`) is a single container image. It needs long-running processes, **WebSockets** for live multiplayer (Phase 4), a **Postgres** database close by, Valkey/Redis later, and background jobs ([backend](../architecture/backend.md)). Players are mostly in Cape Verde, Europe and the US diaspora. The web app is a static Vite build hosted separately; Vercel is the current candidate ([overview](../architecture/overview.md#open-questions)).
+[ADR 0017](0017-local-first-development.md) deferred hosting to a later decision. The Rust server (`apps/server`) is a single container image. It needs long-running processes, **WebSockets** for live multiplayer (Phase 6), a **Postgres** database close by, Valkey/Redis later, and background jobs ([backend](../architecture/backend.md)). Players are mostly in Cape Verde, Europe and the US diaspora. The web app is a static Vite build hosted separately; Vercel is the current candidate ([overview](../architecture/overview.md#open-questions)).
 
 ## Decision
 - **Fly.io** hosts the Rust server, deployed from the same production image (`apps/server/Dockerfile`) that CI builds.
@@ -17,7 +17,7 @@
 - **Secrets** (database URL, Apple sign-in key, OAuth client secrets, Sentry DSN, later push credentials) live in `fly secrets`, never in the repo or the image.
 - **Backups:** besides the managed Postgres backups, a scheduled job writes logical dumps (`pg_dump`) to S3-compatible object storage. Restores are tested before launch.
 - **Release image safety:** CI checks that the production image is built **without** the `dev-auth` feature ([ADR 0017](0017-local-first-development.md)).
-- **Later (Phase 4):** live games are pinned to one machine using Fly's request routing (`fly-replay`), with Valkey/Redis for presence, queues and pub/sub between machines ([ADR 0010](0010-postgres-and-local-sqlite.md)).
+- **Later (Phase 6, live games):** live games are pinned to one machine using Fly's request routing (`fly-replay`), with Valkey/Redis for presence, queues and pub/sub between machines ([ADR 0010](0010-postgres-and-local-sqlite.md)).
 - The server stays **cloud-agnostic** (one image, 12-factor config, standard Postgres), so moving hosts remains possible.
 
 ## Alternatives considered

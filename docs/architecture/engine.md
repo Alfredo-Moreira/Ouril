@@ -11,6 +11,8 @@
 
 ## Core types (sketch)
 
+The implemented types are in [`core/engine/src/types.rs`](../../core/engine/src/types.rs), and their JSON shapes are in the [WASM API](../../core/wasm/API.md#types). The sketch below is the design; [As built](#as-built) lists where the code differs.
+
 ```rust
 pub enum Player { South, North }      // South = pits 0–5, North = pits 6–11
 
@@ -83,7 +85,7 @@ The engine ends a game as an endless cycle when **a position repeats** (same pit
 
 - Each variant spec (`docs/game/variants/<country>/<variant>.md`, produced by the `variant-research` skill) has a `resolved` config in its YAML front matter. The implemented ones are copied to `core/engine/variants/<id>.toml`, and the engine embeds them at build time.
 - Variants form a tree: `base.oware` → country default → regional variants (`extends`). The build checks that every variant resolves to a complete config, and that each country has exactly one default.
-- Public API: `variants()`, `variants_for_country(cc)`, `default_variant(cc)`, `variant(id)`.
+- Public API: `variants()`, `variants_for_country(cc)`, `default_variant(cc)`, `variant(id)` (latest version), `variant_version(id, version)` (exact version, for replays and sync validation).
 - A grand slam with an extra turn (`CapturesAllExtraTurnMustFeed`) means `to_move` doesn't always alternate. Clients must read `to_move` from the returned state, never assume turns alternate.
 
 `events` lets every UI (SwiftUI, Compose, web) animate each seed drop and capture exactly as the engine computed it. No platform re-implements any rule.
@@ -96,6 +98,18 @@ The engine ends a game as an endless cycle when **a position repeats** (same pit
 | Android | Generated Kotlin (UniFFI) | `val result = applyMove(v, s, 2u)` |
 | Web | WASM + generated TS types | `const result = applyMove(v, s, 2)` |
 | Server | Rust crate directly | `ouril_engine::apply_move(&v, &s, 2)?` |
+
+## As built
+
+The engine is implemented in `core/engine` for `cv.standard@1`.
+
+- **Variant files:** `core/engine/variants/base.oware.toml` holds the `base.oware` column of the parameters table. It's abstract and isn't listed by `variants()`. `cv.standard.toml` sets `extends = "base.oware"` but lists every rule key, equal to the spec's `resolved` block. Inherited keys fill in only what a file leaves out. The registry is built on first use, and a variant that doesn't resolve to a complete config panics.
+- **`GameState`** also carries `pits_per_side` and `history`, the position hashes since the last capture. In JSON, `pits` has exactly `2 × pits_per_side` entries and `history` is opaque: clients pass it back unchanged, and it's left out when empty.
+- **More public functions:** `apply_move_quiet` (same state, no events; used by the AI), `replay(v, first, moves)`, `position_hash(s)`, `validate(v)` (the config uses only behaviour the engine implements) and `validate_state(v, s)` (board size and seed total; use it on untrusted input).
+- **End checks after a move run in this order:** win threshold, then "the next player can't move", then endless cycle. No spec covers this order, so it's an engine convention.
+- **The next player can't move:** if they have no seeds while the opponent has some, the game ends with reason `no_moves`, and each player takes their own side. This is an engine convention too. Otherwise it ends as `no_feed` and follows `no_feed_outcome`.
+- **Repetition:** the hash covers the pits and the player to move. A position with no `history` (for example a test-vector setup) counts as the first position since the last capture. `history` is reset on every capture.
+- **Errors:** `MoveError` codes match the test vectors (`not_own_pit`, `empty_pit`, …). `replay` fails with the 0-based ply and the code.
 
 ## Game record
 
@@ -114,9 +128,11 @@ A game is stored as `{ format, variant: {id, version}, first_player, moves: [Mov
   - `legal_moves` is never empty while the game is playing
   - captures only happen on the opponent's side
   - every game terminates
+- **As built:** `tests/vectors.rs` runs every file under `core/test-vectors/` and validates it against [`schema/test-vector.schema.json`](../../core/test-vectors/schema/test-vector.schema.json). `tests/spec_sync.rs` fails if `cv.standard.toml` drifts from the spec's `resolved` block, or `base.oware.toml` from the parameters table. `tests/invariants.rs` plays 500 seeded random games and covers the repeated-position ending, which no vector can express yet. `tests/properties.rs` holds the `proptest` checks above, plus event order, capture rules, end-of-game collection and a JSON round trip of the state.
 - **Golden games:** recorded real games with known results.
 - **Variant matrix:** shared scenarios run against all configs, with the expected result per variant.
 
 ## Open questions
 
 - Do some variants need hooks beyond config flags (for example captures during sowing in Anan-anan, or multi-round pit loss)? Plan for an optional per-variant rule override trait.
+- Confirm the two engine conventions in [As built](#as-built): the end-check order (threshold, then can't move, then endless cycle), and `no_moves` with each player taking their own side. Neither comes from a variant spec. Should they move into the spec or the parameters table?

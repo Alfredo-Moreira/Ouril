@@ -1,6 +1,6 @@
 # 0018. Build order: core, web, iOS, Android; launch all three together
 
-- **Status:** Accepted
+- **Status:** Superseded by [0025](0025-web-first-static-mvp.md)
 - **Date:** 2026-10-03
 
 ## Context

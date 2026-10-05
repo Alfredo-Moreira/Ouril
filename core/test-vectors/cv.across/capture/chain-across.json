@@ -1,0 +1,99 @@
+{
+  "id": "cv.across/capture/chain-across",
+  "description": "Three seeds land in empty pits 2, 3 and 4: South captures across from pit 4, then (chain) from pits 3 and 2.",
+  "variants": [
+    {
+      "id": "cv.across",
+      "version": 1
+    }
+  ],
+  "source": "docs/game/variants/cape-verde/across.md#rules-at-a-glance",
+  "tags": [
+    "capture",
+    "chain",
+    "to-confirm"
+  ],
+  "setup": {
+    "pits": [
+      3,
+      0,
+      0,
+      0,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4
+    ],
+    "stores": [
+      6,
+      7
+    ],
+    "to_move": "south",
+    "moves_since_capture": 0
+  },
+  "steps": [
+    {
+      "expect_legal_moves": [
+        0,
+        4,
+        5
+      ],
+      "move": 0,
+      "expect": {
+        "pits": [
+          0,
+          1,
+          1,
+          1,
+          4,
+          4,
+          4,
+          4,
+          0,
+          0,
+          0,
+          4
+        ],
+        "stores": [
+          18,
+          7
+        ],
+        "to_move": "north",
+        "status": "playing",
+        "events": [
+          {
+            "type": "sow",
+            "pit": 1
+          },
+          {
+            "type": "sow",
+            "pit": 2
+          },
+          {
+            "type": "sow",
+            "pit": 3
+          },
+          {
+            "type": "capture",
+            "pit": 8,
+            "seeds": 4
+          },
+          {
+            "type": "capture",
+            "pit": 9,
+            "seeds": 4
+          },
+          {
+            "type": "capture",
+            "pit": 10,
+            "seeds": 4
+          }
+        ]
+      }
+    }
+  ]
+}

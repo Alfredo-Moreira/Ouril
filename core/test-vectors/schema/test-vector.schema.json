@@ -1,0 +1,172 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Alfredo-Moreira/Ouril/core/test-vectors/schema/test-vector.schema.json",
+  "title": "Ouril rule test vector",
+  "description": "Language-neutral rule test case. Format: docs/architecture/test-vectors.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "description", "variants", "source", "setup", "steps"],
+  "properties": {
+    "id": {
+      "description": "Equal to the file path under core/test-vectors/ without .json.",
+      "type": "string",
+      "pattern": "^[a-z0-9_][a-z0-9_.-]*(/[a-z0-9][a-z0-9-]*)+$"
+    },
+    "description": { "type": "string", "minLength": 1 },
+    "variants": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/variantRef" }
+    },
+    "source": { "type": "string", "minLength": 1 },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+      "uniqueItems": true
+    },
+    "setup": {
+      "oneOf": [
+        { "const": "initial" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["initial"],
+          "properties": {
+            "initial": { "const": true },
+            "first_player": { "$ref": "#/$defs/player" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["pits", "stores", "to_move"],
+          "properties": {
+            "pits": { "$ref": "#/$defs/pits" },
+            "stores": { "$ref": "#/$defs/stores" },
+            "to_move": { "$ref": "#/$defs/player" },
+            "moves_since_capture": { "type": "integer", "minimum": 0, "maximum": 65535 }
+          }
+        }
+      ]
+    },
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/step" }
+    }
+  },
+  "$defs": {
+    "variantRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z]{2}\\.[a-z0-9-]+$" },
+        "version": { "type": "integer", "minimum": 1, "maximum": 65535 }
+      }
+    },
+    "player": { "enum": ["south", "north"] },
+    "pit": { "type": "integer", "minimum": 0, "maximum": 13 },
+    "seeds": { "type": "integer", "minimum": 0, "maximum": 255 },
+    "pits": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 14,
+      "items": { "$ref": "#/$defs/seeds" }
+    },
+    "stores": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": { "$ref": "#/$defs/seeds" }
+    },
+    "status": { "enum": ["playing", "south_wins", "north_wins", "draw"] },
+    "errorCode": {
+      "enum": ["not_own_pit", "empty_pit", "single_seed_rule", "must_feed", "grand_slam_forbidden", "game_over"]
+    },
+    "event": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false, "required": ["type", "pit"],
+          "properties": { "type": { "const": "sow" }, "pit": { "$ref": "#/$defs/pit" } }
+        },
+        {
+          "type": "object", "additionalProperties": false, "required": ["type", "pit"],
+          "properties": { "type": { "const": "skip_origin" }, "pit": { "$ref": "#/$defs/pit" } }
+        },
+        {
+          "type": "object", "additionalProperties": false, "required": ["type", "pit", "seeds"],
+          "properties": {
+            "type": { "const": "relay" },
+            "pit": { "$ref": "#/$defs/pit" },
+            "seeds": { "type": "integer", "minimum": 2, "maximum": 255 }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false, "required": ["type", "pit", "seeds"],
+          "properties": {
+            "type": { "const": "capture" },
+            "pit": { "$ref": "#/$defs/pit" },
+            "seeds": { "type": "integer", "minimum": 1, "maximum": 255 }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false, "required": ["type"],
+          "properties": { "type": { "const": "grand_slam" } }
+        },
+        {
+          "type": "object", "additionalProperties": false, "required": ["type"],
+          "properties": { "type": { "const": "extra_turn" } }
+        },
+        {
+          "type": "object", "additionalProperties": false, "required": ["type", "player", "seeds"],
+          "properties": {
+            "type": { "const": "collect_remaining" },
+            "player": { "$ref": "#/$defs/player" },
+            "seeds": { "type": "integer", "minimum": 1, "maximum": 255 }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false, "required": ["type", "result", "reason"],
+          "properties": {
+            "type": { "const": "game_over" },
+            "result": { "enum": ["south_wins", "north_wins", "draw"] },
+            "reason": { "enum": ["threshold", "no_feed", "endless_cycle", "no_moves"] }
+          }
+        }
+      ]
+    },
+    "expect": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "pits": { "$ref": "#/$defs/pits" },
+        "stores": { "$ref": "#/$defs/stores" },
+        "to_move": { "$ref": "#/$defs/player" },
+        "status": { "$ref": "#/$defs/status" },
+        "events": { "type": "array", "items": { "$ref": "#/$defs/event" } }
+      }
+    },
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "expect_legal_moves": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/pit" },
+          "uniqueItems": true
+        },
+        "move": { "$ref": "#/$defs/pit" },
+        "expect": { "$ref": "#/$defs/expect" },
+        "expect_error": { "$ref": "#/$defs/errorCode" }
+      },
+      "not": { "required": ["expect", "expect_error"] },
+      "dependentRequired": {
+        "expect": ["move"],
+        "expect_error": ["move"]
+      }
+    }
+  }
+}

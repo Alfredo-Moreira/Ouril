@@ -43,6 +43,12 @@
       "skillPath": "skills/compose-ui-testing-patterns/SKILL.md",
       "computedHash": "7935b59303bc287db5a29974136b3415a8e55a5644d9eae35a3855590a5e1bed"
     },
+    "emilkowalski-motion": {
+      "source": "nexu-io/open-design",
+      "sourceType": "github",
+      "skillPath": "skills/emilkowalski-motion/SKILL.md",
+      "computedHash": "ac9e827c591d2527dea51f937e0ba0fc88627c04b713eaaa76bf634c807d547f"
+    },
     "find-skills": {
       "source": "vercel-labs/skills",
       "sourceType": "github",

@@ -1,0 +1,18 @@
+[package]
+name = "ouril-protocol"
+description = "Ouril API types shared by the server and every client (serde; TS via ts-rs)."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+ts-rs = { version = "12", optional = true, features = ["serde-json-impl"] }
+
+[features]
+# `just protocol-ts` runs `cargo test --features ts` with TS_RS_EXPORT_DIR set, which writes
+# the TypeScript types to apps/web/src/generated/protocol (gitignored, ADR 0015).
+ts = ["dep:ts-rs"]

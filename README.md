@@ -2,18 +2,26 @@
 
 **Ouril** is a digital version of the traditional Cape Verdean seed-sowing game, part of the worldwide **Oware** (mancala) family. Two players take turns sowing seeds around a board of twelve pits and capturing the opponent's seeds. Whoever captures the most wins.
 
-This monorepo will hold every part of the project:
+This monorepo holds every part of the project:
 
 - **Core** (Rust): the rules engine and AI, shared by every app and the server
-- **iOS** (SwiftUI) and **Android** (Jetpack Compose): native mobile apps
-- **Web** (TypeScript): play in the browser
-- **Server** (Rust): accounts first, then real-time and async online play
+- **Web** (TypeScript + React): play in the browser, installable and offline
+- **iOS** (SwiftUI) and **Android** (Jetpack Compose): native mobile apps (not started)
+- **Server** (Rust): accounts and sync (built, not in the MVP), then real-time and async online play
 
 ## Status
 
-🚧 **Phase 1 (MVP) starting.** The documentation is complete and the Cape Verdean rules are specified with test cases. Implementation begins with the Rust rules engine.
+🚀 **The MVP is ready: Ouril on the web.** Play against the computer in your browser, with a 3D board, four Cape Verdean rule sets, a tutorial and game music. It works offline and needs no account. It's a static site with no server ([ADR 0025](docs/decisions/0025-web-first-static-mvp.md), [deployment](docs/architecture/deployment.md)). The server, sign-in and sync are built and switched on in a later release; iOS and Android haven't started yet ([roadmap](docs/product/roadmap.md)).
 
-The first release (MVP) is a standalone game: play Cape Verdean Ouril against the computer, learn the rules in a tutorial, and track your stats on your device. You can optionally sign in with Google or Apple to back up your progress. Later releases add online play against others (live and turn-by-turn), more Oware variants, more languages, and global and regional leaderboards.
+To run it locally you need only Docker (and optionally [`just`](https://github.com/casey/just)):
+
+```bash
+just env && just bindings && just dev   # then open http://localhost:5173
+```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md#local-setup-docker-first) for the setup without `just`.
+
+The first release (MVP) is a standalone web game: play Cape Verdean Ouril against the computer, learn the rules in a tutorial, and pick up an unfinished game where you left it. Later releases add optional sign-in with backup and stats, the iOS and Android apps, online play against others (live and turn-by-turn), more variants and languages, and global and regional leaderboards.
 
 ## Documentation
 

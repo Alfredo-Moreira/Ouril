@@ -1,0 +1,204 @@
+{
+  "id": "cv.continuous/feeding/feed-then-capture-back",
+  "description": "North has no seeds. South's move feeds them during a relay lap, then ends by capturing every seed it gave: it still counts as feeding. That's a grand slam: South captures, plays again and must feed again.",
+  "variants": [
+    {
+      "id": "cv.continuous",
+      "version": 1
+    }
+  ],
+  "source": "docs/game/variants/cape-verde/continuous.md#rule-interactions",
+  "tags": [
+    "feeding",
+    "relay",
+    "grand-slam",
+    "to-confirm"
+  ],
+  "setup": {
+    "pits": [
+      1,
+      6,
+      13,
+      0,
+      0,
+      4,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "stores": [
+      12,
+      12
+    ],
+    "to_move": "south",
+    "moves_since_capture": 0
+  },
+  "steps": [
+    {
+      "expect_legal_moves": [
+        0,
+        1,
+        2,
+        5
+      ],
+      "move": 2,
+      "expect": {
+        "pits": [
+          2,
+          7,
+          1,
+          0,
+          2,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "stores": [
+          24,
+          12
+        ],
+        "to_move": "south",
+        "status": "playing",
+        "events": [
+          {
+            "type": "sow",
+            "pit": 3
+          },
+          {
+            "type": "sow",
+            "pit": 4
+          },
+          {
+            "type": "sow",
+            "pit": 5
+          },
+          {
+            "type": "sow",
+            "pit": 6
+          },
+          {
+            "type": "sow",
+            "pit": 7
+          },
+          {
+            "type": "sow",
+            "pit": 8
+          },
+          {
+            "type": "sow",
+            "pit": 9
+          },
+          {
+            "type": "sow",
+            "pit": 10
+          },
+          {
+            "type": "sow",
+            "pit": 11
+          },
+          {
+            "type": "sow",
+            "pit": 0
+          },
+          {
+            "type": "sow",
+            "pit": 1
+          },
+          {
+            "type": "sow",
+            "pit": 2
+          },
+          {
+            "type": "sow",
+            "pit": 3
+          },
+          {
+            "type": "relay",
+            "pit": 3,
+            "seeds": 2
+          },
+          {
+            "type": "sow",
+            "pit": 4
+          },
+          {
+            "type": "sow",
+            "pit": 5
+          },
+          {
+            "type": "relay",
+            "pit": 5,
+            "seeds": 6
+          },
+          {
+            "type": "sow",
+            "pit": 6
+          },
+          {
+            "type": "sow",
+            "pit": 7
+          },
+          {
+            "type": "sow",
+            "pit": 8
+          },
+          {
+            "type": "sow",
+            "pit": 9
+          },
+          {
+            "type": "sow",
+            "pit": 10
+          },
+          {
+            "type": "sow",
+            "pit": 11
+          },
+          {
+            "type": "capture",
+            "pit": 11,
+            "seeds": 2
+          },
+          {
+            "type": "capture",
+            "pit": 10,
+            "seeds": 2
+          },
+          {
+            "type": "capture",
+            "pit": 9,
+            "seeds": 2
+          },
+          {
+            "type": "capture",
+            "pit": 8,
+            "seeds": 2
+          },
+          {
+            "type": "capture",
+            "pit": 7,
+            "seeds": 2
+          },
+          {
+            "type": "capture",
+            "pit": 6,
+            "seeds": 2
+          },
+          {
+            "type": "grand_slam"
+          },
+          {
+            "type": "extra_turn"
+          }
+        ]
+      }
+    }
+  ]
+}

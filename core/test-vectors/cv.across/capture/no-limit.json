@@ -1,0 +1,83 @@
+{
+  "id": "cv.across/capture/no-limit",
+  "description": "Two seeds from pit 3: the last lands in empty pit 5, and all 9 seeds across are captured (no limit on the amount). Pit 4 already had a seed, so the chain stops.",
+  "variants": [
+    {
+      "id": "cv.across",
+      "version": 1
+    }
+  ],
+  "source": "docs/game/variants/cape-verde/across.md#rules-at-a-glance",
+  "tags": [
+    "capture",
+    "to-confirm"
+  ],
+  "setup": {
+    "pits": [
+      0,
+      0,
+      2,
+      1,
+      0,
+      6,
+      3,
+      9,
+      4,
+      4,
+      4,
+      4
+    ],
+    "stores": [
+      5,
+      6
+    ],
+    "to_move": "south",
+    "moves_since_capture": 0
+  },
+  "steps": [
+    {
+      "expect_legal_moves": [
+        2,
+        5
+      ],
+      "move": 2,
+      "expect": {
+        "pits": [
+          0,
+          0,
+          0,
+          2,
+          1,
+          6,
+          3,
+          0,
+          4,
+          4,
+          4,
+          4
+        ],
+        "stores": [
+          14,
+          6
+        ],
+        "to_move": "north",
+        "status": "playing",
+        "events": [
+          {
+            "type": "sow",
+            "pit": 3
+          },
+          {
+            "type": "sow",
+            "pit": 4
+          },
+          {
+            "type": "capture",
+            "pit": 7,
+            "seeds": 9
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "name": "ouril",
+  "private": true,
+  "packageManager": "pnpm@12.9.1",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "pnpm --filter web dev",
+    "build": "pnpm --filter web build",
+    "test": "pnpm --filter web test",
+    "lint": "pnpm --filter web lint",
+    "format": "pnpm --filter web format",
+    "typecheck": "pnpm --filter web typecheck"
+  }
+}

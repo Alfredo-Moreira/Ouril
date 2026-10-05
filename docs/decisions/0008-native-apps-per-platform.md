@@ -10,7 +10,7 @@ We want the best possible look, feel and performance on each platform, with full
 ## Decision
 - **iOS:** Swift + **SwiftUI**. The board is drawn with SwiftUI Canvas/animations, or SpriteKit if needed.
 - **Android:** Kotlin + **Jetpack Compose**. The board is drawn with Compose Canvas/animations.
-- **Web:** **TypeScript + React (Vite)**. The board is drawn with SVG or Canvas. Installable as a PWA for offline play.
+- **Web:** **TypeScript + React (Vite)**. The board is drawn with SVG or Canvas (amended by [ADR 0021](0021-3d-web-board.md): the web board is 3D, with React Three Fiber). Installable as a PWA for offline play.
 - All three call the Rust core through generated bindings, and handle networking, storage and sign-in natively.
 
 ## Alternatives considered

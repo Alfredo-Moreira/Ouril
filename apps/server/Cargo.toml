@@ -1,0 +1,55 @@
+[package]
+name = "ouril-server"
+description = "Ouril API server (Axum): auth, profile and offline-first sync (MVP)."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+# The library holds the whole app (so integration tests in `tests/` can build the router);
+# the binary only reads config, connects and serves.
+[lib]
+name = "ouril_server"
+path = "src/lib.rs"
+
+[[bin]]
+name = "ouril-server"
+path = "src/main.rs"
+
+[features]
+default = []
+# Development identity provider: POST /v1/auth/dev (ADR 0017). Debug builds only; a release
+# build with this feature fails to compile, and the production image never enables it.
+dev-auth = []
+
+[dependencies]
+ouril-engine = { path = "../../core/engine" }
+ouril-protocol = { path = "../../core/protocol" }
+ouril-sync = { path = "../../core/sync" }
+axum = { version = "0.8", features = ["macros"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "signal", "sync", "time"] }
+tower = { version = "0.5", features = ["util"] }
+tower-http = { version = "0.7", features = ["trace", "cors", "catch-panic", "request-id", "util"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "json"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sqlx = { version = "0.9", default-features = false, features = ["runtime-tokio", "tls-rustls", "postgres", "macros", "migrate", "uuid", "time", "json"] }
+uuid = { version = "1", features = ["v4", "v7", "serde"] }
+time = { version = "0.3", features = ["formatting", "parsing", "serde"] }
+# aws-lc-rs backend (already used by rustls): the rust_crypto backend pulls in `rsa`, which has
+# an unfixed timing advisory (RUSTSEC-2023-0071).
+jsonwebtoken = { version = "11", default-features = false, features = ["aws_lc_rs", "use_pem"] }
+sha2 = "0.10"
+base64 = "0.22"
+getrandom = "0.3"
+# JWKS fetches for Google/Apple ID-token verification (only used once a provider is configured).
+reqwest = { version = "0.13", default-features = false, features = ["json", "rustls"] }
+# Both ring (sqlx) and aws-lc-rs (reqwest) end up enabled, so rustls can't pick a crypto
+# provider on its own: `install_crypto_provider` selects aws-lc-rs at startup.
+rustls = { version = "0.23", default-features = false, features = ["aws_lc_rs"] }
+
+[dev-dependencies]
+tower = { version = "0.5", features = ["util"] }
+http-body-util = "0.1"

@@ -1,0 +1,24 @@
+[package]
+name = "ouril-engine"
+description = "Ouril rules engine: variant-configurable, pure and deterministic (ADR 0004)."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+toml = { version = "1", default-features = false, features = ["std", "parse", "serde"] }
+ts-rs = { version = "12", optional = true }
+
+[features]
+# Export TypeScript types (used by `just protocol-ts`). Off by default.
+ts = ["dep:ts-rs"]
+
+[dev-dependencies]
+# Property-based tests (docs/architecture/engine.md "Testing strategy"). No fork/timeout.
+proptest = { version = "1", default-features = false, features = ["std"] }
+serde_json = "1"
+# Validates test vectors against core/test-vectors/schema (no HTTP resolving).
+jsonschema = { version = "0.58", default-features = false }

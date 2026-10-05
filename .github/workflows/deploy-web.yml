@@ -1,0 +1,81 @@
+# Deploy the web app, the whole MVP (ADR 0025: a static site, no server), to Vercel.
+# Vercel's build image has no Rust toolchain, so the WASM engine and the site are built here
+# (the same toolbox image as CI and local development, ADR 0017) and the finished files are
+# uploaded. Runs after CI passes on main, or by hand.
+#
+# Setup (once): create a Vercel project with Framework "Other", no build command and output
+# directory "." (the uploaded folder is already the built site), then add the repository
+# secrets VERCEL_TOKEN, VERCEL_ORG_ID and VERCEL_PROJECT_ID. Until VERCEL_TOKEN exists, this
+# workflow skips the deploy.
+name: Deploy web
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-web
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Build and deploy to Vercel
+    # Only after a green CI run on main (or a manual run).
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - name: Skip when Vercel isn't set up yet
+        id: setup
+        run: |
+          if [ -z "$VERCEL_TOKEN" ]; then
+            echo "::notice::VERCEL_TOKEN is not set: skipping the deploy."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.setup.outputs.ready == 'true'
+        with:
+          # The commit CI just verified.
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - uses: docker/setup-buildx-action@v3
+        if: steps.setup.outputs.ready == 'true'
+      - name: Build the toolbox image (cached)
+        if: steps.setup.outputs.ready == 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/toolbox.Dockerfile
+          tags: ouril-toolbox:latest
+          load: true
+          cache-from: type=gha,scope=toolbox
+      - name: Build the WASM engine
+        if: steps.setup.outputs.ready == 'true'
+        run: |
+          cp .env.example .env
+          docker compose run --rm toolbox wasm-pack build core/wasm --target web --out-dir pkg --out-name ouril_wasm --release
+          docker compose run --rm toolbox wasm-opt -Oz --strip-debug core/wasm/pkg/ouril_wasm_bg.wasm -o core/wasm/pkg/ouril_wasm_bg.wasm
+      - name: Build the site
+        if: steps.setup.outputs.ready == 'true'
+        run: |
+          docker compose run --rm web sh -c "pnpm install --frozen-lockfile && pnpm --filter web build"
+          # Routing, security headers and the CSP travel with the site.
+          cp apps/web/vercel.json apps/web/dist/vercel.json
+      - uses: actions/setup-node@v4
+        if: steps.setup.outputs.ready == 'true'
+        with:
+          node-version: 22
+      - name: Deploy to production
+        if: steps.setup.outputs.ready == 'true'
+        run: npx --yes vercel@latest deploy apps/web/dist --prod --yes --token "$VERCEL_TOKEN"

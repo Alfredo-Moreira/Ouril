@@ -1,0 +1,89 @@
+{
+  "id": "cv.continuous/relay/stops-in-empty-own-pit",
+  "description": "After a relay, the last seed lands in an empty pit on South\u2019s own side: the move ends there.",
+  "variants": [
+    {
+      "id": "cv.continuous",
+      "version": 1
+    }
+  ],
+  "source": "docs/game/variants/cape-verde/continuous.md#rules-at-a-glance",
+  "tags": [
+    "relay",
+    "to-confirm"
+  ],
+  "setup": {
+    "pits": [
+      0,
+      1,
+      1,
+      8,
+      0,
+      2,
+      2,
+      5,
+      6,
+      5,
+      2,
+      0
+    ],
+    "stores": [
+      8,
+      8
+    ],
+    "to_move": "south",
+    "moves_since_capture": 0
+  },
+  "steps": [
+    {
+      "expect_legal_moves": [
+        1,
+        2,
+        3,
+        5
+      ],
+      "move": 1,
+      "expect": {
+        "pits": [
+          0,
+          0,
+          0,
+          9,
+          1,
+          2,
+          2,
+          5,
+          6,
+          5,
+          2,
+          0
+        ],
+        "stores": [
+          8,
+          8
+        ],
+        "to_move": "north",
+        "status": "playing",
+        "events": [
+          {
+            "type": "sow",
+            "pit": 2
+          },
+          {
+            "type": "relay",
+            "pit": 2,
+            "seeds": 2
+          },
+          {
+            "type": "sow",
+            "pit": 3
+          },
+          {
+            "type": "sow",
+            "pit": 4
+          }
+        ]
+      }
+    }
+  ]
+}

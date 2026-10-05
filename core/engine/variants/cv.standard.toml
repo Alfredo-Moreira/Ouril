@@ -1,0 +1,32 @@
+# cv.standard@1 — copied from the `resolved` block of
+# docs/game/variants/cape-verde/standard.md (the source of truth). Do not edit rules here
+# without changing the spec first (/rule-change), and bump `version` once released.
+# Every rule key is listed (equal to the spec's `resolved`); `extends` only documents the
+# inheritance and fills in keys a file leaves out. A test checks this file against the spec.
+id = "cv.standard"
+version = 1
+name = "Ouril (Cape Verde, standard)"
+country = "cv"
+default_for_country = true
+extends = "base.oware"
+
+pits_per_side = 6
+seeds_per_pit = 4
+direction = "ccw"
+skip_origin_on_lap = true
+single_seed_rule = "only_if_no_larger_pit"
+capture_counts = [2, 3]
+capture_mandatory = true
+chain_capture = "backward"
+grand_slam = "captures_all_extra_turn_must_feed"
+must_feed = true
+feeding_overrides_single_seed_rule = true
+no_feed_outcome = "mover_takes_own_side"
+win_threshold = 25
+endless_cycle_outcome = "each_takes_own_side"
+endless_cycle_move_limit = 100
+first_player = "loser_starts_next"
+
+[match_scoring]
+big_win_threshold = 36
+big_win_points = 2
