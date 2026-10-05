@@ -1,7 +1,13 @@
-on: 
+name: Release
+
+on:
   push:
     branches:
       - main
+
+# Creating a tag and a GitHub release needs write access to the repository contents.
+permissions:
+  contents: write
 
 jobs:
   release-on-push:
@@ -15,4 +21,4 @@ jobs:
           bump_version_scheme: minor
           tag_prefix: v
           use_github_release_notes: true
-          release_name: "Portfolio release: <RELEASE_VERSION>"
+          release_name: "Ouril <RELEASE_VERSION>"
