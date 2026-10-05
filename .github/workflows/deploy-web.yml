@@ -68,10 +68,15 @@ jobs:
           docker compose run --rm toolbox wasm-opt -Oz --strip-debug core/wasm/pkg/ouril_wasm_bg.wasm -o core/wasm/pkg/ouril_wasm_bg.wasm
       - name: Build the site
         if: steps.setup.outputs.ready == 'true'
+        env:
+          # Usage statistics (ADR 0026), sent only after the player opts in (ADR 0014). Repository
+          # variables of the same name override these. The CSP in vercel.json must allow the host.
+          VITE_MATOMO_URL: ${{ vars.VITE_MATOMO_URL || 'https://analytics.moreiralabs.org/' }}
+          VITE_MATOMO_SITE_ID: ${{ vars.VITE_MATOMO_SITE_ID || '1' }}
         run: |
           # The container runs as root: hand dist/ back to the runner's user ($(id -u) expands
           # on the host) so the steps below can write to it.
-          docker compose run --rm web sh -c "pnpm install --frozen-lockfile && pnpm --filter web build && chown -R $(id -u):$(id -g) apps/web/dist"
+          docker compose run --rm -e VITE_MATOMO_URL -e VITE_MATOMO_SITE_ID web sh -c "pnpm install --frozen-lockfile && pnpm --filter web build && chown -R $(id -u):$(id -g) apps/web/dist"
           # Routing, security headers and the CSP travel with the site.
           cp apps/web/vercel.json apps/web/dist/vercel.json
       - uses: actions/setup-node@v4

@@ -488,7 +488,7 @@
     "description": "First-launch telemetry prompt title"
   },
   "telemetry.prompt.body": {
-    "message": "You can share anonymous data to help us fix problems. Both options are off unless you turn them on.",
+    "message": "You can share anonymous data to help us improve the game. Nothing is shared unless you turn it on.",
     "description": "First-launch telemetry prompt text"
   },
   "telemetry.prompt.later": {

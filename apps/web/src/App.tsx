@@ -10,7 +10,7 @@ import { hasBoardLinks } from './content/boards';
 import { cacheMusic, setMusic } from './audio/music';
 import { useMusicPrefs } from './audio/musicPrefs';
 import { ScreenErrorBoundary } from './components/ErrorBoundary';
-import { telemetryConfigured } from './telemetry';
+import { telemetryConfigured, trackPageView } from './telemetry';
 import {
   BagIcon,
   InfoIcon,
@@ -51,7 +51,8 @@ export interface AppProps {
 
 /**
  * The web app. The player starts as an unsigned-in guest and nothing here talks to the
- * network (ADR 0014): the core is a same-origin WASM asset and data lives in IndexedDB.
+ * network unless they opt into usage statistics (ADR 0014): the core is a same-origin WASM
+ * asset and data lives in IndexedDB.
  */
 export function App(props: AppProps) {
   return (
@@ -81,8 +82,13 @@ function WithCore({ createApi, animationSpeed }: Pick<AppProps, 'createApi' | 'a
 
 function Layout({ animationSpeed }: { animationSpeed?: number }) {
   const { t } = useTranslation();
-  const { auth, user, update } = useApp();
+  const { auth, user, update, consent } = useApp();
   const { pathname } = useLocation();
+  // A screen view per route, only with usage-statistics consent (ADR 0014). Re-runs when the
+  // choice is made, so the screen the player is on counts too.
+  useEffect(() => {
+    trackPageView(pathname);
+  }, [pathname, consent.decided, consent.usageStats]);
   useEffect(() => {
     // Fetch the 3D board early (idle time) where it will be used, so it's ready on first show.
     if (detectDevice().webgl) preloadBoard3D();

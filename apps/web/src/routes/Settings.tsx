@@ -8,7 +8,7 @@ import { useMusicPrefs } from '../audio/musicPrefs';
 import { FEATURES } from '../features';
 import { SUPPORTED_LOCALES } from '../i18n';
 import { useApp } from '../state/useApp';
-import { telemetryConfigured } from '../telemetry';
+import { crashReportsConfigured, telemetryConfigured, usageStatsConfigured } from '../telemetry';
 
 export function Settings() {
   const { t } = useTranslation();
@@ -98,34 +98,42 @@ export function Settings() {
       {telemetryConfigured() && (
         <fieldset className="card">
           <legend>{t('settings.privacy')}</legend>
-          <label className="toggle">
-            <input
-              type="checkbox"
-              checked={consent.crashReports}
-              onChange={(e) =>
-                void app.saveConsent({
-                  crashReports: e.target.checked,
-                  usageStats: consent.usageStats,
-                })
-              }
-            />
-            <span>{t('telemetry.crash.title')}</span>
-          </label>
-          <p className="note">{t('telemetry.crash.body')}</p>
-          <label className="toggle">
-            <input
-              type="checkbox"
-              checked={consent.usageStats}
-              onChange={(e) =>
-                void app.saveConsent({
-                  crashReports: consent.crashReports,
-                  usageStats: e.target.checked,
-                })
-              }
-            />
-            <span>{t('telemetry.usage.title')}</span>
-          </label>
-          <p className="note">{t('telemetry.usage.body')}</p>
+          {crashReportsConfigured() && (
+            <>
+              <label className="toggle">
+                <input
+                  type="checkbox"
+                  checked={consent.crashReports}
+                  onChange={(e) =>
+                    void app.saveConsent({
+                      crashReports: e.target.checked,
+                      usageStats: consent.usageStats,
+                    })
+                  }
+                />
+                <span>{t('telemetry.crash.title')}</span>
+              </label>
+              <p className="note">{t('telemetry.crash.body')}</p>
+            </>
+          )}
+          {usageStatsConfigured() && (
+            <>
+              <label className="toggle">
+                <input
+                  type="checkbox"
+                  checked={consent.usageStats}
+                  onChange={(e) =>
+                    void app.saveConsent({
+                      crashReports: consent.crashReports,
+                      usageStats: e.target.checked,
+                    })
+                  }
+                />
+                <span>{t('telemetry.usage.title')}</span>
+              </label>
+              <p className="note">{t('telemetry.usage.body')}</p>
+            </>
+          )}
           <button type="button" className="button" onClick={() => void app.resetInstallId()}>
             {t('settings.reset_install_id')}
           </button>

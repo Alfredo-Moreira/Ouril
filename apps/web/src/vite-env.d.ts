@@ -7,6 +7,13 @@ interface ImportMetaEnv {
   /** Sentry DSN for the web app. Empty/absent = telemetry is a no-op (ADR 0014). */
   readonly VITE_SENTRY_DSN?: string;
   /**
+   * Base URL of the self-hosted Matomo for usage statistics, e.g. `https://analytics.example/`
+   * (ADR 0026). Empty/absent, or no site ID = usage statistics are a no-op.
+   */
+  readonly VITE_MATOMO_URL?: string;
+  /** Matomo site ID for this app. */
+  readonly VITE_MATOMO_SITE_ID?: string;
+  /**
    * Origin of the API in production, e.g. `https://api.ouril.example` (same site as the web
    * app, ADR 0020). Empty/absent = same origin (the Vite dev proxy, or a `/v1` reverse proxy).
    */
