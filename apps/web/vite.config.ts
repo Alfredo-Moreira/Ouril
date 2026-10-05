@@ -145,9 +145,11 @@ export default defineConfig({
     env: {
       VITE_FEATURE_ACCOUNTS: 'true',
       VITE_FEATURE_STATS: 'true',
-      // Telemetry "configured" so the consent prompt is tested; it still never sends anything
-      // (GuestNetwork.test.tsx), and features.test.tsx covers the MVP without it.
+      // Telemetry "configured" so the consent prompt is tested. Nothing is sent without consent
+      // (GuestNetwork.test.tsx), and mvp.test.tsx covers a build without any service.
       VITE_SENTRY_DSN: 'https://public@telemetry.invalid/1',
+      VITE_MATOMO_URL: 'https://analytics.invalid/',
+      VITE_MATOMO_SITE_ID: '1',
     },
   },
 });

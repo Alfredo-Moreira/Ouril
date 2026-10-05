@@ -23,7 +23,7 @@ flowchart LR
   end
 ```
 
-Everything runs in the browser; guests make no network requests ([ADR 0014](../decisions/0014-telemetry-consent.md)).
+Everything runs in the browser; guests make no network requests unless they opt into usage statistics ([ADR 0014](../decisions/0014-telemetry-consent.md), [ADR 0026](../decisions/0026-usage-statistics-with-matomo.md)).
 
 ## With accounts (after the MVP)
 

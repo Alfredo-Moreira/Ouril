@@ -2,11 +2,13 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { useApp } from '../state/useApp';
+import { crashReportsConfigured, usageStatsConfigured } from '../telemetry';
 import { Dialog } from './Dialog';
 
 /**
- * First-launch telemetry choices (ADR 0014): two separate options, both off by default.
- * Declining is one tap and as prominent as accepting.
+ * First-launch telemetry choices (ADR 0014): two separate options, both off by default, each
+ * shown only when this build configures its service. Declining is one tap and as prominent as
+ * accepting.
  */
 export function ConsentPrompt() {
   const { t } = useTranslation();
@@ -19,26 +21,34 @@ export function ConsentPrompt() {
   return (
     <Dialog title={t('telemetry.prompt.title')}>
       <p>{t('telemetry.prompt.body')}</p>
-      <label className="toggle">
-        <input
-          type="checkbox"
-          checked={crashReports}
-          onChange={(e) => setCrash(e.target.checked)}
-        />
-        <span>
-          <strong>{t('telemetry.crash.title')}</strong>
-          <br />
-          {t('telemetry.crash.body')}
-        </span>
-      </label>
-      <label className="toggle">
-        <input type="checkbox" checked={usageStats} onChange={(e) => setUsage(e.target.checked)} />
-        <span>
-          <strong>{t('telemetry.usage.title')}</strong>
-          <br />
-          {t('telemetry.usage.body')}
-        </span>
-      </label>
+      {crashReportsConfigured() && (
+        <label className="toggle">
+          <input
+            type="checkbox"
+            checked={crashReports}
+            onChange={(e) => setCrash(e.target.checked)}
+          />
+          <span>
+            <strong>{t('telemetry.crash.title')}</strong>
+            <br />
+            {t('telemetry.crash.body')}
+          </span>
+        </label>
+      )}
+      {usageStatsConfigured() && (
+        <label className="toggle">
+          <input
+            type="checkbox"
+            checked={usageStats}
+            onChange={(e) => setUsage(e.target.checked)}
+          />
+          <span>
+            <strong>{t('telemetry.usage.title')}</strong>
+            <br />
+            {t('telemetry.usage.body')}
+          </span>
+        </label>
+      )}
       <p className="note">{t('telemetry.prompt.later')}</p>
       <div className="dialog__actions dialog__actions--equal">
         <button

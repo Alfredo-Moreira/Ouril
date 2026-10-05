@@ -37,6 +37,7 @@
 | [0023](0023-relay-sowing.md) | Relay sowing as a variant parameter, for Ouril of Santiago | Accepted |
 | [0024](0024-capture-across.md) | Capture across as a variant parameter | Accepted |
 | [0025](0025-web-first-static-mvp.md) | Launch the web app first, as a static site; accounts and native apps after | Accepted |
+| [0026](0026-usage-statistics-with-matomo.md) | Usage statistics with self-hosted Matomo | Proposed |
 
 ## Open questions
 

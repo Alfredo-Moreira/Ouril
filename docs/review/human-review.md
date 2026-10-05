@@ -96,7 +96,7 @@ Agent labels: `scaffold`, `build:core`, `build:server`, `build:web`, `tests:core
    - Region `fra` is a placeholder, and nothing is deployed yet.
 
    Area: infra. Source: scaffold, build:server, sec, apply:server, scan. File: `apps/server/fly.toml`.
-4. **Telemetry.** `SENTRY_DSN` is empty. `VITE_SENTRY_DSN`, the web key, is not in `.env.example`. Sentry lazy-loading after consent, the usage-stats endpoint and the offline queue are all TODO, so nothing is sent even with consent. Area: web, server. Source: build:web, scan. File: `apps/web/src/telemetry/index.ts`.
+4. **Telemetry.** Usage statistics are wired to self-hosted Matomo ([ADR 0026](../decisions/0026-usage-statistics-with-matomo.md), **Proposed**), with the offline queue. Still TODO: `SENTRY_DSN` is empty and Sentry lazy-loading after consent isn't written, so crash reports send nothing; accept ADR 0026; confirm the Matomo instance's IP anonymization and geolocation settings. Area: web, server. Source: build:web, scan. File: `apps/web/src/telemetry/index.ts`.
 5. **`.env.example` is missing documented server keys:** `DB_MAX_CONNECTIONS` (default 10) and `LOG_FORMAT` (json|text). Area: infra. Source: build:server, scan.
 6. **Project contacts.** `[INSERT CONTACT METHOD]` in `CODE_OF_CONDUCT.md`. In `SECURITY.md`, enable GitHub private vulnerability reporting and replace `security@TODO.example`. Area: docs. Source: scan.
 7. **App versions.** `MIN_SUPPORTED_*` and `RECOMMENDED_*` are all `0.1.0`. Area: server. Source: scaffold. File: `.env.example`.

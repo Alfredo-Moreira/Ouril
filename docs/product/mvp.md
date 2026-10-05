@@ -30,7 +30,7 @@ Ship a polished, **offline-capable, single-player** Ouril game on the **web**, a
 - Game music: a random playlist during games, with pause and skip.
 
 ### General
-- **Web only**, as a static site. No sign-in, no server, no database; guests make **zero network requests** ([ADR 0014](../decisions/0014-telemetry-consent.md)). No telemetry is configured, so there's no consent prompt.
+- **Web only**, as a static site. No sign-in, no server, no database; guests make **zero network requests** unless they opt into anonymous usage statistics, asked once on first launch ([ADR 0014](../decisions/0014-telemetry-consent.md), sent to self-hosted Matomo, [ADR 0026](../decisions/0026-usage-statistics-with-matomo.md)). Crash reports aren't offered yet.
 - Works offline after the first visit (installable PWA), including the music.
 - English UI with every string externalized and a test that forbids hard-coded text ([localization](features/localization.md)); the browser's language is used when the app supports it.
 - Responsive for phones, tablets and desktops; reduced-motion support.
@@ -41,13 +41,13 @@ Sign-in (Google, Apple), sync, Stats and history, and replays: the code and the 
 
 ## Out of scope (see [roadmap](roadmap.md))
 
-iOS and Android apps, accounts and sync, stats, online multiplayer, leaderboards, pass-and-play, other countries' variants, languages other than English, telemetry.
+iOS and Android apps, accounts and sync, stats, online multiplayer, leaderboards, pass-and-play, other countries' variants, languages other than English, crash reports.
 
 ## Acceptance criteria
 
 - [x] The Rust core passes its full test suite, including every worked example in [rules.md](../game/rules.md#worked-examples) and every variant's test vectors.
 - [x] A full game against each AI level can be played to completion, with each of the four rule sets.
-- [x] A guest session makes zero network requests (automated test).
+- [x] A guest session makes zero network requests without telemetry consent, and only usage-statistics hits with it (automated test).
 - [x] An in-progress game survives a reload; a game whose rules changed is upgraded or set aside, never a blank page.
 - [x] The game, including music, works with no network connection after the first visit.
 - [x] The tutorial covers every rule and every variant.

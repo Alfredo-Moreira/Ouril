@@ -7,6 +7,7 @@ import {
   getTelemetryState,
   telemetryConfigured,
   trackEvent,
+  usageStatsConfigured,
 } from '../telemetry';
 import { freshDb, renderApp } from '../test/render';
 
@@ -62,14 +63,16 @@ describe('first-launch telemetry consent (ADR 0014)', () => {
   });
 });
 
-describe('telemetry is a no-op without a DSN', () => {
+describe('each telemetry option needs its service configured', () => {
   afterEach(() => {
     vi.unstubAllEnvs();
     configureTelemetry({ decided: false, crashReports: false, usageStats: false, installId: '' });
   });
 
-  it('is inactive even with full consent when VITE_SENTRY_DSN is not set', () => {
+  it('is inactive even with full consent when no service is configured', () => {
     vi.stubEnv('VITE_SENTRY_DSN', '');
+    vi.stubEnv('VITE_MATOMO_URL', '');
+    vi.stubEnv('VITE_MATOMO_SITE_ID', '');
     expect(telemetryConfigured()).toBe(false);
     const s = configureTelemetry({
       decided: true,
@@ -82,8 +85,7 @@ describe('telemetry is a no-op without a DSN', () => {
     expect(getTelemetryState()).toEqual(s);
   });
 
-  it('with a DSN, follows each choice separately and only after a decision', () => {
-    vi.stubEnv('VITE_SENTRY_DSN', 'https://public@example.invalid/1');
+  it('follows each choice separately and only after a decision', () => {
     expect(telemetryConfigured()).toBe(true);
     expect(
       configureTelemetry({ decided: false, crashReports: true, usageStats: true, installId: 'i' }),
@@ -91,5 +93,24 @@ describe('telemetry is a no-op without a DSN', () => {
     expect(
       configureTelemetry({ decided: true, crashReports: true, usageStats: false, installId: 'i' }),
     ).toEqual({ crashReportsActive: true, usageStatsActive: false });
+    expect(
+      configureTelemetry({ decided: true, crashReports: false, usageStats: true, installId: 'i' }),
+    ).toEqual({ crashReportsActive: false, usageStatsActive: true });
+  });
+
+  it('usage statistics need both the Matomo URL and the site ID', () => {
+    vi.stubEnv('VITE_SENTRY_DSN', '');
+    vi.stubEnv('VITE_MATOMO_SITE_ID', '');
+    expect(usageStatsConfigured()).toBe(false);
+    expect(telemetryConfigured()).toBe(false);
+  });
+
+  it('the prompt shows only the options whose service is configured', async () => {
+    freshDb();
+    vi.stubEnv('VITE_SENTRY_DSN', '');
+    renderApp();
+    const dialog = await screen.findByRole('dialog', { name: 'Help improve Ouril?' });
+    expect(within(dialog).getByRole('checkbox', { name: /Usage statistics/ })).toBeInTheDocument();
+    expect(within(dialog).queryByRole('checkbox', { name: /Crash reports/ })).toBeNull();
   });
 });

@@ -176,6 +176,7 @@ export function AppProvider({ children, createApi, coreVersion = '0.0.0' }: AppP
         const next = { ...consent, installId: uuidv7() };
         await setConsent(next);
         setConsentState(next);
+        configureTelemetry(next);
       },
       auth,
       user,
