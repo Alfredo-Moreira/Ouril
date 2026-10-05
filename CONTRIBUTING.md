@@ -1,6 +1,6 @@
 # Contributing to Ouril
 
-> How we work: workflow, conventions, and what "done" means. **Status:** Draft. Toolchain sections will be filled in when the monorepo is scaffolded.
+> How we work: workflow, conventions, and what "done" means. **Status:** Draft. Local setup covers the web app, the server and the Rust core. iOS and Android setup comes when those apps start.
 
 By participating you agree to the [Code of Conduct](CODE_OF_CONDUCT.md).
 
@@ -42,30 +42,59 @@ Write one when a change:
 - [ ] Works offline where applicable. Guests make no network requests without telemetry consent.
 - [ ] No secrets in code or config. Generated bindings regenerated, not hand-edited.
 
-## Local setup (planned): Docker first
+## Local setup: Docker first
 
-Development is **local-first and Docker-first** ([ADR 0017](docs/decisions/0017-local-first-development.md)). The database, server, web dev server and all Rust/WASM/Android toolchains run in containers defined in `compose.yaml`.
+Development is **local-first and Docker-first** ([ADR 0017](docs/decisions/0017-local-first-development.md)). The database, server, web dev server and Rust/WASM toolchain run in containers defined in `compose.yaml`. You don't need Rust or Node on your machine.
 
 | Need it for | Install on your machine |
 |---|---|
-| Everything | `git`, **Docker** (Docker Desktop or OrbStack), [`just`](https://github.com/casey/just) |
-| iOS | macOS, Xcode (latest stable). The iOS bindings and the Simulator can't run in Docker. |
-| Android | Android Studio, for the Emulator and device debugging. Bindings are built in the `toolbox` container. |
+| Everything | `git`, **Docker** (Docker Desktop or OrbStack). [`just`](https://github.com/casey/just) is optional: the `toolbox` container includes it. |
+| iOS (later) | macOS, Xcode (latest stable). The iOS bindings and the Simulator can't run in Docker. |
+| Android (later) | Android Studio, for the Emulator and device debugging. Bindings will be built in the `toolbox` container. |
 
-Planned commands (exact usage will be documented once the scaffolding exists):
+### First run
+
+```bash
+just env        # creates .env from .env.example (or: cp .env.example .env)
+just bindings   # builds core/wasm/pkg; the web app needs it before `pnpm install`
+just dev        # db (Postgres 18), server (dev-auth, hot reload) and web (Vite)
+```
+
+Without `just` on the host:
+
+```bash
+cp .env.example .env
+docker compose run --rm toolbox just bindings
+docker compose up db server web
+```
+
+- Open the web app at <http://localhost:5173>. It starts as a guest: once the page has loaded, a guest makes no network requests. The Vite dev server proxies `/v1` to the server, so signed-in requests are same-origin.
+- The server listens on <http://localhost:8080> (`/healthz`, `/v1/meta`). Debug builds apply migrations on startup.
+- **Sign-in locally:** use **Dev sign-in** on the web Sign-in screen (shown only in dev builds), or `POST /v1/auth/dev`. Google and Apple are placeholders: their buttons are disabled, and the endpoints answer `501 not_configured` while `GOOGLE_CLIENT_ID` / `APPLE_*` in `.env` are empty.
+- Published ports bind to `127.0.0.1` only, because the dev server lets anyone sign in. For testing from a phone on your LAN: `docker compose -f compose.yaml -f docker/compose.lan.yaml up db server web`.
+
+### Everyday commands
 
 | Command | What it does |
 |---|---|
-| `just dev` | Start `db` (PostgreSQL 18), `server` (hot reload, dev sign-in) and `web` (Vite) |
-| `just test` | Core tests and test vectors in the `toolbox` container |
-| `just bindings` | WASM and Android bindings in `toolbox`, iOS bindings on the macOS host |
-| `just i18n` | Generate platform string files from `shared/i18n/` |
-| `just db-reset` | Recreate the local database with migrations and seed data |
+| `just dev` | Build the WASM package, then start `db`, `server` and `web` |
+| `just test` | All tests: `test-core`, `test-server`, `test-web` |
+| `just test-core` | Rust core tests, including every test vector and the property tests |
+| `just test-server` | Server unit and integration tests against the compose Postgres (with `dev-auth`) |
+| `just test-web` | Rebuild the WASM package, then run the Vitest suite |
+| `just lint` / `just fmt` | rustfmt, clippy (warnings are errors), ESLint, Prettier and tsc / format Rust and web code |
+| `just bindings` | Build `core/wasm/pkg` (WASM only for now; UniFFI comes with iOS/Android) |
+| `just protocol-ts` | Export the API and core TypeScript types to `apps/web/src/generated/protocol/` |
+| `just migrate` / `just db-reset` | Apply migrations / drop, recreate and migrate the local database |
+| `just build-server-image` | Build the production server image (`apps/server/Dockerfile`, never with `dev-auth`) |
 | `just shell` | Open a shell in the `toolbox` container |
 
-- Copy `.env.example` to `.env`, and never commit `.env`.
-- Docker Desktop on macOS: give the VM at least 8 GB of memory and 60 GB of disk (Rust and the Android NDK are heavy).
-- Native toolchains (Rust via `rustup`, `wasm-pack`, `cargo-ndk`, Node LTS + pnpm) still work if you prefer them. The `just` recipes can run natively, but Docker is the supported default and what CI uses.
+Without `just` on the host, run any toolbox recipe as `docker compose run --rm toolbox just <recipe>` (for example `just test-core`). For `test-server`, start the database first with `docker compose up -d --wait db`. Web commands run in the `web` container: `docker compose run --rm web sh -c "pnpm install --frozen-lockfile && pnpm --filter web test"`.
+
+- Never commit `.env`. Every OAuth, Sentry and JWT value in it is a local placeholder.
+- Generated files are build output, gitignored and never hand-edited: `core/wasm/pkg/`, `apps/web/src/generated/` (protocol types and i18n strings) and `core/*/bindings/`. The web strings are generated from `shared/i18n/` every time you run the web `dev`, `build`, `test` or `typecheck` scripts. `just i18n` is a stub until `tools/i18n-gen` exists ([ADR 0016](docs/decisions/0016-i18n-source-format.md)).
+- Docker Desktop on macOS: give the VM at least 8 GB of memory and 60 GB of disk, and avoid running two heavy cargo builds at once.
+- Native toolchains (Rust via `rustup`, `wasm-pack`, Node LTS + pnpm) still work if you prefer them: set `OURIL_IN_TOOLBOX=1` so the `just` recipes run commands directly. Docker is the supported default.
 - VS Code users can open the repo in the Dev Container (`.devcontainer/`), which uses the same `toolbox` image.
 
 ### Claude Code skills

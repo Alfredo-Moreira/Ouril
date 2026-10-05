@@ -2,9 +2,11 @@
 
 > How players create accounts and sign in. **Status:** Accepted. See [ADR 0009](../../decisions/0009-oauth-accounts-google-apple.md).
 
-## Why accounts in the MVP
+## Why accounts before multiplayer
 
-The MVP is a single-player game, but online play (real-time and async against other people) is next. Shipping accounts in the MVP means:
+> **Timing:** accounts were planned for the MVP; they're built but switched off, and ship after the web MVP ([ADR 0025](../../decisions/0025-web-first-static-mvp.md)). The design below is unchanged.
+
+The MVP is a single-player game, but online play (real-time and async against other people) is next. Shipping accounts before multiplayer means:
 
 - players already have an identity when multiplayer launches, so there's no migration and no "create an account now" wall
 - stats and history are backed up and follow the player across devices
@@ -73,6 +75,7 @@ sequenceDiagram
 
 - **In-app account deletion** is required by Apple (guideline 5.1.1(v)) and Google Play. Google Play also requires a **web page** where users can request deletion.
 - Deletion removes personal data, revokes all sessions, and **revokes the Sign in with Apple token** through Apple's REST API. Past online games keep an anonymized "Deleted player" entry so opponents' history stays intact.
+- How revocation works: at Apple sign-in the app also sends the `authorization_code`; the server exchanges it for Apple's refresh token (client secret signed with the `.p8` key), keeps it only for this, and revokes it on account deletion. Apple sign-in stays off if the key can't be loaded, so no Apple account is ever created that couldn't be revoked.
 - A **privacy policy** is required by both stores before launch.
 - Apple only sends the user's name on the **first** sign-in, so it must be saved then.
 - Apple users may hide their email behind a relay address. We treat email as optional everywhere.

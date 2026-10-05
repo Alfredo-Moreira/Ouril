@@ -1,0 +1,124 @@
+{
+  "id": "cv.continuous/capture/relay-ends-with-chain-capture",
+  "description": "After relaying, the last seed lands on North\u2019s side and captures with the usual backward chain of 2s and 3s.",
+  "variants": [
+    {
+      "id": "cv.continuous",
+      "version": 1
+    }
+  ],
+  "source": "docs/game/variants/cape-verde/continuous.md#evidence-by-parameter",
+  "tags": [
+    "relay",
+    "capture",
+    "chain",
+    "to-confirm"
+  ],
+  "setup": {
+    "pits": [
+      1,
+      1,
+      1,
+      3,
+      5,
+      4,
+      2,
+      1,
+      1,
+      2,
+      1,
+      2
+    ],
+    "stores": [
+      12,
+      12
+    ],
+    "to_move": "south",
+    "moves_since_capture": 0
+  },
+  "steps": [
+    {
+      "expect_legal_moves": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "move": 0,
+      "expect": {
+        "pits": [
+          0,
+          0,
+          2,
+          0,
+          6,
+          5,
+          0,
+          0,
+          1,
+          2,
+          1,
+          2
+        ],
+        "stores": [
+          17,
+          12
+        ],
+        "to_move": "north",
+        "status": "playing",
+        "events": [
+          {
+            "type": "sow",
+            "pit": 1
+          },
+          {
+            "type": "relay",
+            "pit": 1,
+            "seeds": 2
+          },
+          {
+            "type": "sow",
+            "pit": 2
+          },
+          {
+            "type": "sow",
+            "pit": 3
+          },
+          {
+            "type": "relay",
+            "pit": 3,
+            "seeds": 4
+          },
+          {
+            "type": "sow",
+            "pit": 4
+          },
+          {
+            "type": "sow",
+            "pit": 5
+          },
+          {
+            "type": "sow",
+            "pit": 6
+          },
+          {
+            "type": "sow",
+            "pit": 7
+          },
+          {
+            "type": "capture",
+            "pit": 7,
+            "seeds": 2
+          },
+          {
+            "type": "capture",
+            "pit": 6,
+            "seeds": 3
+          }
+        ]
+      }
+    }
+  ]
+}

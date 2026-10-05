@@ -1,0 +1,30 @@
+[package]
+name = "ouril-wasm"
+description = "WebAssembly bindings for the Ouril core (engine, AI, sync) used by apps/web."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+ouril-engine = { path = "../engine" }
+ouril-ai = { path = "../ai" }
+ouril-sync = { path = "../sync" }
+ouril-protocol = { path = "../protocol" }
+serde = { version = "1", features = ["derive"] }
+serde-wasm-bindgen = "0.6"
+# Must match the wasm-bindgen-cli version in docker/toolbox.Dockerfile exactly.
+wasm-bindgen = "=0.2.129"
+
+# wasm-pack's own wasm-opt would download binaryen at build time, so it stays off. The
+# toolbox ships a pinned binaryen instead, and `just bindings-wasm` runs `wasm-opt -Oz` on the
+# output (docker/toolbox.Dockerfile).
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = false
+
+[package.metadata.wasm-pack.profile.dev]
+wasm-opt = false

@@ -1,0 +1,101 @@
+# Local stack (ADR 0017). Host needs only Docker (+ optionally `just`).
+#   just dev                      -> docker compose up db server web
+#   docker compose run --rm toolbox <cmd>   (Rust, wasm-pack, sqlx, just)
+#   docker compose run --rm web <cmd>       (Node + pnpm)
+# Published ports bind to 127.0.0.1 only: the dev server has `dev-auth` (anyone reaching it
+# can sign in) and Postgres uses default credentials. For LAN/phone testing, opt in with
+#   docker compose -f compose.yaml -f docker/compose.lan.yaml up db server web
+name: ouril
+
+services:
+  db:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: ouril
+      POSTGRES_PASSWORD: ouril
+      POSTGRES_DB: ouril
+    ports:
+      - "127.0.0.1:${DB_PORT:-5432}:5432"
+    volumes:
+      # Postgres 18 images keep data under /var/lib/postgresql/<major>/docker.
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ouril -d ouril"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  server:
+    build:
+      context: .
+      dockerfile: docker/server.dev.Dockerfile
+    image: ouril-server-dev
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: ${COMPOSE_DATABASE_URL:-postgres://ouril:ouril@db:5432/ouril}
+      HOST: 0.0.0.0
+      PORT: "8080"
+    ports:
+      - "127.0.0.1:${SERVER_PORT:-8080}:8080"
+    # Own target volume: cargo-watch here (incremental, dev-auth) must not contend for the
+    # target-dir lock or invalidate artifacts with toolbox builds (non-incremental, tests, wasm).
+    volumes:
+      - .:/workspace
+      - cargo-registry:/usr/local/cargo/registry
+      - cargo-git:/usr/local/cargo/git
+      - cargo-target-server:/workspace/target
+    working_dir: /workspace
+
+  web:
+    build:
+      context: .
+      dockerfile: docker/web.dev.Dockerfile
+    image: ouril-web-dev
+    # Guest-first: the web app works with no server. It doesn't depend on `server`.
+    environment:
+      VITE_API_PROXY_TARGET: http://server:8080
+    ports:
+      - "127.0.0.1:${WEB_PORT:-5173}:5173"
+    volumes:
+      - .:/workspace
+      - node-modules:/workspace/node_modules
+      - web-node-modules:/workspace/apps/web/node_modules
+    working_dir: /workspace
+    command: sh -c "pnpm install && pnpm --filter web dev --host 0.0.0.0 --port 5173"
+
+  toolbox:
+    profiles: ["tools"]
+    build:
+      context: .
+      dockerfile: docker/toolbox.Dockerfile
+    image: ouril-toolbox
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: ${COMPOSE_DATABASE_URL:-postgres://ouril:ouril@db:5432/ouril}
+      CARGO_TARGET_DIR: /workspace/target
+      OURIL_IN_TOOLBOX: "1"
+    volumes:
+      - .:/workspace
+      - cargo-registry:/usr/local/cargo/registry
+      - cargo-git:/usr/local/cargo/git
+      - cargo-target:/workspace/target
+      - node-modules:/workspace/node_modules
+      - web-node-modules:/workspace/apps/web/node_modules
+    working_dir: /workspace
+    command: bash
+
+volumes:
+  pgdata:
+  cargo-registry:
+  cargo-git:
+  cargo-target:
+  cargo-target-server:
+  node-modules:
+  web-node-modules:

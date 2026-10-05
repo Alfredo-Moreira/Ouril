@@ -1,0 +1,81 @@
+{
+  "id": "cv.across/capture/no-capture-when-across-is-empty",
+  "description": "Two seeds from pit 3: the last lands in empty pit 5, but the pit across (North pit 2) is empty: no capture.",
+  "variants": [
+    {
+      "id": "cv.across",
+      "version": 1
+    }
+  ],
+  "source": "docs/game/variants/cape-verde/across.md#rules-at-a-glance",
+  "tags": [
+    "capture",
+    "to-confirm"
+  ],
+  "setup": {
+    "pits": [
+      4,
+      4,
+      2,
+      4,
+      0,
+      4,
+      4,
+      0,
+      4,
+      4,
+      4,
+      4
+    ],
+    "stores": [
+      5,
+      5
+    ],
+    "to_move": "south",
+    "moves_since_capture": 0
+  },
+  "steps": [
+    {
+      "expect_legal_moves": [
+        0,
+        1,
+        2,
+        3,
+        5
+      ],
+      "move": 2,
+      "expect": {
+        "pits": [
+          4,
+          4,
+          0,
+          5,
+          1,
+          4,
+          4,
+          0,
+          4,
+          4,
+          4,
+          4
+        ],
+        "stores": [
+          5,
+          5
+        ],
+        "to_move": "north",
+        "status": "playing",
+        "events": [
+          {
+            "type": "sow",
+            "pit": 3
+          },
+          {
+            "type": "sow",
+            "pit": 4
+          }
+        ]
+      }
+    }
+  ]
+}

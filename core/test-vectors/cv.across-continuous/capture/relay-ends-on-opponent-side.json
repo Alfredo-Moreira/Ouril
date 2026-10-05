@@ -1,0 +1,111 @@
+{
+  "id": "cv.across-continuous/capture/relay-ends-on-opponent-side",
+  "description": "After relaying, the last seed lands on North\u2019s side: no capture there, the move just ends.",
+  "variants": [
+    {
+      "id": "cv.across-continuous",
+      "version": 1
+    }
+  ],
+  "source": "docs/game/variants/cape-verde/across-continuous.md#rules-at-a-glance",
+  "tags": [
+    "relay",
+    "capture",
+    "to-confirm"
+  ],
+  "setup": {
+    "pits": [
+      5,
+      1,
+      3,
+      4,
+      0,
+      2,
+      0,
+      1,
+      0,
+      4,
+      2,
+      2
+    ],
+    "stores": [
+      12,
+      12
+    ],
+    "to_move": "south",
+    "moves_since_capture": 0
+  },
+  "steps": [
+    {
+      "expect_legal_moves": [
+        0,
+        1,
+        2,
+        3,
+        5
+      ],
+      "move": 0,
+      "expect": {
+        "pits": [
+          0,
+          2,
+          4,
+          5,
+          1,
+          0,
+          1,
+          2,
+          1,
+          4,
+          2,
+          2
+        ],
+        "stores": [
+          12,
+          12
+        ],
+        "to_move": "north",
+        "status": "playing",
+        "events": [
+          {
+            "type": "sow",
+            "pit": 1
+          },
+          {
+            "type": "sow",
+            "pit": 2
+          },
+          {
+            "type": "sow",
+            "pit": 3
+          },
+          {
+            "type": "sow",
+            "pit": 4
+          },
+          {
+            "type": "sow",
+            "pit": 5
+          },
+          {
+            "type": "relay",
+            "pit": 5,
+            "seeds": 3
+          },
+          {
+            "type": "sow",
+            "pit": 6
+          },
+          {
+            "type": "sow",
+            "pit": 7
+          },
+          {
+            "type": "sow",
+            "pit": 8
+          }
+        ]
+      }
+    }
+  ]
+}

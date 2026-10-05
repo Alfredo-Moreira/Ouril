@@ -1,6 +1,6 @@
 # Leaderboards
 
-> Product design for rankings: a skill rating and a points board, with global and regional scopes. **Status:** Draft. Phase 5 of the [roadmap](../roadmap.md).
+> Product design for rankings: a skill rating and a points board, with global and regional scopes. **Status:** Draft. Phase 7 of the [roadmap](../roadmap.md).
 
 ## Two kinds of boards
 

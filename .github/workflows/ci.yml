@@ -1,0 +1,117 @@
+# CI for the Rust core, the server and the web app (ADR 0017: the same toolbox image as local
+# development). Every job is read-only towards the repo; nothing is deployed from here
+# (deploy-web.yml deploys the web app after CI passes on main).
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  docs:
+    name: Docs and test vectors
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Docs check (links, structure, ADR index, variant catalog)
+        run: python3 .claude/skills/docs-audit/scripts/check_docs.py .
+      - name: Test vector bookkeeping check
+        run: python3 .claude/skills/test-vectors/scripts/check_vectors.py .
+
+  rust:
+    name: Rust (fmt, clippy, tests, audit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build the toolbox image (cached)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/toolbox.Dockerfile
+          tags: ouril-toolbox:latest
+          load: true
+          cache-from: type=gha,scope=toolbox
+          cache-to: type=gha,mode=max,scope=toolbox
+      - name: Prepare .env and start Postgres
+        run: |
+          cp .env.example .env
+          docker compose up -d --wait db
+      - name: Format
+        run: docker compose run --rm toolbox cargo fmt --all -- --check
+      - name: Clippy (all features)
+        run: docker compose run --rm toolbox cargo clippy --workspace --all-targets --all-features -- -D warnings
+      - name: Tests (all features, incl. the 17+ rule test vectors)
+        run: docker compose run --rm toolbox cargo test --workspace --all-features
+      - name: Server tests without dev-auth (proves /v1/auth/dev is absent)
+        run: docker compose run --rm toolbox cargo test -p ouril-server
+      - name: Dependency audit (RustSec)
+        run: docker compose run --rm toolbox sh -c "cargo binstall -y --locked cargo-audit && cargo audit"
+
+  web:
+    name: WASM and web (lint, typecheck, tests, build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build the toolbox image (cached)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/toolbox.Dockerfile
+          tags: ouril-toolbox:latest
+          load: true
+          cache-from: type=gha,scope=toolbox
+          cache-to: type=gha,mode=max,scope=toolbox
+      - name: Build the WASM engine (wasm-pack + wasm-opt)
+        run: |
+          cp .env.example .env
+          docker compose run --rm toolbox wasm-pack build core/wasm --target web --out-dir pkg --out-name ouril_wasm --release
+          docker compose run --rm toolbox wasm-opt -Oz --strip-debug core/wasm/pkg/ouril_wasm_bg.wasm -o core/wasm/pkg/ouril_wasm_bg.wasm
+      - name: Web checks
+        run: >
+          docker compose run --rm web sh -c
+          "pnpm install --frozen-lockfile
+          && pnpm --filter web lint
+          && pnpm --filter web typecheck
+          && pnpm --filter web format:check
+          && pnpm --filter web test
+          && pnpm --filter web build"
+      - name: Dependency audit (npm, high and critical)
+        run: docker compose run --rm web pnpm audit --prod --audit-level high
+
+  release-image:
+    name: Release server image (no dev-auth)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build the production server image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/server/Dockerfile
+          tags: ouril-server:ci
+          load: true
+          cache-from: type=gha,scope=server
+          cache-to: type=gha,mode=max,scope=server
+      - name: The release binary has no dev sign-in route
+        run: |
+          id=$(docker create ouril-server:ci)
+          docker cp "$id:/usr/local/bin/ouril-server" ./ouril-server
+          docker rm "$id"
+          if grep -a -q "/auth/dev" ./ouril-server; then
+            echo "::error::release binary contains the dev-auth route"
+            exit 1
+          fi

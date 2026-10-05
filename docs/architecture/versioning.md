@@ -15,10 +15,10 @@ Players don't update apps promptly: versions from months ago stay installed, and
 | HTTP API | Major in URL, additive changes within it | `/v1/…` | Breaking change → `/v2`, with `/v1` kept during deprecation |
 | Realtime protocol | Integer, negotiated on connect | `proto: 3` | Server supports the current version and the one before |
 | **Variant rules** | `id` + integer `version` | `cv.standard@1` | **Immutable once released** |
-| Game record format | Integer `format` field | `format: 1` | Readers support every older format |
+| Game record format | Integer `format` field | `format: 1` (rules ended the game), `format: 2` (forfeit) | Readers support every older format |
 | Local DB schema (each app) | Integer, forward-only migrations | `schema: 4` | Migrated on app start |
 | Server DB schema | sqlx migrations (timestamped) | `20261003_…` | Expand → migrate → contract, never breaking in one step |
-| Sync payloads | `schema` field per mutation type | `game_finished@1` | Server accepts older versions and upgrades them |
+| Sync payloads | `schema` field per mutation type | `game_finished@1` | Server accepts older versions and upgrades them. A newer schema, type, record format or variant version it doesn't know is answered `deferred`, and the client retries later |
 
 ## Variant versions
 
@@ -48,6 +48,10 @@ Every stored game, local or on the server, contains everything needed to replay 
 ```
 
 `core_version` is for diagnostics only. Replay depends only on `variant@version` and `moves`.
+
+**Format 2** ([ADR 0022](../decisions/0022-forfeit-and-record-format-2.md)) adds one end reason, `resigned`: the local player forfeited before the rules ended the game. Clients write format 2 only for forfeits, so servers that only know format 1 still accept every other game.
+
+As built, records from the apps also carry three optional fields: `mode` (`vs_ai`), `ai_level` (`easy` \| `medium` \| `hard`) and `human_player` (`south` \| `north`, needed to count wins and losses). Records without them still replay. The full shape is in the [WASM API](../../core/wasm/API.md#game-records-and-stats).
 
 ## Old apps
 

@@ -34,6 +34,7 @@ resolved:
   endless_cycle_move_limit: 100
   first_player: loser_starts_next
   match_scoring: { big_win_threshold: 36, big_win_points: 2 }
+  relay_sowing: none # parameter added later (ADR 0023); single-lap sowing as always
 
 confidence:
   pits_per_side: high

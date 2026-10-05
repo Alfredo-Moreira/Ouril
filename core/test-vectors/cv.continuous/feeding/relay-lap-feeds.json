@@ -1,0 +1,106 @@
+{
+  "id": "cv.continuous/feeding/relay-lap-feeds",
+  "description": "North has no seeds. A move whose first lap stays on South's side but whose relay reaches North feeds them; a move that never reaches North is refused.",
+  "variants": [
+    {
+      "id": "cv.continuous",
+      "version": 1
+    }
+  ],
+  "source": "docs/game/variants/cape-verde/continuous.md#rule-interactions",
+  "tags": [
+    "feeding",
+    "relay",
+    "to-confirm"
+  ],
+  "setup": {
+    "pits": [
+      1,
+      1,
+      4,
+      0,
+      3,
+      2,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "stores": [
+      18,
+      19
+    ],
+    "to_move": "south",
+    "moves_since_capture": 0
+  },
+  "steps": [
+    {
+      "move": 0,
+      "expect_error": "must_feed"
+    },
+    {
+      "expect_legal_moves": [
+        1,
+        2,
+        4,
+        5
+      ],
+      "move": 1,
+      "expect": {
+        "pits": [
+          1,
+          0,
+          0,
+          1,
+          4,
+          3,
+          1,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "stores": [
+          18,
+          19
+        ],
+        "to_move": "north",
+        "status": "playing",
+        "events": [
+          {
+            "type": "sow",
+            "pit": 2
+          },
+          {
+            "type": "relay",
+            "pit": 2,
+            "seeds": 5
+          },
+          {
+            "type": "sow",
+            "pit": 3
+          },
+          {
+            "type": "sow",
+            "pit": 4
+          },
+          {
+            "type": "sow",
+            "pit": 5
+          },
+          {
+            "type": "sow",
+            "pit": 6
+          },
+          {
+            "type": "sow",
+            "pit": 7
+          }
+        ]
+      }
+    }
+  ]
+}

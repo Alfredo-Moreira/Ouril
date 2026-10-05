@@ -1,0 +1,234 @@
+{
+  "id": "cv.continuous/relay/relays-from-the-starting-pit",
+  "description": "A later lap lands in the pit the move started from (which has received seeds since): it is picked up too.",
+  "variants": [
+    {
+      "id": "cv.continuous",
+      "version": 1
+    }
+  ],
+  "source": "docs/game/variants/cape-verde/continuous.md#rules-at-a-glance",
+  "tags": [
+    "relay",
+    "to-confirm"
+  ],
+  "setup": {
+    "pits": [
+      4,
+      0,
+      4,
+      0,
+      8,
+      5,
+      0,
+      2,
+      2,
+      2,
+      3,
+      2
+    ],
+    "stores": [
+      8,
+      8
+    ],
+    "to_move": "south",
+    "moves_since_capture": 0
+  },
+  "steps": [
+    {
+      "expect_legal_moves": [
+        0,
+        2,
+        4,
+        5
+      ],
+      "move": 0,
+      "expect": {
+        "pits": [
+          0,
+          1,
+          0,
+          1,
+          2,
+          1,
+          3,
+          5,
+          5,
+          5,
+          5,
+          4
+        ],
+        "stores": [
+          8,
+          8
+        ],
+        "to_move": "north",
+        "status": "playing",
+        "events": [
+          {
+            "type": "sow",
+            "pit": 1
+          },
+          {
+            "type": "sow",
+            "pit": 2
+          },
+          {
+            "type": "sow",
+            "pit": 3
+          },
+          {
+            "type": "sow",
+            "pit": 4
+          },
+          {
+            "type": "relay",
+            "pit": 4,
+            "seeds": 9
+          },
+          {
+            "type": "sow",
+            "pit": 5
+          },
+          {
+            "type": "sow",
+            "pit": 6
+          },
+          {
+            "type": "sow",
+            "pit": 7
+          },
+          {
+            "type": "sow",
+            "pit": 8
+          },
+          {
+            "type": "sow",
+            "pit": 9
+          },
+          {
+            "type": "sow",
+            "pit": 10
+          },
+          {
+            "type": "sow",
+            "pit": 11
+          },
+          {
+            "type": "sow",
+            "pit": 0
+          },
+          {
+            "type": "sow",
+            "pit": 1
+          },
+          {
+            "type": "relay",
+            "pit": 1,
+            "seeds": 2
+          },
+          {
+            "type": "sow",
+            "pit": 2
+          },
+          {
+            "type": "sow",
+            "pit": 3
+          },
+          {
+            "type": "relay",
+            "pit": 3,
+            "seeds": 2
+          },
+          {
+            "type": "sow",
+            "pit": 4
+          },
+          {
+            "type": "sow",
+            "pit": 5
+          },
+          {
+            "type": "relay",
+            "pit": 5,
+            "seeds": 7
+          },
+          {
+            "type": "sow",
+            "pit": 6
+          },
+          {
+            "type": "sow",
+            "pit": 7
+          },
+          {
+            "type": "sow",
+            "pit": 8
+          },
+          {
+            "type": "sow",
+            "pit": 9
+          },
+          {
+            "type": "sow",
+            "pit": 10
+          },
+          {
+            "type": "sow",
+            "pit": 11
+          },
+          {
+            "type": "sow",
+            "pit": 0
+          },
+          {
+            "type": "relay",
+            "pit": 0,
+            "seeds": 2
+          },
+          {
+            "type": "sow",
+            "pit": 1
+          },
+          {
+            "type": "sow",
+            "pit": 2
+          },
+          {
+            "type": "relay",
+            "pit": 2,
+            "seeds": 7
+          },
+          {
+            "type": "sow",
+            "pit": 3
+          },
+          {
+            "type": "sow",
+            "pit": 4
+          },
+          {
+            "type": "sow",
+            "pit": 5
+          },
+          {
+            "type": "sow",
+            "pit": 6
+          },
+          {
+            "type": "sow",
+            "pit": 7
+          },
+          {
+            "type": "sow",
+            "pit": 8
+          },
+          {
+            "type": "sow",
+            "pit": 9
+          }
+        ]
+      }
+    }
+  ]
+}

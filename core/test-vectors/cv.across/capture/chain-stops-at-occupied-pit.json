@@ -1,0 +1,85 @@
+{
+  "id": "cv.across/capture/chain-stops-at-occupied-pit",
+  "description": "Pit 3 was empty (capture across), but pit 2 already held a seed (now 2): the chain stops there.",
+  "variants": [
+    {
+      "id": "cv.across",
+      "version": 1
+    }
+  ],
+  "source": "docs/game/variants/cape-verde/across.md#rules-at-a-glance",
+  "tags": [
+    "capture",
+    "chain",
+    "to-confirm"
+  ],
+  "setup": {
+    "pits": [
+      2,
+      1,
+      0,
+      0,
+      6,
+      6,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4
+    ],
+    "stores": [
+      4,
+      5
+    ],
+    "to_move": "south",
+    "moves_since_capture": 0
+  },
+  "steps": [
+    {
+      "expect_legal_moves": [
+        0,
+        4,
+        5
+      ],
+      "move": 0,
+      "expect": {
+        "pits": [
+          0,
+          2,
+          1,
+          0,
+          6,
+          6,
+          4,
+          4,
+          4,
+          0,
+          4,
+          4
+        ],
+        "stores": [
+          8,
+          5
+        ],
+        "to_move": "north",
+        "status": "playing",
+        "events": [
+          {
+            "type": "sow",
+            "pit": 1
+          },
+          {
+            "type": "sow",
+            "pit": 2
+          },
+          {
+            "type": "capture",
+            "pit": 9,
+            "seeds": 4
+          }
+        ]
+      }
+    }
+  ]
+}

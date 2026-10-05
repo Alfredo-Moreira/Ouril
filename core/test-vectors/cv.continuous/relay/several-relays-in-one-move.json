@@ -1,0 +1,155 @@
+{
+  "id": "cv.continuous/relay/several-relays-in-one-move",
+  "description": "One move relays three or more times, each time from an occupied pit on South\u2019s side.",
+  "variants": [
+    {
+      "id": "cv.continuous",
+      "version": 1
+    }
+  ],
+  "source": "docs/game/variants/cape-verde/continuous.md#rules-at-a-glance",
+  "tags": [
+    "relay",
+    "to-confirm"
+  ],
+  "setup": {
+    "pits": [
+      2,
+      0,
+      0,
+      1,
+      8,
+      2,
+      2,
+      0,
+      5,
+      5,
+      2,
+      1
+    ],
+    "stores": [
+      10,
+      10
+    ],
+    "to_move": "south",
+    "moves_since_capture": 0
+  },
+  "steps": [
+    {
+      "expect_legal_moves": [
+        0,
+        3,
+        4,
+        5
+      ],
+      "move": 4,
+      "expect": {
+        "pits": [
+          0,
+          1,
+          1,
+          0,
+          1,
+          0,
+          4,
+          2,
+          7,
+          7,
+          3,
+          2
+        ],
+        "stores": [
+          10,
+          10
+        ],
+        "to_move": "north",
+        "status": "playing",
+        "events": [
+          {
+            "type": "sow",
+            "pit": 5
+          },
+          {
+            "type": "sow",
+            "pit": 6
+          },
+          {
+            "type": "sow",
+            "pit": 7
+          },
+          {
+            "type": "sow",
+            "pit": 8
+          },
+          {
+            "type": "sow",
+            "pit": 9
+          },
+          {
+            "type": "sow",
+            "pit": 10
+          },
+          {
+            "type": "sow",
+            "pit": 11
+          },
+          {
+            "type": "sow",
+            "pit": 0
+          },
+          {
+            "type": "relay",
+            "pit": 0,
+            "seeds": 3
+          },
+          {
+            "type": "sow",
+            "pit": 1
+          },
+          {
+            "type": "sow",
+            "pit": 2
+          },
+          {
+            "type": "sow",
+            "pit": 3
+          },
+          {
+            "type": "relay",
+            "pit": 3,
+            "seeds": 2
+          },
+          {
+            "type": "sow",
+            "pit": 4
+          },
+          {
+            "type": "sow",
+            "pit": 5
+          },
+          {
+            "type": "relay",
+            "pit": 5,
+            "seeds": 4
+          },
+          {
+            "type": "sow",
+            "pit": 6
+          },
+          {
+            "type": "sow",
+            "pit": 7
+          },
+          {
+            "type": "sow",
+            "pit": 8
+          },
+          {
+            "type": "sow",
+            "pit": 9
+          }
+        ]
+      }
+    }
+  ]
+}

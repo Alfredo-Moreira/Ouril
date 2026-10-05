@@ -1,0 +1,24 @@
+[workspace]
+resolver = "2"
+members = [
+    "core/engine",
+    "core/ai",
+    "core/sync",
+    "core/protocol",
+    "core/wasm",
+    "apps/server",
+]
+
+# Shared metadata only. Each crate declares its own dependencies (no [workspace.dependencies]).
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/Alfredo-Moreira/Ouril"
+publish = false
+
+[profile.release]
+# Small, fast WASM and server binaries.
+lto = true
+codegen-units = 1
+opt-level = 3

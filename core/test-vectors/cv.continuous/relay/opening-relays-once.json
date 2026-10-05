@@ -1,0 +1,116 @@
+{
+  "id": "cv.continuous/relay/opening-relays-once",
+  "description": "South's opening from pit 1 ends in its occupied pit 5, picks up its 5 seeds and sows on into North's side.",
+  "variants": [
+    {
+      "id": "cv.continuous",
+      "version": 1
+    }
+  ],
+  "source": "docs/game/variants/cape-verde/continuous.md#rules-at-a-glance",
+  "tags": [
+    "relay",
+    "sowing",
+    "to-confirm"
+  ],
+  "setup": {
+    "pits": [
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4
+    ],
+    "stores": [
+      0,
+      0
+    ],
+    "to_move": "south",
+    "moves_since_capture": 0
+  },
+  "steps": [
+    {
+      "expect_legal_moves": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "move": 0,
+      "expect": {
+        "pits": [
+          0,
+          5,
+          5,
+          5,
+          0,
+          5,
+          5,
+          5,
+          5,
+          5,
+          4,
+          4
+        ],
+        "stores": [
+          0,
+          0
+        ],
+        "to_move": "north",
+        "status": "playing",
+        "events": [
+          {
+            "type": "sow",
+            "pit": 1
+          },
+          {
+            "type": "sow",
+            "pit": 2
+          },
+          {
+            "type": "sow",
+            "pit": 3
+          },
+          {
+            "type": "sow",
+            "pit": 4
+          },
+          {
+            "type": "relay",
+            "pit": 4,
+            "seeds": 5
+          },
+          {
+            "type": "sow",
+            "pit": 5
+          },
+          {
+            "type": "sow",
+            "pit": 6
+          },
+          {
+            "type": "sow",
+            "pit": 7
+          },
+          {
+            "type": "sow",
+            "pit": 8
+          },
+          {
+            "type": "sow",
+            "pit": 9
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+# base.oware — the engine baseline every country default extends.
+# Values are the `base.oware` column of the parameters table in
+# docs/game/variants/README.md (the source of truth). Abstract: it is not a playable
+# variant and is not listed by `variants()`; it only supplies defaults through `extends`.
+pits_per_side = 6
+seeds_per_pit = 4
+direction = "ccw"
+skip_origin_on_lap = true
+single_seed_rule = "allowed"
+capture_counts = [2, 3]
+capture_mandatory = true
+chain_capture = "backward"
+grand_slam = "allowed_no_capture"
+must_feed = true
+feeding_overrides_single_seed_rule = true
+no_feed_outcome = "mover_takes_own_side"
+win_threshold = 25
+endless_cycle_outcome = "each_takes_own_side"
+endless_cycle_move_limit = 100
+first_player = "random"
+capture_mode = "opponent_side"
+# match_scoring: none

@@ -1,0 +1,146 @@
+{
+  "id": "cv.across-continuous/capture/relay-then-capture-across",
+  "description": "Sowing carries on from an occupied own pit, then ends in an empty own pit: South captures across, with the chain.",
+  "variants": [
+    {
+      "id": "cv.across-continuous",
+      "version": 1
+    }
+  ],
+  "source": "docs/game/variants/cape-verde/across-continuous.md#rules-at-a-glance",
+  "tags": [
+    "relay",
+    "capture",
+    "chain",
+    "to-confirm"
+  ],
+  "setup": {
+    "pits": [
+      1,
+      3,
+      1,
+      0,
+      0,
+      7,
+      2,
+      4,
+      2,
+      0,
+      5,
+      3
+    ],
+    "stores": [
+      10,
+      10
+    ],
+    "to_move": "south",
+    "moves_since_capture": 0
+  },
+  "steps": [
+    {
+      "expect_legal_moves": [
+        0,
+        1,
+        2,
+        5
+      ],
+      "move": 0,
+      "expect": {
+        "pits": [
+          1,
+          1,
+          2,
+          1,
+          1,
+          0,
+          3,
+          5,
+          3,
+          1,
+          0,
+          0
+        ],
+        "stores": [
+          20,
+          10
+        ],
+        "to_move": "north",
+        "status": "playing",
+        "events": [
+          {
+            "type": "sow",
+            "pit": 1
+          },
+          {
+            "type": "relay",
+            "pit": 1,
+            "seeds": 4
+          },
+          {
+            "type": "sow",
+            "pit": 2
+          },
+          {
+            "type": "sow",
+            "pit": 3
+          },
+          {
+            "type": "sow",
+            "pit": 4
+          },
+          {
+            "type": "sow",
+            "pit": 5
+          },
+          {
+            "type": "relay",
+            "pit": 5,
+            "seeds": 8
+          },
+          {
+            "type": "sow",
+            "pit": 6
+          },
+          {
+            "type": "sow",
+            "pit": 7
+          },
+          {
+            "type": "sow",
+            "pit": 8
+          },
+          {
+            "type": "sow",
+            "pit": 9
+          },
+          {
+            "type": "sow",
+            "pit": 10
+          },
+          {
+            "type": "sow",
+            "pit": 11
+          },
+          {
+            "type": "sow",
+            "pit": 0
+          },
+          {
+            "type": "sow",
+            "pit": 1
+          },
+          {
+            "type": "capture",
+            "pit": 10,
+            "seeds": 6
+          },
+          {
+            "type": "capture",
+            "pit": 11,
+            "seeds": 4
+          }
+        ]
+      }
+    }
+  ]
+}

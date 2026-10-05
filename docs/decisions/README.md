@@ -29,8 +29,14 @@
 | [0015](0015-generated-bindings-not-committed.md) | Generated bindings are build output, not committed | Accepted |
 | [0016](0016-i18n-source-format.md) | Translation source format: ICU messages in JSON, generated per platform | Accepted |
 | [0017](0017-local-first-development.md) | Local-first, Docker-first development; hosting decided before the first deployment | Accepted |
-| [0018](0018-platform-build-order.md) | Build order: core, web, iOS, Android; launch all three together | Accepted |
+| [0018](0018-platform-build-order.md) | Build order: core, web, iOS, Android; launch all three together | Superseded by [0025](0025-web-first-static-mvp.md) |
 | [0019](0019-host-server-on-fly-io.md) | Host the Rust server and Postgres on Fly.io | Accepted |
+| [0020](0020-web-and-api-on-one-site.md) | Web on Vercel, API on a same-site subdomain on Fly.io | Proposed |
+| [0021](0021-3d-web-board.md) | 3D web board with React Three Fiber | Accepted |
+| [0022](0022-forfeit-and-record-format-2.md) | Forfeit a game, recorded as game record format 2 | Accepted |
+| [0023](0023-relay-sowing.md) | Relay sowing as a variant parameter, for Ouril of Santiago | Accepted |
+| [0024](0024-capture-across.md) | Capture across as a variant parameter | Accepted |
+| [0025](0025-web-first-static-mvp.md) | Launch the web app first, as a static site; accounts and native apps after | Accepted |
 
 ## Open questions
 

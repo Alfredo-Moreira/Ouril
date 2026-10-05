@@ -7,10 +7,25 @@
 - A **shared Rust core** holds the rules engine, the AI and the protocol types. It is compiled into every app and into the server ([ADR 0007](../decisions/0007-rust-core-with-generated-bindings.md)).
 - **Native apps:** SwiftUI on iOS, Jetpack Compose on Android, and a TypeScript web app ([ADR 0008](../decisions/0008-native-apps-per-platform.md)).
 - The rules engine is **variant-configurable** ([ADR 0004](../decisions/0004-variant-configurable-rules-engine.md)).
-- **Accounts** use Google and Apple sign-in from the MVP. Signing in is optional ([ADR 0009](../decisions/0009-oauth-accounts-google-apple.md)).
-- A **server-authoritative Rust backend** handles accounts (MVP), then real-time and async multiplayer ([ADR 0005](../decisions/0005-server-authoritative-multiplayer.md)).
+- **The MVP is the web app alone, as a static site with no server** ([ADR 0025](../decisions/0025-web-first-static-mvp.md), [deployment](deployment.md)).
+- **Accounts** use optional Google and Apple sign-in, after the MVP ([ADR 0009](../decisions/0009-oauth-accounts-google-apple.md)); the code is built and switched off.
+- A **server-authoritative Rust backend** handles accounts and sync (after the MVP), then real-time and async multiplayer ([ADR 0005](../decisions/0005-server-authoritative-multiplayer.md)).
 
-## MVP (Phase 1)
+## The MVP: the web app in the browser
+
+```mermaid
+flowchart LR
+  CDN[Static site on Vercel<br/>HTML · JS · WASM · music] --> B
+  subgraph B["Browser"]
+    UI[React UI · 3D board] --> CORE[Rust core via WASM<br/>engine · AI]
+    UI --> DB[(IndexedDB<br/>game in progress · history · settings)]
+    SW[Service worker<br/>offline cache]
+  end
+```
+
+Everything runs in the browser; guests make no network requests ([ADR 0014](../decisions/0014-telemetry-consent.md)).
+
+## With accounts (after the MVP)
 
 ```mermaid
 flowchart TB
@@ -40,6 +55,7 @@ flowchart TB
   SYNC --> PG
 ```
 
+- **Built so far:** the Rust core, `apps/server` and the web app. Sign-in and sync are switched off for the MVP, iOS and Android haven't started, and Google/Apple sign-in are placeholders ([roadmap](../product/roadmap.md#phase-1-mvp-on-the-web-ready-to-launch)).
 - **Gameplay is entirely on-device and works offline.** The rules engine and AI run inside the app.
 - **Guests never use the network** (except opt-in telemetry, [ADR 0014](../decisions/0014-telemetry-consent.md)). Signed-in players work offline too. Changes queue locally and sync when the network is available ([data and sync](data-and-sync.md)).
 

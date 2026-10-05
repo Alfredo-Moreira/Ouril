@@ -1,0 +1,48 @@
+# Fly.io config for the staging app (ADR 0019). Placeholder: not deployed yet.
+# Production uses a copy with app = "ouril-server-prod" and min_machines_running = 2.
+# Deploy from the repo root:  flyctl deploy --config apps/server/fly.toml --dockerfile apps/server/Dockerfile .
+# Secrets (DATABASE_URL, JWT_SECRET, GOOGLE_CLIENT_ID, APPLE_*, SENTRY_DSN) via `fly secrets set`.
+
+app = "ouril-server-staging"
+primary_region = "fra"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[deploy]
+  # Runs before new machines take traffic. Migrations are embedded in the binary.
+  release_command = "ouril-server migrate"
+  strategy = "rolling"
+
+[env]
+  HOST = "0.0.0.0"
+  PORT = "8080"
+  RUST_LOG = "info"
+  ACCESS_TOKEN_TTL_SECS = "900"
+  REFRESH_TOKEN_TTL_DAYS = "30"
+  # ADR 0020: the web app's exact origin(s). Required in release builds (https only).
+  # TODO(domain): replace the placeholder once the domain is chosen.
+  ALLOWED_ORIGINS = "https://staging.ouril.example"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [http_service.concurrency]
+    type = "requests"
+    soft_limit = 200
+    hard_limit = 250
+
+  [[http_service.checks]]
+    method = "GET"
+    path = "/healthz"
+    interval = "15s"
+    timeout = "2s"
+    grace_period = "10s"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

@@ -30,6 +30,8 @@ Thumbs.db
 /apps/ios/**/Generated/
 /apps/android/**/generated/i18n/
 /apps/web/src/generated/
+# ts-rs default export dir when `cargo test --all-features` runs without TS_RS_EXPORT_DIR
+/core/*/bindings/
 
 # --- Node / web -------------------------------------------------------------
 node_modules/
@@ -88,3 +90,4 @@ pnpm-debug.log*
 /.claude/skills/swift-concurrency/
 /.claude/skills/swiftui-expert-skill/
 /.claude/skills/swiftui-pro/
+/.claude/skills/emilkowalski-motion/
