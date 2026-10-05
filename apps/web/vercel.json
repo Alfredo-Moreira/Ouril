@@ -1,5 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "git": {
+    "deploymentEnabled": false
+  },
   "rewrites": [
     {
       "source": "/((?!assets/|icons/|audio/|sw\\.js|workbox-|manifest\\.webmanifest).*)",

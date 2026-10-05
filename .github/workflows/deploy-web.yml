@@ -69,7 +69,9 @@ jobs:
       - name: Build the site
         if: steps.setup.outputs.ready == 'true'
         run: |
-          docker compose run --rm web sh -c "pnpm install --frozen-lockfile && pnpm --filter web build"
+          # The container runs as root: hand dist/ back to the runner's user ($(id -u) expands
+          # on the host) so the steps below can write to it.
+          docker compose run --rm web sh -c "pnpm install --frozen-lockfile && pnpm --filter web build && chown -R $(id -u):$(id -g) apps/web/dist"
           # Routing, security headers and the CSP travel with the site.
           cp apps/web/vercel.json apps/web/dist/vercel.json
       - uses: actions/setup-node@v4
