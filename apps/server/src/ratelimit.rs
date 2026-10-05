@@ -51,7 +51,10 @@ pub enum RouteClass {
 impl RouteClass {
     pub fn of(path: &str) -> RouteClass {
         match path {
-            "/v1/auth/dev" | "/v1/auth/google" | "/v1/auth/apple" => RouteClass::Auth,
+            "/v1/auth/google" | "/v1/auth/apple" => RouteClass::Auth,
+            // Only named when the route exists: the release binary must not contain it (CI).
+            #[cfg(feature = "dev-auth")]
+            "/v1/auth/dev" => RouteClass::Auth,
             _ => RouteClass::Default,
         }
     }
@@ -277,6 +280,7 @@ mod tests {
     fn only_sign_in_is_in_the_auth_class() {
         assert_eq!(RouteClass::of("/v1/auth/google"), RouteClass::Auth);
         assert_eq!(RouteClass::of("/v1/auth/apple"), RouteClass::Auth);
+        #[cfg(feature = "dev-auth")]
         assert_eq!(RouteClass::of("/v1/auth/dev"), RouteClass::Auth);
         assert_eq!(RouteClass::of("/v1/auth/refresh"), RouteClass::Default);
         assert_eq!(RouteClass::of("/v1/auth/logout"), RouteClass::Default);

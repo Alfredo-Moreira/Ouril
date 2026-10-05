@@ -13,7 +13,7 @@ mistakes a careful human makes when writing vectors by hand:
   - seed conservation: sum(pits) + sum(stores) == 2 * pits_per_side * seeds_per_pit
   - bookkeeping between consecutive explicit states:
       * the moved pit belongs to the side to move and is non-empty
-      * number of `sow` events == seeds in the moved pit
+      * number of `sow` events == seeds in the moved pit + seeds picked up by `relay` events
       * sum of `capture` seeds == mover's store gain (ignoring collect_remaining)
       * the moved pit is empty afterwards unless a lap re-filled it
   - expect_legal_moves is sorted, unique and on the mover's side
@@ -28,6 +28,7 @@ from pathlib import Path
 ROOT = Path(sys.argv[1] if len(sys.argv) > 1 else ".").resolve()
 TARGETS = [Path(a).resolve() for a in sys.argv[2:]] or [ROOT / "core/test-vectors"]
 EVENTS = {"sow": {"pit"}, "skip_origin": {"pit"}, "capture": {"pit", "seeds"},
+          "relay": {"pit", "seeds"},
           "grand_slam": set(), "extra_turn": set(), "collect_remaining": {"player", "seeds"},
           "game_over": {"result", "reason"}}
 ERRORS = {"not_own_pit", "empty_pit", "single_seed_rule", "must_feed", "grand_slam_forbidden", "game_over"}
@@ -161,8 +162,11 @@ def check_vector(path, base):
             elif "events" in exp:
                 evs = exp["events"]
                 sown = sum(1 for e in evs if e.get("type") == "sow")
-                if sown != state["pits"][move]:
-                    problem(path, where, f"{sown} sow events but pit {move} held {state['pits'][move]} seeds")
+                # Continuous sowing: each `relay` picks up more seeds and sows them too.
+                relayed = sum(e.get("seeds", 0) for e in evs if e.get("type") == "relay")
+                if sown != state["pits"][move] + relayed:
+                    problem(path, where, f"{sown} sow events but pit {move} held {state['pits'][move]} seeds"
+                            + (f" (+{relayed} relayed)" if relayed else ""))
                 if "stores" in exp and "stores" in state and mover and not any(
                         e.get("type") == "collect_remaining" for e in evs):
                     k = 0 if mover == "south" else 1

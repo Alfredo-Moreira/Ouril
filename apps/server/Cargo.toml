@@ -38,7 +38,9 @@ serde_json = "1"
 sqlx = { version = "0.9", default-features = false, features = ["runtime-tokio", "tls-rustls", "postgres", "macros", "migrate", "uuid", "time", "json"] }
 uuid = { version = "1", features = ["v4", "v7", "serde"] }
 time = { version = "0.3", features = ["formatting", "parsing", "serde"] }
-jsonwebtoken = { version = "11", default-features = false, features = ["rust_crypto", "use_pem"] }
+# aws-lc-rs backend (already used by rustls): the rust_crypto backend pulls in `rsa`, which has
+# an unfixed timing advisory (RUSTSEC-2023-0071).
+jsonwebtoken = { version = "11", default-features = false, features = ["aws_lc_rs", "use_pem"] }
 sha2 = "0.10"
 base64 = "0.22"
 getrandom = "0.3"
