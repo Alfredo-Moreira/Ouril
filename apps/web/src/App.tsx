@@ -31,7 +31,9 @@ import { About } from './routes/About';
 import { GameRoute } from './routes/Game';
 import { Home } from './routes/Home';
 import { ReplayRoute } from './routes/Replay';
+import { DeleteAccount } from './routes/DeleteAccount';
 import { NotFound } from './routes/NotFound';
+import { Privacy } from './routes/Privacy';
 import { Rules } from './routes/Rules';
 import { Settings } from './routes/Settings';
 import { GoogleCallback } from './routes/GoogleCallback';
@@ -197,6 +199,8 @@ function Layout({ animationSpeed }: { animationSpeed?: number }) {
             {FEATURES.accounts && <Route path="/sign-in" element={<SignIn />} />}
             {FEATURES.accounts && <Route path="/auth/google" element={<GoogleCallback />} />}
             <Route path="/about" element={<About />} />
+            <Route path="/privacy" element={<Privacy />} />
+            {FEATURES.accounts && <Route path="/delete-account" element={<DeleteAccount />} />}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </ScreenErrorBoundary>

@@ -85,7 +85,8 @@ Turning on accounts and sync ([ADR 0009](../decisions/0009-oauth-accounts-google
 - sets the GitHub variables `VITE_FEATURE_ACCOUNTS=true` (and `VITE_FEATURE_STATS=true`). `deploy-web.yml` builds with them (Vercel's own environment variables aren't used for the build: the site is built in GitHub Actions), plus `VITE_GOOGLE_CLIENT_ID` from the `GOOGLE_CLIENT_ID` secret. `VITE_API_BASE_URL` stays empty, because the API is same-origin;
 - adds `https://<domain>/auth/google` to the Google client's redirect URIs ([accounts](../product/features/accounts.md#setting-up-the-google-client)). The same `GOOGLE_CLIENT_ID` secret is copied to Fly by the server deploy;
 - keeps `ALLOWED_ORIGINS = "https://ouril.vercel.app"` in `apps/server/fly.toml` in step with the web address, and sets the Apple keys later;
-- publishes the privacy policy and the account-deletion page.
+- ✅ publishes the privacy policy (`/privacy`) and the account-deletion page (`/delete-account`) ([accounts](../product/features/accounts.md#account-deletion-and-privacy));
+- moves the Google app from **Testing** to **In production** in Google Cloud (Google Auth Platform → Audience → Publish app), after adding the home page `https://ouril.vercel.app` and the privacy policy `https://ouril.vercel.app/privacy` under **Branding**. Until then only listed test users can sign in.
 
 ## Open questions
 

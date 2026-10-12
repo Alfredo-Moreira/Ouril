@@ -239,8 +239,8 @@ async fn delete_me_removes_personal_data_and_revokes_sessions(db: PgPool) {
             "SELECT count(*) FROM session_refresh_tokens t JOIN sessions s ON s.id = t.session_id WHERE s.user_id = $1",
         ),
         (
-            "live sessions",
-            "SELECT count(*) FROM sessions WHERE user_id = $1 AND revoked_at IS NULL",
+            "sessions",
+            "SELECT count(*) FROM sessions WHERE user_id = $1",
         ),
     ] {
         assert_eq!(count(&db, sql, uid).await, 0, "{table} not cleaned");

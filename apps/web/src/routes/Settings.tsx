@@ -205,6 +205,10 @@ export function Settings() {
           )}
         </fieldset>
       )}
+      <p className="row note">
+        <Link to="/privacy">{t('privacy.link')}</Link>
+        {FEATURES.accounts && <Link to="/delete-account">{t('delete_account.link')}</Link>}
+      </p>
     </section>
   );
 }

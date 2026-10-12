@@ -215,23 +215,17 @@ pub async fn apple_tokens(
     .await
 }
 
-/// Delete an account: revoke every session, remove identities, settings, games and sync
-/// history, and anonymize the user row ("Deleted player"). Signing in again with the same
+/// Delete an account: remove sessions (and with them every refresh token), identities,
+/// settings, games and sync history, and anonymize the user row ("Deleted player"). The
+/// privacy policy (`apps/web/src/content/privacy.ts`) promises exactly this. Signing in again with the same
 /// provider creates a new, empty account. Apple tokens are revoked by the caller
 /// (`routes::me::delete_me`) with [`apple_tokens`] read before this runs.
 pub async fn delete_account(db: &PgPool, user_id: Uuid) -> Result<(), sqlx::Error> {
     let mut tx = db.begin().await?;
-    sqlx::query("UPDATE sessions SET revoked_at = COALESCE(revoked_at, now()) WHERE user_id = $1")
-        .bind(user_id)
-        .execute(&mut *tx)
-        .await?;
-    sqlx::query(
-        "DELETE FROM session_refresh_tokens WHERE session_id IN (SELECT id FROM sessions WHERE user_id = $1)",
-    )
-    .bind(user_id)
-    .execute(&mut *tx)
-    .await?;
     for sql in [
+        // Refresh tokens go with their sessions (ON DELETE CASCADE); access tokens stop
+        // working because every request checks that its session still exists.
+        "DELETE FROM sessions WHERE user_id = $1",
         "DELETE FROM auth_identities WHERE user_id = $1",
         "DELETE FROM user_settings WHERE user_id = $1",
         "DELETE FROM games WHERE user_id = $1",

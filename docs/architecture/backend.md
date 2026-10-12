@@ -120,7 +120,7 @@ erDiagram
 - `GAMES` holds finished games vs AI in the MVP (`mode = vs_ai`, ID generated on the device). `record` is the exact `GameRecord` the client pushed, once the server has replayed it. Online games will reuse this table, so there's one history.
 - **Stats aren't stored as counters.** They're derived from game records by `ouril-sync` (`derive_stats`), and may be cached in a table that can be rebuilt.
 - Synced tables carry `change_seq` (one Postgres sequence, `change_seq`) for [offline sync](data-and-sync.md). `GAMES` also has `deleted_at` for deletion markers.
-- **Account deletion** revokes every session and deletes identities, refresh tokens, settings, games and sync history. It turns the `USERS` row into an anonymized "Deleted player" (`deleted_at` set).
+- **Account deletion** deletes sessions (and their refresh tokens), identities, settings, games and sync history, as the privacy policy states. It turns the `USERS` row into an anonymized "Deleted player" (`deleted_at` set).
 
 ### Later: multiplayer
 
