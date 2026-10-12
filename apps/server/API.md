@@ -38,7 +38,7 @@ Every non-2xx response has the body `ApiError`:
 |---|---|---|
 | 400 | `bad_request` | Malformed JSON, missing or invalid field |
 | 401 | `unauthorized` | Missing/invalid/expired access token, bad refresh token, ID token verification failed |
-| 403 | `forbidden` | Origin not allowed for a cookie request, or (with `ORIGIN_SECRET` set) a `/v1` request that didn't come through the web app's proxy ([ADR 0029](../../docs/decisions/0029-api-through-vercel-proxy.md)) |
+| 403 | `forbidden` | Origin not allowed for a cookie request, or (only with the optional `ORIGIN_SECRET` set) a `/v1` request without the proxy secret |
 | 404 | `not_found` | Unknown route (also `/v1/auth/dev` in builds without `dev-auth`) |
 | 409 | `handle_taken` | `PATCH /v1/me` with a handle someone else has |
 | 413 | `payload_too_large` | Body > 1 MiB or more than 100 mutations |
@@ -54,7 +54,7 @@ Every non-2xx response has the body `ApiError`:
 
 | Method | Path | Auth | Request | Response |
 |---|---|---|---|---|
-| `GET` | `/healthz` | none | — | `200 text/plain "ok"` (liveness, Fly health check: the process is up, no database call) |
+| `GET` | `/healthz` | none | — | `200 text/plain "ok"` (liveness: the process is up, no database call) |
 | `GET` | `/readyz` | none | — | `200 text/plain "ok"` when the database answers within 2 s, otherwise `503 text/plain "unavailable"` (manual and post-deploy checks; Fly's health check is `/healthz`, so the database can sleep) |
 | `GET` | `/v1/meta` | none | — | `200 Meta` |
 | `POST` | `/v1/auth/dev` | none | `DevSignInRequest` | `200 SignInResponse` (debug + `dev-auth` only; otherwise 404) |
@@ -199,11 +199,11 @@ Response, one entry per mutation in request order:
 
 See [`.env.example`](../../.env.example). Required: `DATABASE_URL`, `JWT_SECRET` (≥ 32 bytes). Empty OAuth variables mean "not configured"; a partial `APPLE_*` set also counts as not configured. Optional extras with defaults: `DB_MAX_CONNECTIONS` (10) and `LOG_FORMAT` (`json` for JSON log lines; anything else is human-readable).
 
-Release builds refuse to start when `JWT_SECRET` is the `.env.example` value or contains `dev-only` / `change-me`, or when `ALLOWED_ORIGINS` lists an `http://` origin other than loopback (`localhost`, `127.0.0.1`, `[::1]`). `FLY_APP_NAME` (set by Fly) makes the rate limiter trust the `Fly-Client-IP` header; elsewhere only the TCP peer address counts.
+Release builds refuse to start when `JWT_SECRET` is the `.env.example` value or contains `dev-only` / `change-me`, or when `ALLOWED_ORIGINS` lists an `http://` origin other than loopback (`localhost`, `127.0.0.1`, `[::1]`). `CLIENT_IP_HEADER` (`x-real-ip` on Vercel) names the header the rate limiter trusts for the client address; `FLY_APP_NAME` makes it trust `Fly-Client-IP`. Otherwise only the TCP peer address counts.
 
 Every `/v1` request has a 15 s time limit; past it the server answers 500 `internal`. Release builds also send `Strict-Transport-Security: max-age=31536000` (without `includeSubDomains` until every subdomain is confirmed to serve HTTPS).
 
-Debug builds apply pending migrations on startup. Release builds rely on `ouril-server migrate` (the Fly release command).
+Debug builds apply pending migrations on startup. Release builds rely on the deploy running migrations first (`sqlx migrate run` in `deploy-web.yml`, or `ouril-server migrate`).
 
 ## Open questions
 

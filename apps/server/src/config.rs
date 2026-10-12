@@ -28,6 +28,10 @@ pub struct Config {
     /// `FLY_APP_NAME` is present, i.e. only behind Fly's proxy, so the header can't be spoofed
     /// anywhere else.
     pub trust_fly_client_ip: bool,
+    /// Request header holding the visitor's IP, set by the platform in front of the server
+    /// and never taken from the client (`CLIENT_IP_HEADER`, `x-real-ip` on Vercel, ADR 0030).
+    /// `None` = not trusted; the rate limiter falls back to `Fly-Client-IP` or the peer address.
+    pub client_ip_header: Option<axum::http::HeaderName>,
     /// Shared secret the web app's proxy (Vercel) sends on every `/v1` request (ADR 0029).
     /// `Some` = `/v1` requests without it get 403, and the proxy's `x-real-ip` is trusted.
     /// `None` (local development) = no check.
@@ -105,6 +109,7 @@ impl fmt::Debug for Config {
                 &self.sentry_dsn.as_ref().map(|_| "<redacted>"),
             )
             .field("trust_fly_client_ip", &self.trust_fly_client_ip)
+            .field("client_ip_header", &self.client_ip_header)
             .field(
                 "origin_secret",
                 &self.origin_secret.as_ref().map(|_| "<redacted>"),
@@ -315,6 +320,13 @@ impl Config {
             apple,
             sentry_dsn: opt("SENTRY_DSN"),
             trust_fly_client_ip: opt("FLY_APP_NAME").is_some(),
+            client_ip_header: match opt("CLIENT_IP_HEADER") {
+                Some(h) => Some(
+                    axum::http::HeaderName::from_bytes(h.trim().to_ascii_lowercase().as_bytes())
+                        .map_err(|_| ConfigError(format!("CLIENT_IP_HEADER is invalid: {h:?}")))?,
+                ),
+                None => None,
+            },
             origin_secret: match opt("ORIGIN_SECRET") {
                 Some(s) if s.len() < MIN_ORIGIN_SECRET_BYTES => {
                     return Err(ConfigError(format!(
