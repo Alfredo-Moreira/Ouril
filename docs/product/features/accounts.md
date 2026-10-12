@@ -23,7 +23,7 @@ The MVP is a single-player game, but online play (real-time and async against ot
 
 | Provider | When | Platforms | Notes |
 |---|---|---|---|
-| **Google** | MVP | iOS, Android, Web | Android uses Credential Manager ("Sign in with Google"). iOS uses the Google Sign-In SDK. Web uses Google Identity Services. |
+| **Google** | MVP | iOS, Android, Web | Android uses Credential Manager ("Sign in with Google"). iOS uses the Google Sign-In SDK. Web uses an OpenID Connect redirect ([below](#google-on-the-web)). |
 | **Apple** | MVP | iOS, Web (Android optional) | **Required on iOS** by App Store guideline 4.8 when a third-party login is offered. iOS uses AuthenticationServices; web uses Sign in with Apple JS. |
 | **X (Twitter)** | Future | All | OAuth 2.0 with PKCE. May not return an email, so accounts must not depend on email. |
 | **Meta (Facebook)** | Future | All | Facebook Login. On iOS, Apple sign-in already satisfies guideline 4.8. |
@@ -56,6 +56,28 @@ sequenceDiagram
 - Tokens are stored in the **Keychain** (iOS), **Android Keystore**-backed storage, and an **httpOnly secure cookie** on the web.
 - Signed-in players still play offline. Stats sync the next time the device is online.
 - **Local development:** debug builds use a development identity provider (`POST /v1/auth/dev`) to sign in as seeded test users without Google or Apple. It's never compiled into release builds ([ADR 0017](../../decisions/0017-local-first-development.md)).
+
+## Google on the web
+
+The web app signs in with Google through a plain **OpenID Connect redirect**, not the Google Identity Services script (`apps/web/src/auth/google.ts`):
+
+1. Tapping **Sign in with Google** stores a random `state` and `nonce` in `sessionStorage` and navigates to `accounts.google.com` with `response_type=id_token`.
+2. Google sends the player back to `/auth/google` with the ID token in the URL fragment, which never reaches a server or the usage statistics. The app checks `state` (and that the sign-in started less than 10 minutes ago), removes the fragment from the address bar and history, and posts the token and the nonce to `POST /v1/auth/google`. The server verifies the token as for every platform.
+
+Why not the Google script: it would load on the sign-in screen, before the player chooses to sign in, and guests make no network requests ([ADR 0014](../../decisions/0014-telemetry-consent.md)). It would also need Google's hosts in the CSP. With the redirect, nothing leaves the device until the player taps the button, and the CSP is unchanged.
+
+The button is enabled when the build has `VITE_GOOGLE_CLIENT_ID`; the server needs `GOOGLE_CLIENT_ID` (the same value). Without them the button stays a disabled placeholder and the server answers `501 not_configured`.
+
+### Setting up the Google client
+
+In the [Google Cloud console](https://console.cloud.google.com/), in a project for Ouril, open **Google Auth Platform**:
+
+1. **Branding:** app name (Ouril), a support email, and a developer contact email. Before publishing, also the home page and privacy policy links.
+2. **Audience:** user type **External**. While the app is in **Testing**, only the test users listed there can sign in; add yourself. Publish it to **In production** before launch. The app asks only for `openid`, `email` and `profile`, which are non-sensitive scopes.
+3. **Clients → Create client → Web application.** Under **Authorized redirect URIs** add `http://localhost:5173/auth/google` for local development, and later `https://<domain>/auth/google`. The URI must match exactly, so open the local app on `localhost`, not `127.0.0.1`. **Authorized JavaScript origins** aren't needed for the redirect.
+4. Copy the **client ID**. The client secret isn't used.
+
+To try it locally, set `GOOGLE_CLIENT_ID` and `VITE_GOOGLE_CLIENT_ID` to the client ID and `VITE_FEATURE_ACCOUNTS=true` in `.env`, then run `just dev` and open <http://localhost:5173/sign-in>. For production, see [deployment](../../architecture/deployment.md#switching-accounts-on).
 
 ## Guest → account
 

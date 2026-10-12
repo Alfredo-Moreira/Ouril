@@ -8,7 +8,7 @@ Guidance for AI agents (and humans) working in this repo.
 
 **Current state:** Phase 0 (documentation) is done. Phase 1, **the MVP, is the web app alone as a static site with no server** ([ADR 0025](docs/decisions/0025-web-first-static-mvp.md), [deployment](docs/architecture/deployment.md)):
 - **Built:** the Rust core (`core/engine`, `core/ai`, `core/sync`, `core/protocol`, `core/wasm`; `cv.standard@1` passes every test vector), the server (`apps/server`: dev sign-in, profile, account deletion, sync push and pull), and the guest-first web app (`apps/web`: play vs AI, tutorial, rules, settings, About; a 3D board, ADR 0021; sign-in with sync and Stats are built but off for the MVP, `apps/web/src/features.ts`).
-- **Placeholders:** Google and Apple sign-in answer `501 not_configured` until client IDs exist, and the web buttons for them are disabled. Use dev sign-in (`POST /v1/auth/dev`) locally. `just i18n` and `core/ffi` (UniFFI) aren't built yet.
+- **Placeholders:** Google and Apple sign-in answer `501 not_configured` until client IDs exist. The web Google button works once `VITE_GOOGLE_CLIENT_ID` is set (an OpenID Connect redirect, [accounts](docs/product/features/accounts.md#google-on-the-web)); Apple's stays disabled. Use dev sign-in (`POST /v1/auth/dev`) locally. `just i18n` and `core/ffi` (UniFFI) aren't built yet.
 - **Not started:** iOS and Android.
 
 Development is **local-first and Docker-first** (ADR 0017): run things through `just` / `docker compose`, not host-installed toolchains, except for iOS/Xcode and the Android Emulator. Build order: core → web → iOS → Android (ADR 0018). See the [roadmap](docs/product/roadmap.md).

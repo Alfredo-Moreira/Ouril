@@ -81,9 +81,10 @@ Later, once the domain is chosen: in the Fly dashboard, open the app → **Certi
 
 Turning on accounts and sync ([ADR 0009](../decisions/0009-oauth-accounts-google-apple.md)) connects the web app to the server above, on the same site ([ADR 0020](../decisions/0020-web-and-api-on-one-site.md)). That release also:
 
-- builds the web app with `VITE_FEATURE_ACCOUNTS=true` (and `VITE_FEATURE_STATS=true`) and `VITE_API_BASE_URL=https://api.<domain>`;
+- sets the GitHub variables `VITE_FEATURE_ACCOUNTS=true` (and `VITE_FEATURE_STATS=true`) and `VITE_API_BASE_URL=https://api.<domain>`. `deploy-web.yml` builds with them (Vercel's own environment variables aren't used: the site is built in GitHub Actions), plus `VITE_GOOGLE_CLIENT_ID` from the `GOOGLE_CLIENT_ID` secret. It refuses to build with accounts on and no API origin;
+- adds `https://<domain>/auth/google` to the Google client's redirect URIs ([accounts](../product/features/accounts.md#setting-up-the-google-client)). The same `GOOGLE_CLIENT_ID` secret is copied to Fly by the server deploy;
 - adds the API origin to the CSP `connect-src` in `vercel.json`;
-- sets the provider keys (Google, Apple) and the real `ALLOWED_ORIGINS` on the server;
+- sets the Apple keys and the real `ALLOWED_ORIGINS` on the server;
 - publishes the privacy policy and the account-deletion page.
 
 ## Open questions

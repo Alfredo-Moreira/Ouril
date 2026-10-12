@@ -73,10 +73,24 @@ jobs:
           # variables of the same name override these. The CSP in vercel.json must allow the host.
           VITE_MATOMO_URL: ${{ vars.VITE_MATOMO_URL || 'https://analytics.moreiralabs.org/' }}
           VITE_MATOMO_SITE_ID: ${{ vars.VITE_MATOMO_SITE_ID || '1' }}
+          # Accounts and sync (deployment.md, "Switching accounts on"): off until the variables
+          # VITE_FEATURE_ACCOUNTS / VITE_FEATURE_STATS are "true". The API origin comes from the
+          # variable VITE_API_BASE_URL; the Google client ID (public) from GOOGLE_CLIENT_ID.
+          VITE_FEATURE_ACCOUNTS: ${{ vars.VITE_FEATURE_ACCOUNTS || 'false' }}
+          VITE_FEATURE_STATS: ${{ vars.VITE_FEATURE_STATS || 'false' }}
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
+          VITE_GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID || vars.GOOGLE_CLIENT_ID }}
         run: |
+          # Accounts need the API's own origin: without it the site would call /v1 on Vercel.
+          if [ "$VITE_FEATURE_ACCOUNTS" = true ] && [ -z "$VITE_API_BASE_URL" ]; then
+            echo "::error::VITE_FEATURE_ACCOUNTS is true but VITE_API_BASE_URL is empty."
+            exit 1
+          fi
           # The container runs as root: hand dist/ back to the runner's user ($(id -u) expands
           # on the host) so the steps below can write to it.
-          docker compose run --rm -e VITE_MATOMO_URL -e VITE_MATOMO_SITE_ID web sh -c "pnpm install --frozen-lockfile && pnpm --filter web build && chown -R $(id -u):$(id -g) apps/web/dist"
+          docker compose run --rm -e VITE_MATOMO_URL -e VITE_MATOMO_SITE_ID \
+            -e VITE_FEATURE_ACCOUNTS -e VITE_FEATURE_STATS -e VITE_API_BASE_URL \
+            -e VITE_GOOGLE_CLIENT_ID web sh -c "pnpm install --frozen-lockfile && pnpm --filter web build && chown -R $(id -u):$(id -g) apps/web/dist"
           # Routing, security headers and the CSP travel with the site.
           cp apps/web/vercel.json apps/web/dist/vercel.json
       - uses: actions/setup-node@v4
