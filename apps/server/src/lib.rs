@@ -27,6 +27,26 @@ pub use state::AppState;
 /// Migrations embedded at compile time from `apps/server/migrations`.
 pub static MIGRATOR: sqlx::migrate::Migrator = sqlx::migrate!("./migrations");
 
+/// Fail unless `db` accepts writes. A read replica's connection string in `DATABASE_URL` (Neon
+/// shows one per compute, ADR 0027) would otherwise surface later as failed sign-ins and syncs;
+/// `ouril-server migrate` calls this first, so such a deploy stops at the release command.
+pub async fn ensure_writable(db: &sqlx::PgPool) -> Result<(), String> {
+    let read_only: bool = sqlx::query_scalar(
+        "SELECT pg_is_in_recovery() OR current_setting('transaction_read_only') = 'on'",
+    )
+    .fetch_one(db)
+    .await
+    .map_err(|e| format!("database check failed: {e}"))?;
+    if read_only {
+        return Err(
+            "DATABASE_URL points at a read-only database (a read replica?): use the \
+                    primary compute's connection string"
+                .into(),
+        );
+    }
+    Ok(())
+}
+
 /// Select rustls' process-wide crypto provider (aws-lc-rs). Idempotent; called by
 /// [`AppState::new`] before any TLS connection (Postgres with TLS, JWKS fetches).
 pub fn install_crypto_provider() {

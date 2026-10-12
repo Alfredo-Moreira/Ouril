@@ -54,7 +54,8 @@ Every non-2xx response has the body `ApiError`:
 
 | Method | Path | Auth | Request | Response |
 |---|---|---|---|---|
-| `GET` | `/healthz` | none | — | `200 text/plain "ok"` (Fly health check) |
+| `GET` | `/healthz` | none | — | `200 text/plain "ok"` (liveness, Fly health check: the process is up, no database call) |
+| `GET` | `/readyz` | none | — | `200 text/plain "ok"` when the database answers within 2 s, otherwise `503 text/plain "unavailable"` (manual and post-deploy checks; Fly's health check is `/healthz`, so the database can sleep) |
 | `GET` | `/v1/meta` | none | — | `200 Meta` |
 | `POST` | `/v1/auth/dev` | none | `DevSignInRequest` | `200 SignInResponse` (debug + `dev-auth` only; otherwise 404) |
 | `POST` | `/v1/auth/google` | none | `GoogleSignInRequest` | `200 SignInResponse` · `501 not_configured` while `GOOGLE_CLIENT_ID` is empty |
