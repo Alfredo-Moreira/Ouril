@@ -1,0 +1,59 @@
+# pgAdmin for the production Postgres on Neon (ADR 0027). Its own Compose project, independent
+# of the local stack in compose.yaml (which has its own pgAdmin for the local database):
+#   cp docker/pgadmin/.env.example docker/pgadmin/.env   # then fill it in
+#   docker compose -f docker/pgadmin/compose.neon.yaml up -d      (or: just pgadmin-neon)
+#   open http://localhost:5051 and sign in with PGADMIN_DEFAULT_EMAIL / PASSWORD
+#   docker compose -f docker/pgadmin/compose.neon.yaml down       when you're done
+# Stop it when you're done: while pgAdmin is connected its dashboards query Neon every few
+# seconds, which keeps the compute awake and spends the free plan's compute-hours.
+# The server list is loaded on the first start only. After changing NEON_* in .env, reset it
+# with `down -v` (that also forgets saved passwords and pgAdmin settings).
+name: ouril-pgadmin-neon
+
+services:
+  pgadmin:
+    image: dpage/pgadmin4:9
+    env_file:
+      - path: .env
+        required: true
+    environment:
+      # Server mode: pgAdmin asks for its own login, because it reaches production data.
+      PGADMIN_CONFIG_SERVER_MODE: "True"
+      PGADMIN_SERVER_JSON_FILE: /tmp/servers.json
+    # Write the server list from NEON_* (no password: pgAdmin asks on first connect), then hand
+    # over to the image's entrypoint.
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        set -eu
+        : "$${NEON_HOST:?set NEON_HOST in docker/pgadmin/.env}"
+        : "$${NEON_USER:?set NEON_USER in docker/pgadmin/.env}"
+        : "$${NEON_DATABASE:?set NEON_DATABASE in docker/pgadmin/.env}"
+        cat > /tmp/servers.json <<JSON
+        {
+          "Servers": {
+            "1": {
+              "Name": "Ouril production (Neon)",
+              "Group": "Ouril",
+              "Host": "$${NEON_HOST}",
+              "Port": 5432,
+              "MaintenanceDB": "$${NEON_DATABASE}",
+              "Username": "$${NEON_USER}",
+              "ConnectionParameters": {
+                "sslmode": "require",
+                "connect_timeout": 10
+              }
+            }
+          }
+        }
+        JSON
+        exec /entrypoint.sh
+    ports:
+      # Loopback only: never expose a pgAdmin that holds production credentials.
+      - "127.0.0.1:${PGADMIN_NEON_PORT:-5051}:80"
+    volumes:
+      - pgadmin-neon-data:/var/lib/pgadmin
+
+volumes:
+  pgadmin-neon-data:

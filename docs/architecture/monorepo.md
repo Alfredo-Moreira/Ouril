@@ -18,7 +18,7 @@ ouril/
 │   ├── ios/                # SwiftUI app (Xcode); uses the core as an XCFramework via SPM     (not started)
 │   ├── android/            # Kotlin + Jetpack Compose (Gradle); core .so + Kotlin bindings     (not started)
 │   ├── web/                # TypeScript + React (Vite, PWA); uses core/wasm/pkg                ✅ built
-│   │   ├── vercel.json     # SPA routing + CSP and security headers for Vercel (ADR 0020)
+│   │   ├── vercel.json     # SPA routing, the /v1 proxy to Fly, CSP and security headers (ADR 0029)
 │   │   └── scripts/gen-i18n.mjs  # interim: shared/i18n → src/generated/i18n (until tools/i18n-gen)
 │   └── server/             # Rust (Axum): auth + accounts + sync; API.md, migrations/,        ✅ built
 │                           #   Dockerfile (production) + fly.toml (ADR 0019)

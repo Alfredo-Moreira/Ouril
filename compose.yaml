@@ -59,6 +59,10 @@ services:
     # Guest-first: the web app works with no server. It doesn't depend on `server`.
     environment:
       VITE_API_PROXY_TARGET: http://server:8080
+      # Build-time flags and public IDs from .env (all off/empty unless set there).
+      VITE_FEATURE_ACCOUNTS: ${VITE_FEATURE_ACCOUNTS:-false}
+      VITE_FEATURE_STATS: ${VITE_FEATURE_STATS:-false}
+      VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID:-}
     ports:
       - "127.0.0.1:${WEB_PORT:-5173}:5173"
     volumes:
@@ -67,6 +71,28 @@ services:
       - web-node-modules:/workspace/apps/web/node_modules
     working_dir: /workspace
     command: sh -c "pnpm install && pnpm --filter web dev --host 0.0.0.0 --port 5173"
+
+  # pgAdmin for the local database: `just pgadmin` (or `docker compose up -d pgadmin`), then
+  # http://localhost:5050, no login. Password for "Ouril local": ouril. Opt-in (profile), so
+  # `just dev` doesn't start it. Neon has its own: docker/pgadmin/compose.neon.yaml.
+  pgadmin:
+    profiles: ["pgadmin"]
+    image: dpage/pgadmin4:9
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # Desktop mode: no pgAdmin login. Fine for the local database on a loopback port.
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+      # The image requires these even in desktop mode.
+      PGADMIN_DEFAULT_EMAIL: dev@example.com
+      PGADMIN_DEFAULT_PASSWORD: dev
+    ports:
+      - "127.0.0.1:${PGADMIN_PORT:-5050}:80"
+    volumes:
+      - ./docker/pgadmin/servers.local.json:/pgadmin4/servers.json:ro
+      - pgadmin-data:/var/lib/pgadmin
 
   toolbox:
     profiles: ["tools"]
@@ -93,6 +119,7 @@ services:
 
 volumes:
   pgdata:
+  pgadmin-data:
   cargo-registry:
   cargo-git:
   cargo-target:

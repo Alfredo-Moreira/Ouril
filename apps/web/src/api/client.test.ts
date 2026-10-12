@@ -139,6 +139,39 @@ describe('API origin', () => {
   });
 });
 
+describe('Google sign-in', () => {
+  it('posts the ID token and nonce and keeps the access token', async () => {
+    const calls: { url: string; body: unknown; auth: string | null }[] = [];
+    const fetchImpl = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      const headers = new Headers(init?.headers);
+      calls.push({
+        url: String(input),
+        body: init?.body ? JSON.parse(String(init.body)) : null,
+        auth: headers.get('authorization'),
+      });
+      if (String(input).endsWith('/v1/auth/google')) {
+        return Response.json({
+          tokens: { access_token: 'access-1', expires_in: 900 },
+          user: { id: 'u1' },
+          is_new_user: true,
+        });
+      }
+      return Response.json({ id: 'u1' });
+    }) as typeof fetch;
+    const api = new ApiClient({ fetch: fetchImpl, clientHeader: () => 'web/test', locks: null });
+    const res = await api.googleSignIn({ id_token: 'tok', nonce: 'n' });
+    expect(res.is_new_user).toBe(true);
+    expect(calls[0]).toEqual({
+      url: '/v1/auth/google',
+      body: { id_token: 'tok', nonce: 'n' },
+      auth: null,
+    });
+    expect(api.hasAccessToken).toBe(true);
+    await api.me();
+    expect(calls[1]?.auth).toBe('Bearer access-1');
+  });
+});
+
 describe('server unreachable', () => {
   const api = (res: () => Response) =>
     new ApiClient({

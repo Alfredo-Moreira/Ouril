@@ -28,6 +28,10 @@ pub struct Config {
     /// `FLY_APP_NAME` is present, i.e. only behind Fly's proxy, so the header can't be spoofed
     /// anywhere else.
     pub trust_fly_client_ip: bool,
+    /// Shared secret the web app's proxy (Vercel) sends on every `/v1` request (ADR 0029).
+    /// `Some` = `/v1` requests without it get 403, and the proxy's `x-real-ip` is trusted.
+    /// `None` (local development) = no check.
+    pub origin_secret: Option<String>,
     /// Sign-in requests per client network per minute (`RATE_LIMIT_AUTH_PER_MINUTE`).
     pub rate_limit_auth_per_minute: u32,
     /// Other `/v1` requests per client network per minute (`RATE_LIMIT_DEFAULT_PER_MINUTE`).
@@ -102,6 +106,10 @@ impl fmt::Debug for Config {
             )
             .field("trust_fly_client_ip", &self.trust_fly_client_ip)
             .field(
+                "origin_secret",
+                &self.origin_secret.as_ref().map(|_| "<redacted>"),
+            )
+            .field(
                 "rate_limit_auth_per_minute",
                 &self.rate_limit_auth_per_minute,
             )
@@ -133,6 +141,9 @@ pub const EXAMPLE_JWT_SECRET: &str = "dev-only-insecure-jwt-secret-change-me-012
 /// Whether this is a release build (staging/production image). Debug builds keep the
 /// convenient local-development defaults.
 const RELEASE_BUILD: bool = !cfg!(debug_assertions);
+
+/// Minimum `ORIGIN_SECRET` length (`openssl rand -hex 32` gives 64).
+pub const MIN_ORIGIN_SECRET_BYTES: usize = 32;
 
 /// `JWT_SECRET` checks. In a release build the secret must not be a known placeholder: anyone
 /// who knows it could mint access tokens.
@@ -304,6 +315,15 @@ impl Config {
             apple,
             sentry_dsn: opt("SENTRY_DSN"),
             trust_fly_client_ip: opt("FLY_APP_NAME").is_some(),
+            origin_secret: match opt("ORIGIN_SECRET") {
+                Some(s) if s.len() < MIN_ORIGIN_SECRET_BYTES => {
+                    return Err(ConfigError(format!(
+                        "ORIGIN_SECRET must be at least {MIN_ORIGIN_SECRET_BYTES} bytes \
+                         (e.g. `openssl rand -hex 32`)"
+                    )));
+                }
+                s => s,
+            },
             rate_limit_auth_per_minute: positive(
                 "RATE_LIMIT_AUTH_PER_MINUTE",
                 parse(

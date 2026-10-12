@@ -38,7 +38,7 @@ Every non-2xx response has the body `ApiError`:
 |---|---|---|
 | 400 | `bad_request` | Malformed JSON, missing or invalid field |
 | 401 | `unauthorized` | Missing/invalid/expired access token, bad refresh token, ID token verification failed |
-| 403 | `forbidden` | Origin not allowed for a cookie request |
+| 403 | `forbidden` | Origin not allowed for a cookie request, or (with `ORIGIN_SECRET` set) a `/v1` request that didn't come through the web app's proxy ([ADR 0029](../../docs/decisions/0029-api-through-vercel-proxy.md)) |
 | 404 | `not_found` | Unknown route (also `/v1/auth/dev` in builds without `dev-auth`) |
 | 409 | `handle_taken` | `PATCH /v1/me` with a handle someone else has |
 | 413 | `payload_too_large` | Body > 1 MiB or more than 100 mutations |

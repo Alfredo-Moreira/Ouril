@@ -11,13 +11,15 @@
  *   sends the already-rotated cookie and succeeds. Without `navigator.locks`, refresh is only
  *   de-duplicated within the tab.
  * - In dev, Vite proxies `/v1` to the server, so requests are same-origin. In production the
- *   API may live on a same-site subdomain (`VITE_API_BASE_URL`, ADR 0020); requests are then
+ *   web app proxies `/v1` to the API (ADR 0029), so requests stay same-origin too. If the API
+ *   ever moves to a same-site subdomain (`VITE_API_BASE_URL`), requests are
  *   cross-origin with `credentials: 'include'` so the refresh cookie is sent (the server
  *   allows the web origin via CORS with credentials).
  */
 import type {
   ApiErrorBody,
   DevSignInRequest,
+  GoogleSignInRequest,
   Me,
   Meta,
   SignInResponse,
@@ -103,6 +105,16 @@ export class ApiClient {
     if (!import.meta.env.DEV)
       throw new ApiError(404, 'not_found', 'dev sign-in is not in production builds');
     const res = await this.request<SignInResponse>('POST', '/v1/auth/dev', request, {
+      auth: false,
+    });
+    this.accessToken = res.tokens.access_token;
+    return res;
+  }
+
+  /** Exchanges a Google ID token for our session (`501 not_configured` until the server has
+   * `GOOGLE_CLIENT_ID`). */
+  async googleSignIn(request: GoogleSignInRequest): Promise<SignInResponse> {
+    const res = await this.request<SignInResponse>('POST', '/v1/auth/google', request, {
       auth: false,
     });
     this.accessToken = res.tokens.access_token;

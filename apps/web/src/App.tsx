@@ -34,6 +34,7 @@ import { ReplayRoute } from './routes/Replay';
 import { NotFound } from './routes/NotFound';
 import { Rules } from './routes/Rules';
 import { Settings } from './routes/Settings';
+import { GoogleCallback } from './routes/GoogleCallback';
 import { SignIn } from './routes/SignIn';
 import { Stats } from './routes/Stats';
 import { Tutorial } from './routes/Tutorial';
@@ -194,6 +195,7 @@ function Layout({ animationSpeed }: { animationSpeed?: number }) {
             <Route path="/rules" element={<Rules />} />
             <Route path="/settings" element={<Settings />} />
             {FEATURES.accounts && <Route path="/sign-in" element={<SignIn />} />}
+            {FEATURES.accounts && <Route path="/auth/google" element={<GoogleCallback />} />}
             <Route path="/about" element={<About />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

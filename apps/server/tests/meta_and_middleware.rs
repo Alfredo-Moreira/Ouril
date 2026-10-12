@@ -296,3 +296,86 @@ async fn bodies_over_one_mib_are_413(db: PgPool) {
         .await
         .assert_error(StatusCode::PAYLOAD_TOO_LARGE, "payload_too_large");
 }
+
+const ORIGIN_SECRET: &str = "test-origin-secret-0123456789abcdef0123456789abcdef";
+
+fn behind_proxy(env_extra: &[(&'static str, &str)], db: PgPool) -> TestApp {
+    let mut env = base_env();
+    env.insert("ORIGIN_SECRET", ORIGIN_SECRET.into());
+    for (k, v) in env_extra {
+        env.insert(k, (*v).into());
+    }
+    TestApp::with_env(db, env)
+}
+
+#[sqlx::test]
+async fn with_an_origin_secret_v1_requires_the_proxy_header(db: PgPool) {
+    let app = behind_proxy(&[], db);
+    // Straight to the server (bypassing the web app's proxy): refused.
+    app.call(Req::get("/v1/meta"))
+        .await
+        .assert_error(StatusCode::FORBIDDEN, "forbidden");
+    app.call(Req::get("/v1/meta").header("x-ouril-origin-secret", "guess"))
+        .await
+        .assert_error(StatusCode::FORBIDDEN, "forbidden");
+    app.call(Req::post("/v1/auth/google").json(json!({"id_token": "x", "nonce": "n"})))
+        .await
+        .assert_error(StatusCode::FORBIDDEN, "forbidden");
+    // Through the proxy: served.
+    app.call(Req::get("/v1/meta").header("x-ouril-origin-secret", ORIGIN_SECRET))
+        .await
+        .assert_status(StatusCode::OK);
+    // Health checks come from Fly directly and stay open.
+    app.call(Req::get("/healthz"))
+        .await
+        .assert_status(StatusCode::OK);
+    app.call(Req::get("/readyz"))
+        .await
+        .assert_status(StatusCode::OK);
+}
+
+#[sqlx::test]
+async fn without_an_origin_secret_nothing_is_checked(db: PgPool) {
+    let app = TestApp::new(db);
+    app.call(Req::get("/v1/meta"))
+        .await
+        .assert_status(StatusCode::OK);
+}
+
+#[sqlx::test]
+async fn behind_the_proxy_rate_limits_key_on_the_visitor_ip(db: PgPool) {
+    let app = behind_proxy(&[("RATE_LIMIT_DEFAULT_PER_MINUTE", "2")], db);
+    let via = |ip: &str| {
+        Req::get("/v1/meta")
+            .header("x-ouril-origin-secret", ORIGIN_SECRET)
+            .header("x-real-ip", ip)
+    };
+    for _ in 0..2 {
+        app.call(via("198.51.100.1"))
+            .await
+            .assert_status(StatusCode::OK);
+    }
+    app.call(via("198.51.100.1"))
+        .await
+        .assert_error(StatusCode::TOO_MANY_REQUESTS, "rate_limited");
+    // Another visitor behind the same proxy has its own budget.
+    app.call(via("198.51.100.2"))
+        .await
+        .assert_status(StatusCode::OK);
+}
+
+#[sqlx::test]
+async fn x_real_ip_is_ignored_without_the_proxy_secret(db: PgPool) {
+    let mut env = base_env();
+    env.insert("RATE_LIMIT_DEFAULT_PER_MINUTE", "2".into());
+    let app = TestApp::with_env(db, env);
+    // No ORIGIN_SECRET: a client can't pick its own rate-limit key with x-real-ip.
+    for ip in ["198.51.100.1", "198.51.100.2"] {
+        app.call(Req::get("/v1/meta").header("x-real-ip", ip))
+            .await
+            .assert_status(StatusCode::OK);
+    }
+    app.call(Req::get("/v1/meta").header("x-real-ip", "198.51.100.3"))
+        .await
+        .assert_error(StatusCode::TOO_MANY_REQUESTS, "rate_limited");
+}

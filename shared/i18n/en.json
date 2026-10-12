@@ -51,6 +51,22 @@
     "message": "Sign in with Apple",
     "description": "Apple sign-in button"
   },
+  "account.sign_in.google.working": {
+    "message": "Signing you in with Google…",
+    "description": "Shown while the app finishes Google sign-in after Google sends the player back"
+  },
+  "account.sign_in.google.cancelled": {
+    "message": "Google sign-in was cancelled. You can try again or keep playing as a guest.",
+    "description": "The player closed or declined Google's sign-in page"
+  },
+  "account.sign_in.google.failed": {
+    "message": "Google sign-in didn't finish. Please try again.",
+    "description": "Google sent the player back without a usable answer (expired, or opened in another tab)"
+  },
+  "account.sign_in.try_again": {
+    "message": "Try again",
+    "description": "Link back to the sign-in screen after a failed or cancelled sign-in"
+  },
   "account.sign_in.unavailable": {
     "message": "Sign-in isn't available yet. You can keep playing as a guest.",
     "description": "Shown under disabled sign-in buttons while OAuth is not configured"
@@ -466,6 +482,10 @@
   "error.not_configured": {
     "message": "This sign-in method isn’t available yet.",
     "description": "Server answered not_configured"
+  },
+  "error.provider_unavailable": {
+    "message": "The sign-in service isn't responding. Please try again in a moment.",
+    "description": "Server answered provider_unavailable (Google's or Apple's keys couldn't be fetched)"
   },
   "error.not_found": {
     "message": "This isn’t available on this server.",

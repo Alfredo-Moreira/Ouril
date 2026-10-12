@@ -162,17 +162,29 @@ impl RateLimiter {
     }
 }
 
-/// The client address. With `trust_fly_client_ip` (`Config`, set from `FLY_APP_NAME`) the Fly
-/// proxy's `Fly-Client-IP` header is trusted; otherwise only the TCP peer address is used, so
-/// the header can't be spoofed.
+/// The client address. A request that came through the web app's proxy (its secret matched,
+/// [`crate::proxy::ViaTrustedProxy`]) uses the visitor IP the proxy sends in `x-real-ip`: Fly
+/// only sees the proxy's address. Otherwise, with `trust_fly_client_ip` (`Config`, set from
+/// `FLY_APP_NAME`) the Fly proxy's `Fly-Client-IP` header is trusted, and failing that only the
+/// TCP peer address is used, so neither header can be spoofed.
 fn client_ip(req: &Request, trust_fly_client_ip: bool) -> Option<IpAddr> {
-    if trust_fly_client_ip {
-        if let Some(ip) = req
-            .headers()
-            .get("fly-client-ip")
+    let header_ip = |name: &str| {
+        req.headers()
+            .get(name)
             .and_then(|v| v.to_str().ok())
             .and_then(|v| v.trim().parse::<IpAddr>().ok())
-        {
+    };
+    if req
+        .extensions()
+        .get::<crate::proxy::ViaTrustedProxy>()
+        .is_some()
+    {
+        if let Some(ip) = header_ip("x-real-ip") {
+            return Some(ip);
+        }
+    }
+    if trust_fly_client_ip {
+        if let Some(ip) = header_ip("fly-client-ip") {
             return Some(ip);
         }
     }

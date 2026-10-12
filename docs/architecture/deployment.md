@@ -65,15 +65,26 @@ Everything happens in three websites (Neon, Fly.io and GitHub); you don't need `
 
 To change the database, update `DATABASE_URL` in the GitHub environment; the next deploy copies it to Fly. An app name is global on Fly: if the first deploy says `ouril-server-prod` is taken, change `app` in `apps/server/fly.toml` and run it again. The org token can manage every app in the organization, so keep this organization for Ouril, or replace the token with an app deploy token (the app's **Tokens** tab) once the app exists.
 
-Later, once the domain is chosen: in the Fly dashboard, open the app → **Certificates** and add `api.<domain>`, add the DNS records Fly shows, and replace the placeholder `ALLOWED_ORIGINS` in `apps/server/fly.toml` ([ADR 0020](../decisions/0020-web-and-api-on-one-site.md)).
+### Browse the production database
+
+`docker/pgadmin/compose.neon.yaml` runs pgAdmin for the Neon database as its own Compose project, independent of the local stack (which has its own pgAdmin for the local database, `just pgadmin` on port 5050).
+
+1. Copy `docker/pgadmin/.env.example` to `docker/pgadmin/.env` (gitignored). Set a pgAdmin login (`PGADMIN_DEFAULT_EMAIL`, `PGADMIN_DEFAULT_PASSWORD`), and `NEON_HOST`, `NEON_USER` and `NEON_DATABASE` from Neon's **Connect** dialog with the **primary** compute selected.
+2. Start it with `just pgadmin-neon` (or `docker compose -f docker/pgadmin/compose.neon.yaml up -d`), open <http://localhost:5051> and sign in. The server "Ouril production (Neon)" is already listed. Enter the Neon password on first connect; pgAdmin can save it in its volume.
+3. **Stop it when you're done** (`just pgadmin-neon-down`). While pgAdmin is connected, its dashboards query the database every few seconds, which keeps the Neon compute awake and spends the free plan's compute-hours.
+
+It listens on `127.0.0.1` only and asks for its own login, because it can change production data. The Neon password never goes in a file. The server list is loaded on the first start only: after changing `NEON_*`, reset with `docker compose -f docker/pgadmin/compose.neon.yaml down -v` (that also forgets the saved password). For a quick query, Neon's console **SQL Editor** needs no setup at all.
+
+Browsers don't call `ouril-server-prod.fly.dev` directly: the web app forwards `/v1` to it ([ADR 0029](../decisions/0029-api-through-vercel-proxy.md), [below](#switching-accounts-on)).
 
 ## Switching accounts on
 
-Turning on accounts and sync ([ADR 0009](../decisions/0009-oauth-accounts-google-apple.md)) connects the web app to the server above, on the same site ([ADR 0020](../decisions/0020-web-and-api-on-one-site.md)). That release also:
+Turning on accounts and sync ([ADR 0009](../decisions/0009-oauth-accounts-google-apple.md)) connects the web app to the server above. The browser calls `https://ouril.vercel.app/v1/…`, and Vercel forwards it to `https://ouril-server-prod.fly.dev/v1/…` (the `routes` entry in `apps/web/vercel.json`), so the API is same-origin and the refresh cookie is first-party ([ADR 0029](../decisions/0029-api-through-vercel-proxy.md)). Vercel adds the header `x-ouril-origin-secret` from its `ORIGIN_SECRET` environment variable, and the server refuses `/v1` requests without it; it rate-limits on the visitor IP Vercel sends in `x-real-ip`. That release also:
 
-- builds the web app with `VITE_FEATURE_ACCOUNTS=true` (and `VITE_FEATURE_STATS=true`) and `VITE_API_BASE_URL=https://api.<domain>`;
-- adds the API origin to the CSP `connect-src` in `vercel.json`;
-- sets the provider keys (Google, Apple) and the real `ALLOWED_ORIGINS` on the server;
+- creates the shared secret (for example `openssl rand -hex 32`) and stores it twice: as the secret `ORIGIN_SECRET` in the `production` GitHub environment (the server deploy copies it to Fly), and as the environment variable `ORIGIN_SECRET` in the Vercel project (Settings → Environment Variables, Production). Vercel reads it on each request, so no web rebuild is needed when it changes, but both sides must match or every `/v1` call gets 403;
+- sets the GitHub variables `VITE_FEATURE_ACCOUNTS=true` (and `VITE_FEATURE_STATS=true`). `deploy-web.yml` builds with them (Vercel's own environment variables aren't used for the build: the site is built in GitHub Actions), plus `VITE_GOOGLE_CLIENT_ID` from the `GOOGLE_CLIENT_ID` secret. `VITE_API_BASE_URL` stays empty, because the API is same-origin;
+- adds `https://<domain>/auth/google` to the Google client's redirect URIs ([accounts](../product/features/accounts.md#setting-up-the-google-client)). The same `GOOGLE_CLIENT_ID` secret is copied to Fly by the server deploy;
+- keeps `ALLOWED_ORIGINS = "https://ouril.vercel.app"` in `apps/server/fly.toml` in step with the web address, and sets the Apple keys later;
 - publishes the privacy policy and the account-deletion page.
 
 ## Open questions

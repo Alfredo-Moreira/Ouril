@@ -14,7 +14,10 @@
 # Setup (once, see docs/architecture/deployment.md): in the GitHub environment production (shared
 # with deploy-web.yml), add the secrets FLY_API_TOKEN (an org token from the Fly dashboard, which
 # can create the app) and DATABASE_URL (Neon's direct connection string, ADR 0027). Optional
-# variable FLY_ORG: the Fly organization slug (default "personal").
+# settings: the variable FLY_ORG, the Fly organization slug (default "personal"); GOOGLE_CLIENT_ID
+# (a secret or a variable), the Google OAuth client ID, copied to Fly so Google sign-in is on
+# (unset = 501). Secret ORIGIN_SECRET: the shared secret the web app's /v1 proxy sends (ADR 0029),
+# copied to Fly; the same value goes in Vercel's environment variables.
 name: Deploy server
 
 on:
@@ -42,6 +45,8 @@ jobs:
       FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       FLY_ORG: ${{ vars.FLY_ORG || 'personal' }}
+      GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID || vars.GOOGLE_CLIENT_ID }}
+      ORIGIN_SECRET: ${{ secrets.ORIGIN_SECRET }}
       TAG: ${{ inputs.tag }}
       CONFIG: apps/server/fly.toml
       GH_TOKEN: ${{ github.token }}
@@ -84,6 +89,14 @@ jobs:
           elif ! printf '%s\n' "$existing" | grep -qx DATABASE_URL; then
             echo "::error::Add the DATABASE_URL secret (Neon's direct connection string) to the production environment."
             exit 1
+          fi
+          # GOOGLE_CLIENT_ID: from GitHub (secret or variable); unset leaves Google sign-in off.
+          if [ -n "$GOOGLE_CLIENT_ID" ]; then
+            flyctl secrets set --app "$app" --stage "GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID" > /dev/null
+          fi
+          # ORIGIN_SECRET: from GitHub; once set, /v1 only answers requests through the proxy.
+          if [ -n "$ORIGIN_SECRET" ]; then
+            flyctl secrets set --app "$app" --stage "ORIGIN_SECRET=$ORIGIN_SECRET" > /dev/null
           fi
           # JWT_SECRET: generated once. Replacing it would sign every player out.
           if ! printf '%s\n' "$existing" | grep -qx JWT_SECRET; then

@@ -22,6 +22,8 @@ export interface AppContextValue {
   syncStatus: SyncStatus | null;
   /** Dev sign-in (debug builds with server feature `dev-auth`). */
   signInDev(user?: string): Promise<void>;
+  /** Google sign-in: the ID token and nonce from the redirect back from Google. */
+  signInGoogle(idToken: string, nonce: string): Promise<void>;
   signOut(): Promise<void>;
   deleteAccount(): Promise<void>;
   /** Call after a local change (finished game, settings) so a signed-in player syncs soon. */

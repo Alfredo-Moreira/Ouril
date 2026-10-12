@@ -58,6 +58,12 @@ export interface SignInResponse {
   is_new_user: boolean;
 }
 
+/** `POST /v1/auth/google`: the ID token from Google and the raw nonce the app generated. */
+export interface GoogleSignInRequest {
+  id_token: string;
+  nonce: string;
+}
+
 export interface DevSignInRequest {
   user?: string;
   display_name?: string;

@@ -150,6 +150,8 @@ export default defineConfig({
       VITE_SENTRY_DSN: 'https://public@telemetry.invalid/1',
       VITE_MATOMO_URL: 'https://analytics.invalid/',
       VITE_MATOMO_SITE_ID: '1',
+      // Google sign-in off unless a test turns it on, whatever the developer's .env says.
+      VITE_GOOGLE_CLIENT_ID: '',
     },
   },
 });

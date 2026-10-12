@@ -1,6 +1,6 @@
 # 0020. Web on Vercel, API on a same-site subdomain on Fly.io
 
-- **Status:** Proposed
+- **Status:** Rejected — superseded by [0029](0029-api-through-vercel-proxy.md)
 - **Date:** 2026-10-04
 
 ## Context

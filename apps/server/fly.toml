@@ -23,9 +23,9 @@ primary_region = "fra"
   LOG_FORMAT = "json"
   ACCESS_TOKEN_TTL_SECS = "900"
   REFRESH_TOKEN_TTL_DAYS = "30"
-  # ADR 0020: the web app's exact origin(s). Required in release builds (https only).
-  # TODO(domain): replace the placeholder once the domain is chosen.
-  ALLOWED_ORIGINS = "https://ouril.example"
+  # The web app's exact origin. Browsers reach this server through its /v1 proxy (ADR 0029).
+  # Required in release builds (https only).
+  ALLOWED_ORIGINS = "https://ouril.vercel.app"
 
 [http_service]
   internal_port = 8080

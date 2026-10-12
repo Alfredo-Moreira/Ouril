@@ -14,6 +14,7 @@ pub mod auth;
 pub mod client;
 pub mod config;
 pub mod error;
+pub mod proxy;
 pub mod ratelimit;
 pub mod routes;
 pub mod state;
