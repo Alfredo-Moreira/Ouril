@@ -11,8 +11,8 @@
 # No local flyctl needed: this workflow creates the Fly app on its first run, copies DATABASE_URL
 # into Fly's secrets, and generates JWT_SECRET once (never replaced, so sessions survive deploys).
 #
-# Setup (once, see docs/architecture/deployment.md): create the GitHub environment
-# server-production with the secrets FLY_API_TOKEN (an org token from the Fly dashboard, which
+# Setup (once, see docs/architecture/deployment.md): in the GitHub environment production (shared
+# with deploy-web.yml), add the secrets FLY_API_TOKEN (an org token from the Fly dashboard, which
 # can create the app) and DATABASE_URL (Neon's direct connection string, ADR 0027). Optional
 # variable FLY_ORG: the Fly organization slug (default "personal").
 name: Deploy server
@@ -37,7 +37,7 @@ jobs:
   deploy:
     name: Deploy ${{ inputs.tag }} to production
     runs-on: ubuntu-latest
-    environment: server-production
+    environment: production
     env:
       FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -49,7 +49,7 @@ jobs:
       - name: Check the inputs
         run: |
           if [ -z "$FLY_API_TOKEN" ]; then
-            echo "::error::Add the FLY_API_TOKEN secret to the server-production environment."
+            echo "::error::Add the FLY_API_TOKEN secret to the production environment."
             exit 1
           fi
           if ! printf '%s' "$TAG" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
@@ -82,7 +82,7 @@ jobs:
           if [ -n "$DATABASE_URL" ]; then
             flyctl secrets set --app "$app" --stage "DATABASE_URL=$DATABASE_URL" > /dev/null
           elif ! printf '%s\n' "$existing" | grep -qx DATABASE_URL; then
-            echo "::error::Add the DATABASE_URL secret (Neon's direct connection string) to the server-production environment."
+            echo "::error::Add the DATABASE_URL secret (Neon's direct connection string) to the production environment."
             exit 1
           fi
           # JWT_SECRET: generated once. Replacing it would sign every player out.

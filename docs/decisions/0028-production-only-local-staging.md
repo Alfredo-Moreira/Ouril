@@ -20,6 +20,6 @@ See [deployment](../architecture/deployment.md#the-server-on-flyio).
 - **Neon branch as staging, no Fly staging app:** a cheap database copy, but it doesn't test the deployed server, and it still needs its own secrets.
 
 ## Consequences
-- Half the setup: one Fly app, one Neon project, one GitHub environment (`server-production`).
+- Half the setup: one Fly app, one Neon project, one GitHub environment (`production`, shared with the web deploy).
 - Problems that only appear on Fly or Neon (TLS, cold starts, release command) show up first in production. Deploy when you can watch the result, and check `/readyz` after each deploy.
 - Real Google and Apple tokens can't be tested locally (local sign-in uses `POST /v1/auth/dev`). Test them on production before turning the web sign-in buttons on.
