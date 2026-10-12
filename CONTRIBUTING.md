@@ -86,6 +86,8 @@ docker compose up db server web
 | `just bindings` | Build `core/wasm/pkg` (WASM only for now; UniFFI comes with iOS/Android) |
 | `just protocol-ts` | Export the API and core TypeScript types to `apps/web/src/generated/protocol/` |
 | `just migration <name>` | Create an empty server migration in `apps/server/migrations` ([migrations](docs/architecture/backend.md#migrations)) |
+| `just pgadmin` | pgAdmin for the local database on <http://localhost:5050> (no login; the `ouril` password) |
+| `just pgadmin-neon` / `just pgadmin-neon-down` | pgAdmin for the production database on Neon, on <http://localhost:5051> (its own Compose project; needs `docker/pgadmin/.env`, see [deployment](docs/architecture/deployment.md#browse-the-production-database)) |
 | `just migrate` / `just db-reset` | Apply migrations / drop, recreate and migrate the local database |
 | `just build-server-image` | Build the production server image (`apps/server/Dockerfile`, never with `dev-auth`) |
 | `just shell` | Open a shell in the `toolbox` container |

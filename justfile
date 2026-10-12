@@ -74,6 +74,20 @@ migrate:
 migration name:
     {{tb}} sqlx migrate add --source {{migrations}} {{name}}
 
+# pgAdmin for the local database on http://localhost:5050 (no login; password: ouril)
+pgadmin:
+    {{dc}} up -d pgadmin
+    @echo "pgAdmin: http://localhost:${PGADMIN_PORT:-5050}"
+
+# pgAdmin for the production database on Neon, on http://localhost:5051 (needs docker/pgadmin/.env)
+pgadmin-neon:
+    {{dc}} -f docker/pgadmin/compose.neon.yaml up -d
+    @echo "pgAdmin (Neon): http://localhost:${PGADMIN_NEON_PORT:-5051}. Stop it when done: just pgadmin-neon-down"
+
+# Stop the Neon pgAdmin (it keeps Neon awake while connected)
+pgadmin-neon-down:
+    {{dc}} -f docker/pgadmin/compose.neon.yaml down
+
 # Open a shell in the toolbox container
 shell:
     {{dc}} run --rm toolbox bash

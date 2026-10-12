@@ -77,6 +77,7 @@ The host needs only Docker, plus `just` if you want it. Don't use host Rust or N
 | Lint (rustfmt, clippy `-D warnings`, ESLint, Prettier, tsc) / format | `just lint` / `just fmt` | see the `lint` and `fmt` recipes in the `justfile` |
 | TS types for the API (`apps/web/src/generated/protocol`) | `just protocol-ts` | `docker compose run --rm toolbox just protocol-ts` |
 | New migration / apply / reset the db ([migrations](docs/architecture/backend.md#migrations)) | `just migration <name>` / `just migrate` / `just db-reset` | `docker compose run --rm toolbox just migration <name>` |
+| pgAdmin: local db on :5050 / Neon on :5051 (own project, needs `docker/pgadmin/.env`) | `just pgadmin` / `just pgadmin-neon` | `docker compose up -d pgadmin` / `docker compose -f docker/pgadmin/compose.neon.yaml up -d` |
 | Production server image (never includes `dev-auth`) | `just build-server-image` | `docker build -f apps/server/Dockerfile -t ouril-server:local .` |
 | Shell with the toolchain | `just shell` | `docker compose run --rm toolbox bash` |
 

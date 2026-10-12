@@ -65,6 +65,16 @@ Everything happens in three websites (Neon, Fly.io and GitHub); you don't need `
 
 To change the database, update `DATABASE_URL` in the GitHub environment; the next deploy copies it to Fly. An app name is global on Fly: if the first deploy says `ouril-server-prod` is taken, change `app` in `apps/server/fly.toml` and run it again. The org token can manage every app in the organization, so keep this organization for Ouril, or replace the token with an app deploy token (the app's **Tokens** tab) once the app exists.
 
+### Browse the production database
+
+`docker/pgadmin/compose.neon.yaml` runs pgAdmin for the Neon database as its own Compose project, independent of the local stack (which has its own pgAdmin for the local database, `just pgadmin` on port 5050).
+
+1. Copy `docker/pgadmin/.env.example` to `docker/pgadmin/.env` (gitignored). Set a pgAdmin login (`PGADMIN_DEFAULT_EMAIL`, `PGADMIN_DEFAULT_PASSWORD`), and `NEON_HOST`, `NEON_USER` and `NEON_DATABASE` from Neon's **Connect** dialog with the **primary** compute selected.
+2. Start it with `just pgadmin-neon` (or `docker compose -f docker/pgadmin/compose.neon.yaml up -d`), open <http://localhost:5051> and sign in. The server "Ouril production (Neon)" is already listed. Enter the Neon password on first connect; pgAdmin can save it in its volume.
+3. **Stop it when you're done** (`just pgadmin-neon-down`). While pgAdmin is connected, its dashboards query the database every few seconds, which keeps the Neon compute awake and spends the free plan's compute-hours.
+
+It listens on `127.0.0.1` only and asks for its own login, because it can change production data. The Neon password never goes in a file. The server list is loaded on the first start only: after changing `NEON_*`, reset with `docker compose -f docker/pgadmin/compose.neon.yaml down -v` (that also forgets the saved password). For a quick query, Neon's console **SQL Editor** needs no setup at all.
+
 Later, once the domain is chosen: in the Fly dashboard, open the app → **Certificates** and add `api.<domain>`, add the DNS records Fly shows, and replace the placeholder `ALLOWED_ORIGINS` in `apps/server/fly.toml` ([ADR 0020](../decisions/0020-web-and-api-on-one-site.md)).
 
 ## Switching accounts on
