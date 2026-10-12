@@ -27,6 +27,40 @@ pub use state::AppState;
 /// Migrations embedded at compile time from `apps/server/migrations`.
 pub static MIGRATOR: sqlx::migrate::Migrator = sqlx::migrate!("./migrations");
 
+/// Ping the database (`SELECT 1`) up to `attempts` times, `delay` apart, and log the outcome:
+/// `database reachable` at info, or a warning per failed attempt and an error once all fail.
+/// Never fails the caller: the server keeps serving and the pool reconnects on its own, so a
+/// brief outage doesn't make Fly restart the machine in a loop. Each attempt waits at most
+/// [`DB_PING_TIMEOUT`], long enough for an idle Neon compute to wake (ADR 0027).
+pub async fn log_database_status(
+    db: &sqlx::PgPool,
+    attempts: u32,
+    delay: std::time::Duration,
+) -> bool {
+    for attempt in 1..=attempts {
+        let ping = sqlx::query("SELECT 1").execute(db);
+        match tokio::time::timeout(DB_PING_TIMEOUT, ping).await {
+            Ok(Ok(_)) => {
+                tracing::info!(attempt, "database reachable");
+                return true;
+            }
+            Ok(Err(e)) => tracing::warn!(attempt, error = %e, "database not reachable yet"),
+            Err(_) => tracing::warn!(attempt, "database not reachable yet: timed out"),
+        }
+        if attempt < attempts {
+            tokio::time::sleep(delay).await;
+        }
+    }
+    tracing::error!(
+        attempts,
+        "database unreachable at startup; serving anyway, requests that need it will fail"
+    );
+    false
+}
+
+/// Upper bound for one [`log_database_status`] ping.
+pub const DB_PING_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
+
 /// Fail unless `db` accepts writes. A read replica's connection string in `DATABASE_URL` (Neon
 /// shows one per compute, ADR 0027) would otherwise surface later as failed sign-ins and syncs;
 /// `ouril-server migrate` calls this first, so such a deploy stops at the release command.

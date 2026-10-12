@@ -76,7 +76,7 @@ The host needs only Docker, plus `just` if you want it. Don't use host Rust or N
 | Everything | `just test` | the three rows above |
 | Lint (rustfmt, clippy `-D warnings`, ESLint, Prettier, tsc) / format | `just lint` / `just fmt` | see the `lint` and `fmt` recipes in the `justfile` |
 | TS types for the API (`apps/web/src/generated/protocol`) | `just protocol-ts` | `docker compose run --rm toolbox just protocol-ts` |
-| Migrations / reset the db | `just migrate` / `just db-reset` | `docker compose run --rm toolbox just migrate` |
+| New migration / apply / reset the db ([migrations](docs/architecture/backend.md#migrations)) | `just migration <name>` / `just migrate` / `just db-reset` | `docker compose run --rm toolbox just migration <name>` |
 | Production server image (never includes `dev-auth`) | `just build-server-image` | `docker build -f apps/server/Dockerfile -t ouril-server:local .` |
 | Shell with the toolchain | `just shell` | `docker compose run --rm toolbox bash` |
 

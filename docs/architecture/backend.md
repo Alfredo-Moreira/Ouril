@@ -173,7 +173,23 @@ Multiplayer adds `/v1/games…` (create, invite, async move) and the realtime We
 - **Sync validation:** `game_finished` records are replayed with `ouril-engine` at the exact `variant@version`. A record whose moves are illegal, or whose outcome, stores or end reason don't match, is rejected as `illegal_game`. Forfeits (format 2, reason `resigned`) must replay to a game still in progress, with the other side winning ([ADR 0022](../decisions/0022-forfeit-and-record-format-2.md)). Each mutation runs in its own transaction, and a repeated mutation ID returns the stored outcome.
 - **Middleware:** `X-Ouril-Client` is parsed on every request, and clients below `min_supported` get `426` on every `/v1` route except `/v1/meta`. CORS allows exact origins with credentials. Other middleware: security headers (plus HSTS in release builds), a 1 MiB body limit, a 15 s timeout per request, JSON errors for every failure (including panics and malformed input), and request logs that never record headers or bodies.
 - **Rate limiting:** in-memory fixed windows per server machine, keyed by client network (IPv4 address or IPv6 /64, from `Fly-Client-IP` behind Fly). Sign-in is limited to 60/min; everything else, including refresh and logout, to 600/min. Both are configurable. The map is capped at 50,000 windows and pruned at most every 10 s; when it's full, new clients pass untracked instead of being locked out. `429` comes with `Retry-After`. Counters move to Valkey when multiplayer brings it.
+- **Startup:** the server pings the database in the background (`SELECT 1`, 3 attempts 2 s apart, 5 s each) and logs `database reachable`, or a warning per failed attempt and an error if all fail. It keeps serving either way, so a brief outage doesn't make Fly restart machines in a loop.
 - **Release safety:** a release build with `dev-auth` fails to compile, and the production image never enables it. Release builds refuse to start with the `.env.example` JWT secret or a non-loopback `http://` origin, and `ouril-server migrate` refuses a read-only database (a read replica's URL, [ADR 0027](../decisions/0027-postgres-on-neon-free-plan.md)).
+
+## Migrations
+
+The schema lives in `apps/server/migrations` as plain SQL, forward-only, applied with sqlx. The same files run against local Docker Postgres and against Neon in production ([ADR 0027](../decisions/0027-postgres-on-neon-free-plan.md)); nothing Neon-specific is needed.
+
+1. **Create one:** `just migration <name>` (for example `just migration add_friends`) writes an empty `apps/server/migrations/<next number>_<name>.sql`. Write the SQL there.
+2. **Try it locally:** `just dev` applies it on startup (debug builds), or run `just migrate`. `just db-reset` replays every migration from scratch. Every `#[sqlx::test]` gets a fresh database with all migrations applied, so `just test-server` runs against the new schema.
+3. **Ship it:** migrations are compiled into the binary. On deploy, Fly runs `ouril-server migrate` before new machines take traffic; it applies only the migrations Neon hasn't seen and records them in `_sqlx_migrations`. A failing migration stops the deploy and the old machines keep serving.
+
+Rules:
+
+- **Never edit a migration after it's merged.** sqlx stores each one's checksum, and a changed file makes `migrate` fail on every database that already ran it. Fix mistakes with a new migration.
+- **Expand, then contract** ([versioning](versioning.md#data-migrations)). During a rolling deploy the old code runs against the new schema, so add columns and tables first, and drop or rename them in a later release.
+- **Keep migrations transactional and short:** each runs in a transaction, and a long lock blocks live requests.
+- **Risky change on real data?** Create a branch of the production database in Neon's console (a free copy), then run against its direct connection string: `docker compose run --rm -e DATABASE_URL='<branch url>' toolbox sqlx migrate run --source apps/server/migrations`. Delete the branch afterwards.
 
 ## Realtime protocol (sketch)
 
