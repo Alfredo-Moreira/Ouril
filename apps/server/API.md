@@ -64,7 +64,7 @@ Every non-2xx response has the body `ApiError`:
 | `POST` | `/v1/auth/logout` | refresh token (cookie or body) | `RefreshRequest` | `204` (clears the cookie). Idempotent: an unknown token is still `204`. |
 | `GET` | `/v1/me` | Bearer | — | `200 Me` |
 | `PATCH` | `/v1/me` | Bearer | `ProfilePatch` | `200 Me` · `409 handle_taken` |
-| `DELETE` | `/v1/me` | Bearer | — | `204`. Deletes personal data, revokes all sessions (and the Apple token when configured), clears the cookie. |
+| `DELETE` | `/v1/me` | Bearer | — | `204`. Deletes personal data and every session (and revokes the Apple token when configured), clears the cookie. |
 | `POST` | `/v1/sync/push` | Bearer | `SyncPush` | `200 SyncPushResult` |
 | `GET` | `/v1/sync/pull?cursor=N&limit=M` | Bearer | query | `200 SyncPull` |
 
