@@ -13,7 +13,7 @@
 - **Production deploys are manual:** `deploy-server.yml` deploys a release tag by hand, only if CI passed on its commit.
 - **Revisit** when real Google and Apple sign-in need a public HTTPS host to test against, or when more people deploy.
 
-See [deployment](../architecture/deployment.md#the-server-on-flyio).
+See [deployment](../architecture/deployment.md#the-server-on-vercel).
 
 ## Alternatives considered
 - **Hosted staging (ADR 0019 as written):** catches host-specific problems (Fly config, Neon TLS, real OAuth callbacks) before production, but doubles the setup and secrets for one maintainer.

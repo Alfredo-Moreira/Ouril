@@ -30,7 +30,7 @@
 | [0016](0016-i18n-source-format.md) | Translation source format: ICU messages in JSON, generated per platform | Accepted |
 | [0017](0017-local-first-development.md) | Local-first, Docker-first development; hosting decided before the first deployment | Accepted |
 | [0018](0018-platform-build-order.md) | Build order: core, web, iOS, Android; launch all three together | Superseded by [0025](0025-web-first-static-mvp.md) |
-| [0019](0019-host-server-on-fly-io.md) | Host the Rust server and Postgres on Fly.io | Accepted; database superseded by [0027](0027-postgres-on-neon-free-plan.md), staging by [0028](0028-production-only-local-staging.md) |
+| [0019](0019-host-server-on-fly-io.md) | Host the Rust server and Postgres on Fly.io | Superseded by [0027](0027-postgres-on-neon-free-plan.md) (database), [0028](0028-production-only-local-staging.md) (staging) and [0030](0030-server-on-vercel-container-service.md) (server host) |
 | [0020](0020-web-and-api-on-one-site.md) | Web on Vercel, API on a same-site subdomain on Fly.io | Rejected, superseded by 0029 |
 | [0021](0021-3d-web-board.md) | 3D web board with React Three Fiber | Accepted |
 | [0022](0022-forfeit-and-record-format-2.md) | Forfeit a game, recorded as game record format 2 | Accepted |
@@ -40,7 +40,8 @@
 | [0026](0026-usage-statistics-with-matomo.md) | Usage statistics with self-hosted Matomo | Proposed |
 | [0027](0027-postgres-on-neon-free-plan.md) | Postgres on Neon's free plan; the server stays on Fly.io | Accepted |
 | [0028](0028-production-only-local-staging.md) | One deployed environment: production; local Docker is staging | Accepted |
-| [0029](0029-api-through-vercel-proxy.md) | The web app reaches the API through a /v1 proxy on Vercel | Accepted |
+| [0029](0029-api-through-vercel-proxy.md) | The web app reaches the API through a /v1 proxy on Vercel | Superseded by [0030](0030-server-on-vercel-container-service.md) |
+| [0030](0030-server-on-vercel-container-service.md) | Run the server on Vercel, as a container service next to the web app | Accepted |
 
 ## Open questions
 

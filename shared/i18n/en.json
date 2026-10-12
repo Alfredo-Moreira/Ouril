@@ -1664,23 +1664,23 @@
     "description": "privacy policy page"
   },
   "privacy.processors.1": {
-    "message": "Vercel (United States) hosts the website and passes the app's requests on to our server.",
+    "message": "Vercel (United States company) hosts the website and runs our server, in Frankfurt, Germany.",
     "description": "privacy policy page"
   },
   "privacy.processors.2": {
-    "message": "Fly.io (United States company, servers in Frankfurt, Germany) runs our server.",
-    "description": "privacy policy page"
-  },
-  "privacy.processors.3": {
     "message": "Neon (United States company, servers in Frankfurt, Germany) stores our database.",
     "description": "privacy policy page"
   },
-  "privacy.processors.4": {
+  "privacy.processors.3": {
     "message": "Google handles “Sign in with Google”, under Google's own privacy policy.",
     "description": "privacy policy page"
   },
+  "privacy.processors.4": {
+    "message": "These providers process data only to run the service. As United States companies, they may transfer data there under their standard contractual safeguards.",
+    "description": "privacy policy page"
+  },
   "privacy.processors.5": {
-    "message": "These providers process data only to run the service. Some are United States companies, so data may be transferred there under their standard contractual safeguards. Like any web service, they see your IP address when you connect and may keep it in their logs for a short time.",
+    "message": "Like any web service, they see your IP address when you connect and may keep it in their logs for a short time. Our server uses it briefly, in memory only, to limit repeated requests.",
     "description": "privacy policy page"
   },
   "privacy.retention.title": {

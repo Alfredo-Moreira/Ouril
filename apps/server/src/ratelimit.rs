@@ -162,18 +162,31 @@ impl RateLimiter {
     }
 }
 
-/// The client address. A request that came through the web app's proxy (its secret matched,
-/// [`crate::proxy::ViaTrustedProxy`]) uses the visitor IP the proxy sends in `x-real-ip`: Fly
-/// only sees the proxy's address. Otherwise, with `trust_fly_client_ip` (`Config`, set from
-/// `FLY_APP_NAME`) the Fly proxy's `Fly-Client-IP` header is trusted, and failing that only the
-/// TCP peer address is used, so neither header can be spoofed.
-fn client_ip(req: &Request, trust_fly_client_ip: bool) -> Option<IpAddr> {
+/// The client address, from the first of:
+/// 1. `CLIENT_IP_HEADER` (`Config::client_ip_header`): the platform in front of the server sets
+///    it and overwrites any value the client sent (`x-real-ip` on Vercel, ADR 0030);
+/// 2. `x-real-ip` on a request that came through the web app's proxy (its secret matched,
+///    [`crate::proxy::ViaTrustedProxy`]);
+/// 3. Fly's `Fly-Client-IP`, with `trust_fly_client_ip` (set from `FLY_APP_NAME`);
+/// 4. the TCP peer address.
+///
+/// No header is read unless the deployment says it's trustworthy, so none can be spoofed.
+fn client_ip(
+    req: &Request,
+    client_ip_header: Option<&axum::http::HeaderName>,
+    trust_fly_client_ip: bool,
+) -> Option<IpAddr> {
     let header_ip = |name: &str| {
         req.headers()
             .get(name)
             .and_then(|v| v.to_str().ok())
             .and_then(|v| v.trim().parse::<IpAddr>().ok())
     };
+    if let Some(name) = client_ip_header {
+        if let Some(ip) = header_ip(name.as_str()) {
+            return Some(ip);
+        }
+    }
     if req
         .extensions()
         .get::<crate::proxy::ViaTrustedProxy>()
@@ -196,8 +209,13 @@ fn client_ip(req: &Request, trust_fly_client_ip: bool) -> Option<IpAddr> {
 pub async fn rate_limit(State(state): State<AppState>, req: Request, next: Next) -> Response {
     // Original path: inside the nested `/v1` router `req.uri()` lacks the `/v1` prefix.
     let class = RouteClass::of(crate::client::full_path(&req));
-    let key =
-        client_ip(&req, state.config.trust_fly_client_ip).map_or(ClientKey::Unknown, ClientKey::of);
+    let config = &state.config;
+    let key = client_ip(
+        &req,
+        config.client_ip_header.as_ref(),
+        config.trust_fly_client_ip,
+    )
+    .map_or(ClientKey::Unknown, ClientKey::of);
     if let Err(retry_after) = state.rate_limiter.check(key, class, Instant::now()) {
         tracing::warn!(?class, "rate limited");
         return AppError::rate_limited(retry_after).into_response();
@@ -280,12 +298,41 @@ mod tests {
             .unwrap();
         req.extensions_mut()
             .insert(ConnectInfo(SocketAddr::from(([10, 0, 0, 1], 4000))));
-        assert_eq!(client_ip(&req, true), Some("203.0.113.7".parse().unwrap()));
-        assert_eq!(client_ip(&req, false), Some("10.0.0.1".parse().unwrap()));
+        assert_eq!(
+            client_ip(&req, None, true),
+            Some("203.0.113.7".parse().unwrap())
+        );
+        assert_eq!(
+            client_ip(&req, None, false),
+            Some("10.0.0.1".parse().unwrap())
+        );
         // An unparsable header falls back to the peer address.
         req.headers_mut()
             .insert("fly-client-ip", "not-an-ip".parse().unwrap());
-        assert_eq!(client_ip(&req, true), Some("10.0.0.1".parse().unwrap()));
+        assert_eq!(
+            client_ip(&req, None, true),
+            Some("10.0.0.1".parse().unwrap())
+        );
+    }
+
+    #[test]
+    fn platform_ip_header_only_when_configured() {
+        let mut req = Request::builder()
+            .header("x-real-ip", "198.51.100.9")
+            .body(axum::body::Body::empty())
+            .unwrap();
+        req.extensions_mut()
+            .insert(ConnectInfo(SocketAddr::from(([10, 0, 0, 1], 4000))));
+        let header = axum::http::HeaderName::from_static("x-real-ip");
+        assert_eq!(
+            client_ip(&req, Some(&header), false),
+            Some("198.51.100.9".parse().unwrap())
+        );
+        // Not configured: a client can't choose its own key with the header.
+        assert_eq!(
+            client_ip(&req, None, false),
+            Some("10.0.0.1".parse().unwrap())
+        );
     }
 
     #[test]

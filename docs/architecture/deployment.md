@@ -1,69 +1,64 @@
 # Deployment
 
-> How the MVP web app is built and deployed to Vercel, how the server is deployed to Fly.io with its database on Neon, and what changes when accounts are switched on. **Status:** Accepted. See [ADR 0025](../decisions/0025-web-first-static-mvp.md), [ADR 0019](../decisions/0019-host-server-on-fly-io.md) and [ADR 0027](../decisions/0027-postgres-on-neon-free-plan.md).
+> How the web app and the server are built and deployed to one Vercel project, with the database on Neon, and what to set when accounts are switched on. **Status:** Accepted. See [ADR 0025](../decisions/0025-web-first-static-mvp.md), [ADR 0030](../decisions/0030-server-on-vercel-container-service.md) and [ADR 0027](../decisions/0027-postgres-on-neon-free-plan.md).
 
-## The MVP: a static site
+## Overview
 
-The MVP is the web app alone. Its build (`apps/web/dist`) is a static site: HTML, JavaScript, the WASM rules engine, the 3D board, fonts, images and music. It needs **no server and no database**.
+One Vercel project serves everything at `https://ouril.vercel.app`, as two services ([ADR 0030](../decisions/0030-server-on-vercel-container-service.md)):
+
+- **`web`:** the static site (`apps/web/dist`): HTML, JavaScript, the WASM rules engine, the 3D board, fonts, images and music. Guests need nothing else.
+- **`api`:** the Rust server (`apps/server`) as a container, built by Vercel from `apps/server/Dockerfile.vercel`. It serves `/v1`, `/healthz` and `/readyz` on the same origin, and talks to Postgres on Neon in Frankfurt.
 
 ```mermaid
 flowchart LR
   CI[GitHub Actions: CI] -->|green on main| D[deploy-web.yml]
-  D -->|build WASM + site<br/>toolbox image| DIST[apps/web/dist]
-  DIST -->|vercel deploy --prod| V[Vercel CDN]
-  V --> B[Browser: game, storage, music<br/>offline after the first visit]
+  D -->|build WASM + site<br/>toolbox image| W[out/web]
+  D -->|sqlx migrate run| N[(Neon Postgres<br/>Frankfurt)]
+  D -->|Rust sources +<br/>Dockerfile.vercel| A[out/api]
+  W & A -->|vercel deploy --prod| V[Vercel project]
+  V -->|"/v1, /healthz, /readyz"| S[api service<br/>container, fra1]
+  V -->|everything else| C[web service<br/>CDN]
+  S --- N
 ```
 
-- **Why it's built in GitHub Actions:** the WASM engine is compiled from Rust, and Vercel's build image has no Rust toolchain. [`.github/workflows/deploy-web.yml`](../../.github/workflows/deploy-web.yml) runs after CI passes on `main` (or by hand). It builds the WASM engine and the site with the same toolbox image as CI ([ADR 0017](../decisions/0017-local-first-development.md)), copies `apps/web/vercel.json` into the build, and uploads it with `vercel deploy --prod`.
-- **`vercel.json`** turns off Vercel's own Git deployments (`git.deploymentEnabled: false`): a build on Vercel fails because `ouril-wasm` (`core/wasm/pkg`) can't be compiled there. It also carries the SPA routing (every path except assets, icons, audio and the service worker serves `index.html`), the security headers (HSTS, CSP with `connect-src` limited to the site and the Matomo host, etc.) and a 404 for missing `/audio/` files.
-- **Environment variables:** only usage statistics ([ADR 0026](../decisions/0026-usage-statistics-with-matomo.md)). The workflow builds with `VITE_MATOMO_URL=https://analytics.moreiralabs.org/` and `VITE_MATOMO_SITE_ID=1` (repository variables of the same name override them), and the CSP's `connect-src` allows that host; a different host needs both changed. Players are asked on first launch and nothing is sent without consent. Sign-in and Stats are off by default (`VITE_FEATURE_ACCOUNTS`, `VITE_FEATURE_STATS`), and with no `VITE_SENTRY_DSN` crash reports aren't offered. Local builds set none of these, so development sends nothing.
+- **Workflow:** [`.github/workflows/deploy-web.yml`](../../.github/workflows/deploy-web.yml) runs after CI passes on `main`, or by hand. It builds the WASM engine and the site with the same toolbox image as CI ([ADR 0017](../decisions/0017-local-first-development.md)), because Vercel's build image has no Rust toolchain. It checks that `DATABASE_URL` accepts writes, runs the migrations, assembles `out/` (`vercel.json`, `web/`, and `api/` with the Rust workspace and the Dockerfile), and uploads it with `vercel deploy --prod`. Vercel then builds the server image. A failed CI run never deploys.
+- **`apps/web/vercel.json`** defines the two services and the routing. It turns off Vercel's own Git deployments (`git.deploymentEnabled: false`), because a build from the repository on Vercel would fail on `ouril-wasm`. The `web` service carries the SPA routing (every path except assets, icons, audio and the service worker serves `index.html`) and the security headers (HSTS, CSP with `connect-src` limited to the site and the Matomo host, etc.).
+- **Server settings** go to the deployment as runtime environment variables from the `production` GitHub environment (`vercel deploy --env`), so nothing needs setting in Vercel's dashboard: `DATABASE_URL`, `JWT_SECRET`, `GOOGLE_CLIENT_ID`, `ALLOWED_ORIGINS` (`https://ouril.vercel.app`, or the variable of that name), `CLIENT_IP_HEADER=x-real-ip`, `PORT=8080` and JSON logs.
+- **Web build variables:** usage statistics ([ADR 0026](../decisions/0026-usage-statistics-with-matomo.md)), built with `VITE_MATOMO_URL=https://analytics.moreiralabs.org/` and `VITE_MATOMO_SITE_ID=1` (repository variables of the same name override them; the CSP's `connect-src` must allow the host), and the accounts flags below. Local builds set none of these, so development sends nothing.
 - **Offline:** the service worker precaches the app (about 2 MB) and downloads the game music into its own cache while the browser is idle ([web design](web-design.md)).
-
-## One-time setup
-
-1. Create a Vercel project for the repository with **Framework: Other**, **no build command** and **output directory `.`** (the uploaded folder is already the built site).
-2. Add the repository secrets **`VERCEL_TOKEN`**, **`VERCEL_ORG_ID`** and **`VERCEL_PROJECT_ID`** (GitHub → Settings → Secrets and variables → Actions). Until `VERCEL_TOKEN` exists, the workflow skips the deploy.
-3. Point the domain at the Vercel project. HTTPS is automatic, and required for the service worker and installing the app.
-4. In Matomo (site 1), keep the privacy settings ADR 0026 relies on: **Anonymize IP addresses** (at least 2 bytes, also used for location), **no location from IP** (or the anonymized IP only), and a data-retention period. Add the production domain to the site's URLs.
+- **Only production is deployed:** the local Docker stack is the staging environment ([ADR 0028](../decisions/0028-production-only-local-staging.md)). Before merging, check the change locally: `just dev`, `just test`, and `just build-server-image` for the production image. A manual run of *Deploy* with **preview** makes a deployment on its own URL without touching production (no migrations; sign-in doesn't work there, because its origin isn't allowed).
 
 ## Releasing
 
-Merge to `main`. CI runs; when it's green, `deploy-web.yml` deploys that exact commit to production. A failed CI run never deploys. Players get the new version on their next visit (the service worker updates itself, `registerType: autoUpdate`).
+Merge to `main`. CI runs; when it's green, `deploy-web.yml` migrates the database and deploys that exact commit, web and server together. Players get the new site on their next visit (the service worker updates itself, `registerType: autoUpdate`). After a deploy that changes the server, open `https://ouril.vercel.app/readyz`: it should say `ok`.
 
-## The server on Fly.io
+## The server on Vercel
 
-The Rust server (`apps/server`) runs on Fly.io in Frankfurt (`fra`) ([ADR 0019](../decisions/0019-host-server-on-fly-io.md)), and its Postgres database on Neon's free plan in AWS Frankfurt ([ADR 0027](../decisions/0027-postgres-on-neon-free-plan.md)). **Only production is deployed:** the local Docker stack is the staging environment ([ADR 0028](../decisions/0028-production-only-local-staging.md)).
+- **Image:** `apps/server/Dockerfile.vercel`, the same release build as `apps/server/Dockerfile` without BuildKit cache mounts. It never enables `dev-auth` (CI's release-image job checks the same build).
+- **Scaling:** Vercel runs the container as a Function. It scales to zero after 5 idle minutes, and the next request waits for it to start. The in-memory rate limiter is per instance, and keys on `x-real-ip`, which Vercel sets on every request ([backend](backend.md)).
+- **Region:** the project's Functions region must be Frankfurt (`fra1`), next to Neon (one-time setup below).
+- **Migrations** are forward-only SQL in `apps/server/migrations` ([backend](backend.md#migrations)). `deploy-web.yml` runs `sqlx migrate run` before deploying; a failure stops the deploy and the running version keeps serving. Because every merge deploys the server, a migration must work with the code that's already running (expand, then contract).
+- **Health:** `/healthz` (liveness) and `/readyz` (the database answers within 2 s, else 503) are routed to the server for manual checks. Vercel has no health checks of its own, so nothing keeps the database awake.
+- **Logs:** the server's JSON logs are in the Vercel dashboard (project → Logs); the free plan keeps them for 1 hour.
+- **Database connection:** `DATABASE_URL` is Neon's **direct** connection string for the **primary** compute (host without `-pooler`), with `sslmode=require`. The project has a read replica that the server doesn't use ([ADR 0027](../decisions/0027-postgres-on-neon-free-plan.md)): sessions are checked on every request and sync pull follows a push, so replica lag would show stale data. `deploy-web.yml` (and `ouril-server migrate`) refuse a read-only database, so a replica's connection string stops the deploy. Neon's pooled URL runs PgBouncer in transaction mode, which breaks sqlx's named prepared statements and the migrator's advisory lock. The server closes connections idle for 4 minutes, so Neon can suspend the compute after its 5 idle minutes; the first query after that waits a few hundred milliseconds while it wakes.
+- **Free-plan limits:** Vercel Hobby includes 1M function invocations, 4 hours of active CPU and 360 GB-hours of memory a month, and is for non-commercial use (donations are fine). Neon's project gets 0.5 GB of storage and 100 compute-hours a month; when it runs out of compute-hours, Neon suspends it until the next month and the API fails. Check both dashboards now and then.
 
-```mermaid
-flowchart LR
-  L[Local Docker: just dev, just test,<br/>just build-server-image] -->|PR, CI green| M[main]
-  M -->|release.yml| T[tag vX.Y.Z]
-  T -.->|run by hand| D[deploy-server.yml]
-  D -->|flyctl deploy<br/>fly.toml| F[Fly.io: ouril-server-prod<br/>2+ machines]
-  F --- N[(Neon Postgres<br/>production project)]
-```
+## One-time setup
 
-- **Before deploying:** check the change locally. `just dev` runs the server against local Postgres, `just test` runs every test, and `just build-server-image` builds the exact production image.
-- **Workflow:** [`.github/workflows/deploy-server.yml`](../../.github/workflows/deploy-server.yml) runs only by hand, with a release tag (`vX.Y.Z`, which `release.yml` creates on every merge to `main`), and only if CI passed on that commit. Tags pushed by `release.yml` can't trigger workflows, so every deploy is a deliberate promotion. On its first run it also creates the Fly app and its secrets (see the setup below).
-- **Image:** Fly's remote builder builds `apps/server/Dockerfile`, which never enables `dev-auth` (CI's release-image job checks the same Dockerfile).
-- **Config:** `apps/server/fly.toml` (`ouril-server-prod`, `min_machines_running = 2`, JSON logs).
-- **Migrations** are embedded in the binary and run as the release command (`ouril-server migrate`) before new machines take traffic. A failed migration stops the deploy, and the old machines keep serving.
-- **Health:** Fly's health check is `/healthz` (liveness, no database call), so checks don't keep the Neon database awake. `/readyz` checks the database (200 within 2 s, else 503); open it after each deploy.
-- **Database connection:** `DATABASE_URL` is Neon's **direct** connection string for the **primary** compute (host without `-pooler`), with `sslmode=require`. The project has a read replica that the server doesn't use ([ADR 0027](../decisions/0027-postgres-on-neon-free-plan.md)): sessions are checked on every request and sync pull follows a push, so replica lag would show stale data. `ouril-server migrate` refuses a read-only database, so a replica's connection string stops the deploy at the release command. Neon's pooled URL runs PgBouncer in transaction mode, which breaks sqlx's named prepared statements and the migrator's advisory lock. The server closes connections idle for 4 minutes, so Neon can suspend the compute after its 5 idle minutes; the first query after that waits a few hundred milliseconds while it wakes.
-- **Free-plan limits:** the Neon project gets 0.5 GB of storage and 100 compute-hours a month. When it runs out of compute-hours, Neon suspends it until the next month and the API fails. Count the read replica too if anything connects to it. Check usage in Neon's console, and move to a paid plan before there are steady daily players.
-- **Secrets:** only `DATABASE_URL` and `JWT_SECRET` are required. Leave the Google and Apple variables unset until their keys exist (those routes answer `501 not_configured`). Every other setting has a default or is in the Fly config.
+Everything happens in the Vercel, Neon and GitHub websites.
 
-## One-time setup for the server
+1. **Vercel:** the project for the repository (Framework **Other**). Under **Settings → Functions**, set the **Function Region** to **Frankfurt, Germany (fra1)**. Add the repository secrets **`VERCEL_TOKEN`**, **`VERCEL_ORG_ID`** and **`VERCEL_PROJECT_ID`** (GitHub → Settings → Secrets and variables → Actions). Until `VERCEL_TOKEN` exists, the workflow skips the deploy.
+2. **Neon** (free account at neon.com): a project in **AWS Europe Central 1 (Frankfurt)**. Open **Connect**, keep the default branch, choose the **primary** compute (not the read replica), turn **Connection pooling off** and copy the connection string (the host has no `-pooler`).
+3. **GitHub:** Settings → Environments → `production` (used by `deploy-web.yml`), with the secrets:
+   - `DATABASE_URL`: the Neon connection string (paste it straight into GitHub; it contains the database password);
+   - `JWT_SECRET`: a long random value, for example from `openssl rand -base64 48`. Keep it stable: changing it signs every player out;
+   - `GOOGLE_CLIENT_ID`: the Google OAuth client ID ([accounts](../product/features/accounts.md#setting-up-the-google-client)).
 
-Everything happens in three websites (Neon, Fly.io and GitHub); you don't need `flyctl` on your machine. The deploy workflow runs `flyctl` in GitHub Actions: on its first run it creates the Fly app, copies `DATABASE_URL` into the app's secrets, and generates `JWT_SECRET` (once; it's never replaced, so players stay signed in across deploys).
+   **Required reviewers** on that environment would gate every deploy.
+4. **First deploy:** Actions → *Deploy* → *Run workflow*. Try **preview** first, then **production**. Open `/readyz` on the deployment's URL: it should say `ok`, and `/v1/meta` should return JSON.
+5. In Matomo (site 1), keep the privacy settings ADR 0026 relies on: **Anonymize IP addresses** (at least 2 bytes, also used for location), **no location from IP** (or the anonymized IP only), and a data-retention period. Add the production address to the site's URLs.
 
-1. **Neon** (free account at neon.com): create a project in **AWS Europe Central 1 (Frankfurt)**. Ignore the CLI setup steps Neon suggests; only the connection string is needed. Open **Connect**, keep the default branch, choose the **primary** compute (not the read replica) in the **Compute** menu, turn **Connection pooling off** and copy the connection string (the host has no `-pooler`).
-2. **Fly.io** (account at fly.io, with a payment method once the trial ends): open the dashboard, choose your organization, then **Tokens**, and create an **organization token**. It must be org-scoped, not an app token, because the workflow creates the app. Note the organization's slug (`personal` for a personal account).
-3. **GitHub:** Settings → Environments → `production` (the existing environment, also used by the web deploy), and add the secrets `FLY_API_TOKEN` (the Fly token) and `DATABASE_URL` (the Neon connection string; paste it straight into GitHub, it contains the database password). If your Fly organization isn't `personal`, add a repository variable `FLY_ORG` with its slug. **Required reviewers** on that environment would also gate every web deploy.
-4. **First deploy:** Actions → *Deploy server* → *Run workflow*, with the latest release tag (Releases page, for example `v0.5.0`). Then open `https://ouril-server-prod.fly.dev/readyz` in a browser: it should say `ok`, and `/v1/meta` should return JSON.
-5. **Alerts:** in the Fly dashboard, set a spending alert on the organization (ADR 0019). In Neon, check the project's compute-hours now and then.
-
-To change the database, update `DATABASE_URL` in the GitHub environment; the next deploy copies it to Fly. An app name is global on Fly: if the first deploy says `ouril-server-prod` is taken, change `app` in `apps/server/fly.toml` and run it again. The org token can manage every app in the organization, so keep this organization for Ouril, or replace the token with an app deploy token (the app's **Tokens** tab) once the app exists.
+To change the database, update `DATABASE_URL` in the GitHub environment; the next deploy uses it.
 
 ### Browse the production database
 
@@ -75,20 +70,17 @@ To change the database, update `DATABASE_URL` in the GitHub environment; the nex
 
 It listens on `127.0.0.1` only and asks for its own login, because it can change production data. The Neon password never goes in a file. The server list is loaded on the first start only: after changing `NEON_*`, reset with `docker compose -f docker/pgadmin/compose.neon.yaml down -v` (that also forgets the saved password). For a quick query, Neon's console **SQL Editor** needs no setup at all.
 
-Browsers don't call `ouril-server-prod.fly.dev` directly: the web app forwards `/v1` to it ([ADR 0029](../decisions/0029-api-through-vercel-proxy.md), [below](#switching-accounts-on)).
-
 ## Switching accounts on
 
-Turning on accounts and sync ([ADR 0009](../decisions/0009-oauth-accounts-google-apple.md)) connects the web app to the server above. The browser calls `https://ouril.vercel.app/v1/…`, and Vercel forwards it to `https://ouril-server-prod.fly.dev/v1/…` (the `routes` entry in `apps/web/vercel.json`), so the API is same-origin and the refresh cookie is first-party ([ADR 0029](../decisions/0029-api-through-vercel-proxy.md)). Vercel adds the header `x-ouril-origin-secret` from its `ORIGIN_SECRET` environment variable, and the server refuses `/v1` requests without it; it rate-limits on the visitor IP Vercel sends in `x-real-ip`. That release also:
+Turning on accounts and sync ([ADR 0009](../decisions/0009-oauth-accounts-google-apple.md)) shows sign-in in the web app. The browser calls `/v1` on the site's own address, so the refresh cookie is first-party ([ADR 0030](../decisions/0030-server-on-vercel-container-service.md)). That release:
 
-- creates the shared secret (for example `openssl rand -hex 32`) and stores it twice: as the secret `ORIGIN_SECRET` in the `production` GitHub environment (the server deploy copies it to Fly), and as the environment variable `ORIGIN_SECRET` in the Vercel project (Settings → Environment Variables, Production). Vercel reads it on each request, so no web rebuild is needed when it changes, but both sides must match or every `/v1` call gets 403;
-- sets the GitHub variables `VITE_FEATURE_ACCOUNTS=true` (and `VITE_FEATURE_STATS=true`). `deploy-web.yml` builds with them (Vercel's own environment variables aren't used for the build: the site is built in GitHub Actions), plus `VITE_GOOGLE_CLIENT_ID` from the `GOOGLE_CLIENT_ID` secret. `VITE_API_BASE_URL` stays empty, because the API is same-origin;
-- adds `https://<domain>/auth/google` to the Google client's redirect URIs ([accounts](../product/features/accounts.md#setting-up-the-google-client)). The same `GOOGLE_CLIENT_ID` secret is copied to Fly by the server deploy;
-- keeps `ALLOWED_ORIGINS = "https://ouril.vercel.app"` in `apps/server/fly.toml` in step with the web address, and sets the Apple keys later;
+- sets the GitHub variables `VITE_FEATURE_ACCOUNTS=true` (and `VITE_FEATURE_STATS=true`). `deploy-web.yml` builds with them, plus `VITE_GOOGLE_CLIENT_ID` from the `GOOGLE_CLIENT_ID` secret. Vercel's own environment variables aren't used for the web build, which happens in GitHub Actions. `VITE_API_BASE_URL` stays empty, because the API is same-origin;
+- adds `https://<site>/auth/google` to the Google client's redirect URIs ([accounts](../product/features/accounts.md#setting-up-the-google-client));
+- keeps `ALLOWED_ORIGINS` (default `https://ouril.vercel.app`) in step with the site's address, and sets the Apple keys later;
 - ✅ publishes the privacy policy (`/privacy`) and the account-deletion page (`/delete-account`) ([accounts](../product/features/accounts.md#account-deletion-and-privacy));
 - moves the Google app from **Testing** to **In production** in Google Cloud (Google Auth Platform → Audience → Publish app), after adding the home page `https://ouril.vercel.app` and the privacy policy `https://ouril.vercel.app/privacy` under **Branding**. Until then only listed test users can sign in.
 
 ## Open questions
 
-- The production domain.
-- Scheduled `pg_dump` backups to object storage (ADR 0019): where they go, and when the first restore test happens.
+- A custom domain (the site works on `ouril.vercel.app`).
+- Scheduled `pg_dump` backups to object storage: where they go, and when the first restore test happens.

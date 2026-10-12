@@ -1,6 +1,6 @@
 # 0029. The web app reaches the API through a /v1 proxy on Vercel
 
-- **Status:** Accepted
+- **Status:** Superseded by [0030](0030-server-on-vercel-container-service.md)
 - **Date:** 2026-10-12
 - **Supersedes:** [0020](0020-web-and-api-on-one-site.md)
 

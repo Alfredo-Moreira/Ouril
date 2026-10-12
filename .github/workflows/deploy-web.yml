@@ -1,13 +1,17 @@
-# Deploy the web app, the whole MVP (ADR 0025: a static site, no server), to Vercel.
-# Vercel's build image has no Rust toolchain, so the WASM engine and the site are built here
-# (the same toolbox image as CI and local development, ADR 0017) and the finished files are
-# uploaded. Runs after CI passes on main, or by hand.
+# Deploy Ouril to Vercel: the web app and the server, as two services of one project (ADR 0030).
+# - web: the static site. Vercel's build image has no Rust toolchain, so the WASM engine and the
+#   site are built here (the same toolbox image as CI and local development, ADR 0017) and
+#   uploaded as finished files.
+# - api: the Rust server (apps/server) as a container service. Vercel builds it from
+#   apps/server/Dockerfile.vercel during the deploy and serves /v1 from it, on the same origin.
+# Production deploys run after CI passes on main, or by hand. A manual run can also make a
+# preview deployment (its own URL, production untouched; no migrations, sign-in won't work there).
 #
-# Setup (once): create a Vercel project with Framework "Other", no build command and output
-# directory "." (the uploaded folder is already the built site), then add the repository
-# secrets VERCEL_TOKEN, VERCEL_ORG_ID and VERCEL_PROJECT_ID. Until VERCEL_TOKEN exists, this
-# workflow skips the deploy.
-name: Deploy web
+# Setup (once, see docs/architecture/deployment.md): the repository secrets VERCEL_TOKEN,
+# VERCEL_ORG_ID and VERCEL_PROJECT_ID, and in the `production` environment the secrets
+# DATABASE_URL (Neon's direct connection string, ADR 0027), JWT_SECRET (`openssl rand -base64 48`)
+# and GOOGLE_CLIENT_ID. Until VERCEL_TOKEN exists, this workflow skips the deploy.
+name: Deploy
 
 on:
   workflow_run:
@@ -15,35 +19,53 @@ on:
     types: [completed]
     branches: [main]
   workflow_dispatch:
+    inputs:
+      target:
+        description: production, or preview (a separate URL; production untouched)
+        type: choice
+        options: [production, preview]
+        default: production
 
 permissions:
   contents: read
 
 concurrency:
-  group: deploy-web
+  group: deploy
   cancel-in-progress: false
 
 jobs:
   deploy:
-    name: Build and deploy to Vercel
+    name: Build and deploy to Vercel (${{ inputs.target || 'production' }})
     # Only after a green CI run on main (or a manual run).
     if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     environment: production
     env:
+      TARGET: ${{ inputs.target || 'production' }}
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      # Server settings, passed to the deployment as runtime environment variables.
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID || vars.GOOGLE_CLIENT_ID }}
+      ALLOWED_ORIGINS: ${{ vars.ALLOWED_ORIGINS || 'https://ouril.vercel.app' }}
     steps:
-      - name: Skip when Vercel isn't set up yet
+      - name: Check the setup
         id: setup
         run: |
           if [ -z "$VERCEL_TOKEN" ]; then
             echo "::notice::VERCEL_TOKEN is not set: skipping the deploy."
             echo "ready=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "ready=true" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
+          for name in DATABASE_URL JWT_SECRET; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Add the $name secret to the production environment (deployment.md)."
+              exit 1
+            fi
+          done
+          echo "ready=true" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v4
         if: steps.setup.outputs.ready == 'true'
         with:
@@ -74,9 +96,8 @@ jobs:
           VITE_MATOMO_URL: ${{ vars.VITE_MATOMO_URL || 'https://analytics.moreiralabs.org/' }}
           VITE_MATOMO_SITE_ID: ${{ vars.VITE_MATOMO_SITE_ID || '1' }}
           # Accounts and sync (deployment.md, "Switching accounts on"): off until the variables
-          # VITE_FEATURE_ACCOUNTS / VITE_FEATURE_STATS are "true". The API is same-origin through
-          # the /v1 proxy in vercel.json (ADR 0029), so VITE_API_BASE_URL stays empty unless the
-          # API moves. The Google client ID (public) comes from GOOGLE_CLIENT_ID.
+          # VITE_FEATURE_ACCOUNTS / VITE_FEATURE_STATS are "true". The API is served on the same
+          # origin (/v1, ADR 0030), so VITE_API_BASE_URL stays empty unless the API moves.
           VITE_FEATURE_ACCOUNTS: ${{ vars.VITE_FEATURE_ACCOUNTS || 'false' }}
           VITE_FEATURE_STATS: ${{ vars.VITE_FEATURE_STATS || 'false' }}
           VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
@@ -87,12 +108,49 @@ jobs:
           docker compose run --rm -e VITE_MATOMO_URL -e VITE_MATOMO_SITE_ID \
             -e VITE_FEATURE_ACCOUNTS -e VITE_FEATURE_STATS -e VITE_API_BASE_URL \
             -e VITE_GOOGLE_CLIENT_ID web sh -c "pnpm install --frozen-lockfile && pnpm --filter web build && chown -R $(id -u):$(id -g) apps/web/dist"
-          # Routing, security headers and the CSP travel with the site.
-          cp apps/web/vercel.json apps/web/dist/vercel.json
+      - name: Migrate the database
+        if: steps.setup.outputs.ready == 'true' && env.TARGET == 'production'
+        run: |
+          # Refuse a read-only database (the Neon read replica's URL, ADR 0027): the server
+          # would start but every write would fail.
+          ro=$(docker run --rm -e DATABASE_URL postgres:18 sh -c \
+            'psql "$DATABASE_URL" -tAc "SELECT pg_is_in_recovery() OR current_setting('"'"'transaction_read_only'"'"') = '"'"'on'"'"'"')
+          if [ "$ro" != f ]; then
+            echo "::error::DATABASE_URL is read-only or unreachable (got '$ro'): use the primary compute's connection string."
+            exit 1
+          fi
+          # Forward-only, embedded in the server too (backend.md, "Migrations").
+          docker compose run --rm -e DATABASE_URL toolbox sqlx migrate run --source apps/server/migrations
+      - name: Assemble the deployment
+        if: steps.setup.outputs.ready == 'true'
+        run: |
+          # out/vercel.json: the two services and the routing. out/web: the site.
+          # out/api: the Rust workspace the container build needs (no target/, no web).
+          mkdir -p out/api/apps
+          cp apps/web/vercel.json out/vercel.json
+          cp -R apps/web/dist out/web
+          cp Cargo.toml Cargo.lock out/api/
+          rsync -a --exclude target --exclude 'wasm/pkg' core out/api/
+          rsync -a --exclude target apps/server out/api/apps/
+          cp apps/server/Dockerfile.vercel out/api/Dockerfile.vercel
+          du -sh out/web out/api
       - uses: actions/setup-node@v4
         if: steps.setup.outputs.ready == 'true'
         with:
           node-version: 22
-      - name: Deploy to production
+      - name: Deploy
         if: steps.setup.outputs.ready == 'true'
-        run: npx --yes vercel@latest deploy apps/web/dist --prod --yes --token "$VERCEL_TOKEN"
+        run: |
+          prod=()
+          if [ "$TARGET" = production ]; then prod=(--prod); fi
+          url=$(npx --yes vercel@latest deploy out "${prod[@]}" --yes --token "$VERCEL_TOKEN" \
+            --env DATABASE_URL="$DATABASE_URL" \
+            --env JWT_SECRET="$JWT_SECRET" \
+            --env GOOGLE_CLIENT_ID="$GOOGLE_CLIENT_ID" \
+            --env ALLOWED_ORIGINS="$ALLOWED_ORIGINS" \
+            --env CLIENT_IP_HEADER=x-real-ip \
+            --env PORT=8080 \
+            --env LOG_FORMAT=json \
+            --env RUST_LOG=info)
+          echo "Deployed ($TARGET): $url" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "Check: $url/readyz should say ok, and $url/v1/meta should return JSON." >> "$GITHUB_STEP_SUMMARY"

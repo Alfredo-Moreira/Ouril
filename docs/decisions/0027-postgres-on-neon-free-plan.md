@@ -1,6 +1,6 @@
 # 0027. Postgres on Neon's free plan, the server stays on Fly.io
 
-- **Status:** Accepted
+- **Status:** Accepted (the server moved from Fly.io to Vercel: [0030](0030-server-on-vercel-container-service.md); the database decision stands)
 - **Date:** 2026-10-11
 - **Supersedes:** [0019](0019-host-server-on-fly-io.md) (the database only)
 
@@ -15,7 +15,7 @@
 - **Let the database sleep:** Fly's health check is `/healthz`, which doesn't touch the database, and the server's pool closes connections idle for 4 minutes, before Neon suspends an idle compute (5 minutes). `/readyz` stays available for manual checks.
 - **Revisit** when a project nears the free plan's limits (0.5 GB of storage, 100 compute-hours a month), or when production needs longer point-in-time restore. The next steps are Neon's paid plan or Fly managed Postgres, both a `DATABASE_URL` change plus a `pg_dump` restore.
 
-See [deployment](../architecture/deployment.md#the-server-on-flyio).
+See [deployment](../architecture/deployment.md#the-server-on-vercel).
 
 ## Alternatives considered
 - **Fly managed Postgres for both environments (ADR 0019 as written):** about $76 a month with no players yet.
