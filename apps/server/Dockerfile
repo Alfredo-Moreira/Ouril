@@ -23,5 +23,6 @@ ENV HOST=0.0.0.0 \
     PORT=8080 \
     RUST_LOG=info
 EXPOSE 8080
-# `ouril-server migrate` applies embedded migrations (Fly release command).
+# `ouril-server migrate` applies the embedded migrations. On Vercel (Dockerfile.vercel, ADR 0030)
+# the deploy workflow runs them before deploying.
 CMD ["ouril-server"]

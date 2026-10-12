@@ -1,0 +1,27 @@
+# The server as a Vercel container service (ADR 0030). Vercel builds this image during the
+# deploy and runs it as a Function in the same project as the web app. deploy-web.yml assembles
+# the build context: Cargo.toml, Cargo.lock, core/ and apps/server/ (no target/, no web).
+# Same build as apps/server/Dockerfile, without BuildKit cache mounts. NEVER enables `dev-auth`
+# (a release build with it fails to compile anyway).
+
+FROM rust:1-bookworm AS build
+WORKDIR /src
+COPY . .
+RUN cargo build --release --locked -p ouril-server \
+ && cp target/release/ouril-server /usr/local/bin/ouril-server
+
+FROM debian:bookworm-slim AS runtime
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends ca-certificates \
+ && rm -rf /var/lib/apt/lists/* \
+ && useradd --system --uid 10001 --no-create-home ouril
+COPY --from=build /usr/local/bin/ouril-server /usr/local/bin/ouril-server
+USER ouril
+# Vercel sends traffic to $PORT (set to 8080 by the deploy). Migrations run in deploy-web.yml
+# before the deploy, not at startup.
+ENV HOST=0.0.0.0 \
+    PORT=8080 \
+    RUST_LOG=info \
+    LOG_FORMAT=json
+EXPOSE 8080
+CMD ["ouril-server"]

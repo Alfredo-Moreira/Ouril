@@ -1,6 +1,6 @@
 # 0019. Host the Rust server and Postgres on Fly.io
 
-- **Status:** Accepted; the database part is superseded by [0027](0027-postgres-on-neon-free-plan.md), and the staging environment by [0028](0028-production-only-local-staging.md)
+- **Status:** Superseded by [0027](0027-postgres-on-neon-free-plan.md) (database), [0028](0028-production-only-local-staging.md) (staging) and [0030](0030-server-on-vercel-container-service.md) (server host)
 - **Date:** 2026-10-03
 
 ## Context

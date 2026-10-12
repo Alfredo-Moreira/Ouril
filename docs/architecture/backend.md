@@ -16,7 +16,7 @@
 | Phase ([roadmap](../product/roadmap.md)) | Server responsibilities |
 |---|---|
 | 1 · MVP | None: the web MVP is a static site |
-| 2 · Accounts and sync | Sign in (Google, Apple), profile, account deletion, offline-first sync of game history and settings (guests never call the server). Built; deployed to Fly.io ([deployment](deployment.md#the-server-on-flyio)) |
+| 2 · Accounts and sync | Sign in (Google, Apple), profile, account deletion, offline-first sync of game history and settings (guests never call the server). Built; deployed on Vercel ([deployment](deployment.md#the-server-on-vercel)) |
 | 3 · Reach and replay | No new server work (pass-and-play and sharing are on-device) |
 | 4 · Play with friends (async) | Async games (HTTP + push), invites, friends list |
 | 5 · iOS and Android | Native push (APNs, FCM) |
@@ -166,14 +166,14 @@ Multiplayer adds `/v1/games…` (create, invite, async move) and the realtime We
 
 ## As built (MVP)
 
-- **Crate layout:** `apps/server` is a library plus a thin binary, so the integration tests build the same router. `ouril-server migrate` applies migrations (the Fly release command). Debug builds also apply them on startup.
+- **Crate layout:** `apps/server` is a library plus a thin binary, so the integration tests build the same router. `ouril-server migrate` applies migrations; production runs them with `sqlx migrate run` in the deploy workflow. Debug builds also apply them on startup.
 - **Sessions:** the access token is a JWT (HS256, `JWT_SECRET`) with `sub`, `sid`, `iss = ouril`, `aud = ouril-api`, valid for 15 minutes by default. Every signed-in request also checks in the database that the session is live, so logout and deletion take effect at once. Refresh tokens are opaque, last 30 days by default, and each refresh extends the session.
 - **Web vs native:** a request with an `Origin` from `ALLOWED_ORIGINS` is treated as the web app. The web app gets the refresh token as an httpOnly cookie, `ouril_refresh` (`SameSite=Lax`, `Path=/v1/auth`, `Secure` except on `http://localhost`), and never in the body. A disallowed `Origin` on `/v1/auth/*` gets 403. The web app holds a cross-tab lock (`navigator.locks`) while it refreshes, so two tabs don't trip reuse detection.
 - **Google and Apple:** ID-token verification is written (cached key set, issuer, audience, expiry, nonce) and unit-tested offline with a test key. It hasn't been tested with real tokens. Revoking the Apple token on account deletion is still a TODO.
 - **Sync validation:** `game_finished` records are replayed with `ouril-engine` at the exact `variant@version`. A record whose moves are illegal, or whose outcome, stores or end reason don't match, is rejected as `illegal_game`. Forfeits (format 2, reason `resigned`) must replay to a game still in progress, with the other side winning ([ADR 0022](../decisions/0022-forfeit-and-record-format-2.md)). Each mutation runs in its own transaction, and a repeated mutation ID returns the stored outcome.
 - **Middleware:** `X-Ouril-Client` is parsed on every request, and clients below `min_supported` get `426` on every `/v1` route except `/v1/meta`. CORS allows exact origins with credentials. Other middleware: security headers (plus HSTS in release builds), a 1 MiB body limit, a 15 s timeout per request, JSON errors for every failure (including panics and malformed input), and request logs that never record headers or bodies.
-- **Web app proxy:** with `ORIGIN_SECRET` set, `/v1` only answers requests carrying `x-ouril-origin-secret` with that value (403 `forbidden` otherwise, constant-time check); the web app's Vercel proxy adds it ([ADR 0029](../decisions/0029-api-through-vercel-proxy.md)). The header is removed before handlers run. Unset locally.
-- **Rate limiting:** in-memory fixed windows per server machine, keyed by client network (IPv4 address or IPv6 /64): the `x-real-ip` the web app's proxy sends, for requests that carry its secret, else `Fly-Client-IP` behind Fly. Sign-in is limited to 60/min; everything else, including refresh and logout, to 600/min. Both are configurable. The map is capped at 50,000 windows and pruned at most every 10 s; when it's full, new clients pass untracked instead of being locked out. `429` comes with `Retry-After`. Counters move to Valkey when multiplayer brings it.
+- **Proxy secret (optional):** with `ORIGIN_SECRET` set, `/v1` only answers requests carrying `x-ouril-origin-secret` with that value (403 `forbidden` otherwise, constant-time check). It was for an external proxy ([ADR 0029](../decisions/0029-api-through-vercel-proxy.md)); on Vercel the server is only reachable through Vercel, so it's unset ([ADR 0030](../decisions/0030-server-on-vercel-container-service.md)).
+- **Rate limiting:** in-memory fixed windows per server machine, keyed by client network (IPv4 address or IPv6 /64), from the header named by `CLIENT_IP_HEADER` (`x-real-ip` on Vercel, which sets it on every request), else the peer address. Without that setting no header is trusted. Sign-in is limited to 60/min; everything else, including refresh and logout, to 600/min. Both are configurable. The map is capped at 50,000 windows and pruned at most every 10 s; when it's full, new clients pass untracked instead of being locked out. `429` comes with `Retry-After`. Counters move to Valkey when multiplayer brings it.
 - **Startup:** the server pings the database in the background (`SELECT 1`, 3 attempts 2 s apart, 5 s each) and logs `database reachable`, or a warning per failed attempt and an error if all fail. It keeps serving either way, so a brief outage doesn't make Fly restart machines in a loop.
 - **Release safety:** a release build with `dev-auth` fails to compile, and the production image never enables it. Release builds refuse to start with the `.env.example` JWT secret or a non-loopback `http://` origin, and `ouril-server migrate` refuses a read-only database (a read replica's URL, [ADR 0027](../decisions/0027-postgres-on-neon-free-plan.md)).
 
@@ -183,7 +183,7 @@ The schema lives in `apps/server/migrations` as plain SQL, forward-only, applied
 
 1. **Create one:** `just migration <name>` (for example `just migration add_friends`) writes an empty `apps/server/migrations/<next number>_<name>.sql`. Write the SQL there.
 2. **Try it locally:** `just dev` applies it on startup (debug builds), or run `just migrate`. `just db-reset` replays every migration from scratch. Every `#[sqlx::test]` gets a fresh database with all migrations applied, so `just test-server` runs against the new schema.
-3. **Ship it:** migrations are compiled into the binary. On deploy, Fly runs `ouril-server migrate` before new machines take traffic; it applies only the migrations Neon hasn't seen and records them in `_sqlx_migrations`. A failing migration stops the deploy and the old machines keep serving.
+3. **Ship it:** merge. The deploy workflow (`deploy-web.yml`) runs `sqlx migrate run` against Neon before deploying; it applies only the migrations Neon hasn't seen and records them in `_sqlx_migrations`. A failing migration stops the deploy and the running version keeps serving.
 
 Rules:
 
@@ -204,7 +204,7 @@ Server → client: `state(game_id, moves, clocks)`, `moved(ply, pit, events, clo
 
 ## Operations
 
-- **Hosting:** Fly.io, one app `ouril-server-prod` (`apps/server/fly.toml`; no hosted staging, local Docker plays that role, [ADR 0028](../decisions/0028-production-only-local-staging.md)), region `fra`, migrations as the release command, at least 2 production machines, health checks on `/healthz`, JSON logs, and secrets in `fly secrets` ([ADR 0019](../decisions/0019-host-server-on-fly-io.md)). Postgres is on Neon's free plan in AWS Frankfurt, one project ([ADR 0027](../decisions/0027-postgres-on-neon-free-plan.md)). Deploys and setup: [deployment](deployment.md#the-server-on-flyio).
+- **Hosting:** a container service in the web app's Vercel project (`apps/server/Dockerfile.vercel`, region `fra1`), serving `/v1` on the same origin; it scales to zero when idle. Migrations run in the deploy workflow, settings come from the `production` GitHub environment, and there's no hosted staging ([ADR 0030](../decisions/0030-server-on-vercel-container-service.md), [ADR 0028](../decisions/0028-production-only-local-staging.md)). Postgres is on Neon's free plan in AWS Frankfurt, one project ([ADR 0027](../decisions/0027-postgres-on-neon-free-plan.md)). Deploys and setup: [deployment](deployment.md#the-server-on-vercel).
 - Containerized, stateless app instances behind a load balancer. Live games are pinned to an instance, with Redis pub/sub for cross-instance events.
 - Observability: structured logs (`tracing`), metrics, error tracking (for example Sentry).
 - Secrets (Apple private key, push credentials) live in the host's secret manager, never in the repo.

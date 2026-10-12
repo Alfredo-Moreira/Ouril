@@ -35,8 +35,8 @@ See [mvp.md](mvp.md) and [ADR 0025](../decisions/0025-web-first-static-mvp.md): 
 Phases 2 to 7 ship in this order (agreed after the MVP; accounts and sync moved ahead of reach and replay on 2026-10-11). The three "coming soon" items on the home page are phases 2, 4 and 7.
 
 ## Phase 2: Accounts and sync *(in progress)*
-Switch on what's already built ([accounts](features/accounts.md), [backend](../architecture/backend.md)): host the server and database ([ADR 0019](../decisions/0019-host-server-on-fly-io.md)), set up Google and Apple client IDs, and publish a privacy policy. Moved ahead of "Reach and replay" so the server is live and proven before online play.
-- ✅ Deploy pipeline to Fly.io: production from a release tag, run by hand; local Docker is the staging environment ([deployment](../architecture/deployment.md#the-server-on-flyio)). ✅ Server on Fly.io, database on Neon, the web app reaching it through a `/v1` proxy on Vercel ([ADR 0029](../decisions/0029-api-through-vercel-proxy.md)).
+Switch on what's already built ([accounts](features/accounts.md), [backend](../architecture/backend.md)): host the server and database ([ADR 0030](../decisions/0030-server-on-vercel-container-service.md), [ADR 0027](../decisions/0027-postgres-on-neon-free-plan.md)), set up Google and Apple client IDs, and publish a privacy policy. Moved ahead of "Reach and replay" so the server is live and proven before online play.
+- ✅ Web app and server deployed together to one Vercel project after every green merge, with migrations; local Docker is the staging environment ([deployment](../architecture/deployment.md#the-server-on-vercel)). Database on Neon. (The server ran on Fly.io until its trial ended, [ADR 0030](../decisions/0030-server-on-vercel-container-service.md).)
 - ✅ Google sign-in on the web, live at `ouril.vercel.app` for Google test users. ✅ Privacy policy and account-deletion page. ⏳ Publish the Google app, database backups.
 - Optional sign-in with Google and Apple; guests stay fully offline.
 - Backup and sync of game history and settings across devices.

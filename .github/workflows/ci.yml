@@ -1,6 +1,6 @@
 # CI for the Rust core, the server and the web app (ADR 0017: the same toolbox image as local
 # development). Every job is read-only towards the repo; nothing is deployed from here
-# (deploy-web.yml deploys the web app after CI passes on main).
+# (deploy-web.yml deploys the web app and the server after CI passes on main).
 name: CI
 
 on:
