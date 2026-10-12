@@ -3,13 +3,15 @@ import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router';
 
 import { ApiError } from '../api/client';
+import { googleClientId, startGoogleSignIn } from '../auth/google';
 import { useApp } from '../state/useApp';
 
 /**
  * Optional sign-in (never required to play).
  *
- * Google and Apple are placeholders until real client IDs exist: the buttons are disabled and
- * no request is made (the server would answer 501 `not_configured`). In dev builds
+ * Google: enabled when `VITE_GOOGLE_CLIENT_ID` is set. The button navigates to Google
+ * (`auth/google.ts`); nothing touches the network before the player taps it. Apple is still a
+ * placeholder: disabled, and no request is made. In dev builds
  * (`import.meta.env.DEV`) a "Dev sign-in" button calls POST /v1/auth/dev (server feature
  * `dev-auth`, debug builds only). Production bundles don't include that button.
  */
@@ -35,6 +37,11 @@ export function SignIn() {
     );
   }
 
+  const googleId = googleClientId();
+  const google = () => {
+    if (googleId) startGoogleSignIn(googleId);
+  };
+
   const dev = async () => {
     setBusy(true);
     setError(null);
@@ -54,16 +61,29 @@ export function SignIn() {
       <p>{t('account.sign_in.why')}</p>
       {app.auth === 'expired' && <p className="note">{t('account.expired')}</p>}
       <div className="stack">
-        <button type="button" className="button" disabled aria-describedby="sign-in-unavailable">
-          {t('account.sign_in.google')} <span className="badge">{t('common.coming_soon')}</span>
-        </button>
-        <button type="button" className="button" disabled aria-describedby="sign-in-unavailable">
+        {googleId ? (
+          <button type="button" className="button" onClick={google}>
+            {t('account.sign_in.google')}
+          </button>
+        ) : (
+          <button type="button" className="button" disabled aria-describedby="sign-in-unavailable">
+            {t('account.sign_in.google')} <span className="badge">{t('common.coming_soon')}</span>
+          </button>
+        )}
+        <button
+          type="button"
+          className="button"
+          disabled
+          aria-describedby={googleId ? undefined : 'sign-in-unavailable'}
+        >
           {t('account.sign_in.apple')} <span className="badge">{t('common.coming_soon')}</span>
         </button>
       </div>
-      <p id="sign-in-unavailable" className="note">
-        {t('account.sign_in.unavailable')}
-      </p>
+      {!googleId && (
+        <p id="sign-in-unavailable" className="note">
+          {t('account.sign_in.unavailable')}
+        </p>
+      )}
 
       {DEV_SIGN_IN && (
         <div className="card dev-only">

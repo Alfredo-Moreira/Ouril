@@ -7,7 +7,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
 import { ApiClient } from '../api/client';
-import type { Me } from '../api/types';
+import type { Me, SignInResponse } from '../api/types';
 import { getDb } from '../storage/db';
 import {
   claimForUser,
@@ -121,6 +121,20 @@ export function AppProvider({ children, createApi, coreVersion = '0.0.0' }: AppP
       .catch(() => undefined);
   }, [api]);
 
+  /** After any sign-in: claim the guest's local data, remember the account, start syncing. */
+  const finishSignIn = useCallback(
+    async (res: SignInResponse) => {
+      await claimForUser(res.user.id);
+      await setStoredAccount({ user: res.user });
+      setSettings(await getSettings()); // the account's own settings (or the claimed guest's)
+      setUser(res.user);
+      setAuth('signed_in');
+      setDataVersion((v) => v + 1);
+      startSync();
+    },
+    [startSync],
+  );
+
   // Startup: local reads only.
   useEffect(() => {
     let cancelled = false;
@@ -182,14 +196,10 @@ export function AppProvider({ children, createApi, coreVersion = '0.0.0' }: AppP
       user,
       syncStatus,
       async signInDev(name) {
-        const res = await api().devSignIn(name ? { user: name } : {});
-        await claimForUser(res.user.id);
-        await setStoredAccount({ user: res.user });
-        setSettings(await getSettings()); // the account's own settings (or the claimed guest's)
-        setUser(res.user);
-        setAuth('signed_in');
-        setDataVersion((v) => v + 1);
-        startSync();
+        await finishSignIn(await api().devSignIn(name ? { user: name } : {}));
+      },
+      async signInGoogle(idToken, nonce) {
+        await finishSignIn(await api().googleSignIn({ id_token: idToken, nonce }));
       },
       async signOut() {
         syncRef.current?.stop();
@@ -275,7 +285,7 @@ export function AppProvider({ children, createApi, coreVersion = '0.0.0' }: AppP
       syncStatus,
       dataVersion,
       api,
-      startSync,
+      finishSignIn,
       update,
       pendingHandle,
       profileNotice,

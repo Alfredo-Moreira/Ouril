@@ -18,6 +18,11 @@ interface ImportMetaEnv {
    * app, ADR 0020). Empty/absent = same origin (the Vite dev proxy, or a `/v1` reverse proxy).
    */
   readonly VITE_API_BASE_URL?: string;
+  /**
+   * Google OAuth client ID (public). Empty/absent = the Google button stays a disabled
+   * placeholder. Register `<origin>/auth/google` as a redirect URI for it (`src/auth/google.ts`).
+   */
+  readonly VITE_GOOGLE_CLIENT_ID?: string;
   /** `"true"` turns on sign-in, accounts and sync (off for the MVP; `src/features.ts`). */
   readonly VITE_FEATURE_ACCOUNTS?: string;
   /** `"true"` turns on the Stats page (off for the MVP; `src/features.ts`). */

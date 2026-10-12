@@ -18,6 +18,7 @@
 import type {
   ApiErrorBody,
   DevSignInRequest,
+  GoogleSignInRequest,
   Me,
   Meta,
   SignInResponse,
@@ -103,6 +104,16 @@ export class ApiClient {
     if (!import.meta.env.DEV)
       throw new ApiError(404, 'not_found', 'dev sign-in is not in production builds');
     const res = await this.request<SignInResponse>('POST', '/v1/auth/dev', request, {
+      auth: false,
+    });
+    this.accessToken = res.tokens.access_token;
+    return res;
+  }
+
+  /** Exchanges a Google ID token for our session (`501 not_configured` until the server has
+   * `GOOGLE_CLIENT_ID`). */
+  async googleSignIn(request: GoogleSignInRequest): Promise<SignInResponse> {
+    const res = await this.request<SignInResponse>('POST', '/v1/auth/google', request, {
       auth: false,
     });
     this.accessToken = res.tokens.access_token;

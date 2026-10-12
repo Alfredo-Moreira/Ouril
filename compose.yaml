@@ -59,6 +59,10 @@ services:
     # Guest-first: the web app works with no server. It doesn't depend on `server`.
     environment:
       VITE_API_PROXY_TARGET: http://server:8080
+      # Build-time flags and public IDs from .env (all off/empty unless set there).
+      VITE_FEATURE_ACCOUNTS: ${VITE_FEATURE_ACCOUNTS:-false}
+      VITE_FEATURE_STATS: ${VITE_FEATURE_STATS:-false}
+      VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID:-}
     ports:
       - "127.0.0.1:${WEB_PORT:-5173}:5173"
     volumes:

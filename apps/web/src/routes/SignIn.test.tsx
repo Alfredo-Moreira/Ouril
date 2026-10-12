@@ -2,6 +2,7 @@ import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ApiClient, ApiError } from '../api/client';
+import { browser, GOOGLE_PENDING_KEY } from '../auth/google';
 import type { Me } from '../api/types';
 import { getActiveOwner, setConsent } from '../storage/repo';
 import { freshDb, renderApp } from '../test/render';
@@ -35,6 +36,28 @@ describe('Sign-in screen', () => {
     expect(screen.getAllByText('Coming soon')).toHaveLength(2);
     // Playing on as a guest is always offered.
     expect(screen.getByRole('link', { name: /keep playing/i })).toBeInTheDocument();
+  });
+
+  it('with a Google client ID, the Google button goes to Google without any request', async () => {
+    vi.stubEnv('VITE_GOOGLE_CLIENT_ID', 'client-1.apps.googleusercontent.com');
+    const assign = vi.spyOn(browser, 'assign').mockImplementation(() => undefined);
+    renderApp({ route: '/sign-in' });
+    const google = await screen.findByRole('button', { name: 'Sign in with Google' });
+    expect(google).toBeEnabled();
+    expect(screen.getByRole('button', { name: /Sign in with Apple/ })).toBeDisabled();
+    expect(screen.queryByText(/isn't available yet/)).toBeNull();
+    fireEvent.click(google);
+    expect(assign).toHaveBeenCalledTimes(1);
+    const url = new URL(assign.mock.calls[0]?.[0] ?? '');
+    expect(url.host).toBe('accounts.google.com');
+    expect(url.searchParams.get('client_id')).toBe('client-1.apps.googleusercontent.com');
+    expect(url.searchParams.get('redirect_uri')).toBe(`${window.location.origin}/auth/google`);
+    expect(JSON.parse(sessionStorage.getItem(GOOGLE_PENDING_KEY)!).state).toBe(
+      url.searchParams.get('state'),
+    );
+    expect(fetchSpy).not.toHaveBeenCalled();
+    assign.mockRestore();
+    sessionStorage.clear();
   });
 
   it('dev builds show "Dev sign-in", which signs in and claims guest data', async () => {
