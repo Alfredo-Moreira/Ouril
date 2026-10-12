@@ -6,9 +6,6 @@
   "services": {
     "web": {
       "root": "web/",
-      "framework": null,
-      "installCommand": "",
-      "buildCommand": "",
       "outputDirectory": ".",
       "rewrites": [
         {
