@@ -45,7 +45,7 @@ Agent labels: `scaffold`, `build:core`, `build:server`, `build:web`, `tests:core
 6. **Retryable error code.** Timeouts, database pool exhaustion and JWKS failures return 500 `internal`. Add 503 `unavailable` with `Retry-After` to ouril-protocol and handle it in the web client? Area: server, core, web. Source: arch, sec, apply:server, verify. Files: `core/protocol`, `apps/server/API.md`.
 7. **Data retention and database integrity.**
    - `sessions`, `session_refresh_tokens` and `sync_mutation` are never pruned (about 35k token rows per device-year).
-   - Account deletion keeps revoked `sessions` rows, including `device_name`.
+   - ✅ Fixed 2026-10-12: account deletion now deletes the user's `sessions` rows (and their refresh tokens), as the privacy policy says.
    - Enum-like text columns have no CHECK constraints. These can still go into the init migration, because it hasn't been applied anywhere shared.
 
    Decide the retention policy and record it in data-and-sync.md. Area: server. Source: sec, arch. Files: `apps/server/src/users.rs`, `apps/server/migrations/20261004000001_init.sql`.

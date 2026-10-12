@@ -5,7 +5,7 @@
  */
 import { useEffect, useState, type ComponentType, type SVGProps } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useLocation } from 'react-router';
+import { Link, useLocation } from 'react-router';
 
 import { BuyBoards } from '../components/BuyBoards';
 
@@ -150,6 +150,9 @@ export function About() {
         </section>
       )}
       <BuyBoards id="buy" />
+      <p className="note">
+        <Link to="/privacy">{t('privacy.link')}</Link>
+      </p>
     </article>
   );
 }

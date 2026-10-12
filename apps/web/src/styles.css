@@ -2115,6 +2115,16 @@ main.main--immersive {
 
 /* --- About the developer ---------------------------------------------------------------------- */
 
+/* Privacy policy and account deletion: long text at a readable line length. */
+.privacy {
+  max-width: 44rem;
+  margin: 0 auto;
+}
+
+.privacy h2 {
+  margin-top: 1.75rem;
+}
+
 .about {
   max-width: 52rem;
   margin: 0 auto;

@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 
 import { BOARD_KINDS } from '../content/boards';
 import { COMING_SOON } from '../content/comingSoon';
+import { PRIVACY_SECTIONS } from '../content/privacy';
 import { LEVELS } from '../engine/types';
 import { PLAYABLE_VARIANTS } from '../game/session';
 import en from '../generated/i18n/en.json';
@@ -65,6 +66,10 @@ describe('i18n keys', () => {
         'x',
       ],
       'home.soon': COMING_SOON.flatMap((id) => [`${id}.title`, `${id}.body`]),
+      privacy: PRIVACY_SECTIONS.flatMap((s) => [
+        `${s.id}.title`,
+        ...Array.from({ length: s.paragraphs }, (_, i) => `${s.id}.${i + 1}`),
+      ]),
       'home.steps': [1, 2, 3, 4].flatMap((n) => [`${n}.title`, `${n}.body`]),
       'home.features': ['offline', 'levels', 'guest'].flatMap((k) => [`${k}.title`, `${k}.body`]),
       // Error codes the client can produce itself (others fall back to error.internal).
@@ -114,6 +119,7 @@ describe('i18n keys', () => {
       'error.',
       'tutorial.',
       'rules.',
+      'privacy.',
     ];
     const unknown: string[] = [];
     for (const f of files) {

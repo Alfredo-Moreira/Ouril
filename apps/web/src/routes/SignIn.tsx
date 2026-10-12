@@ -98,6 +98,9 @@ export function SignIn() {
           {t(`error.${error}`, { defaultValue: t('error.internal') })}
         </p>
       )}
+      <p className="note">
+        {t('account.sign_in.privacy')} <Link to="/privacy">{t('privacy.link')}</Link>
+      </p>
       <Link to="/">{t('account.keep_playing')}</Link>
     </section>
   );

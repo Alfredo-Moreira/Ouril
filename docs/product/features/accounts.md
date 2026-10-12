@@ -95,10 +95,10 @@ To try it locally, set `GOOGLE_CLIENT_ID` and `VITE_GOOGLE_CLIENT_ID` to the cli
 
 ## Account deletion and privacy
 
-- **In-app account deletion** is required by Apple (guideline 5.1.1(v)) and Google Play. Google Play also requires a **web page** where users can request deletion.
+- **In-app account deletion** is required by Apple (guideline 5.1.1(v)) and Google Play: Settings → Delete account. Google Play also requires a **web page** where users can request deletion: [`/delete-account`](https://ouril.vercel.app/delete-account) (`apps/web/src/routes/DeleteAccount.tsx`) explains the in-app steps, the email route for players who can't sign in, and what's deleted or kept.
 - Deletion removes personal data, revokes all sessions, and **revokes the Sign in with Apple token** through Apple's REST API. Past online games keep an anonymized "Deleted player" entry so opponents' history stays intact.
 - How revocation works: at Apple sign-in the app also sends the `authorization_code`; the server exchanges it for Apple's refresh token (client secret signed with the `.p8` key), keeps it only for this, and revokes it on account deletion. Apple sign-in stays off if the key can't be loaded, so no Apple account is ever created that couldn't be revoked.
-- A **privacy policy** is required by both stores before launch.
+- The **privacy policy** is at [`/privacy`](https://ouril.vercel.app/privacy), part of the app so it works offline (`apps/web/src/routes/Privacy.tsx`, text in `privacy.*` strings, facts in `apps/web/src/content/privacy.ts`). The controller is the developer, Alfredo Ramos Moreira; requests go to `devops.moreira@gmail.com`. It must match what the app and server do: update it, and its date, in the same change as anything that alters what data is collected, where it goes, or how long it's kept. It's a draft written from the code, not legal advice; have it reviewed when possible. Settings, About and the sign-in screen link to it.
 - Apple only sends the user's name on the **first** sign-in, so it must be saved then.
 - Apple users may hide their email behind a relay address. We treat email as optional everywhere.
 
@@ -112,4 +112,4 @@ To try it locally, set `GOOGLE_CLIENT_ID` and `VITE_GOOGLE_CLIENT_ID` to the cli
 
 - Handle rules: length, allowed characters, reserved words, and how often it can be changed.
 - Offer Apple sign-in on Android too, or only on iOS and web?
-- Minimum age and parental consent (COPPA/GDPR-K) if children play.
+- Minimum age and parental consent (COPPA/GDPR-K): the privacy policy says signing in is for players aged 13 or older (16 where local law requires) and younger players play as guests. Confirm this, and whether the sign-in screen should ask.

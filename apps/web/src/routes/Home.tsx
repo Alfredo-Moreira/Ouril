@@ -28,7 +28,7 @@ import {
   StatsIcon,
   UserIcon,
 } from '../components/Icons';
-import { COMING_SOON } from '../content/comingSoon';
+import { comingSoon } from '../content/comingSoon';
 import { useCore } from '../engine/CoreContext';
 import { FEATURES } from '../features';
 import type { GameState } from '../engine/types';
@@ -48,6 +48,7 @@ export type { NewGameRequest } from '../components/NewGameForm';
  */
 export function Home() {
   const { t } = useTranslation();
+  const soon = comingSoon(FEATURES);
   const { auth, user, dataVersion, notifyLocalChange } = useApp();
   const [current, setCurrent] = useState<CurrentGame | null | undefined>(undefined);
 
@@ -215,14 +216,14 @@ export function Home() {
           </div>
         </Reveal>
 
-        {(COMING_SOON.length > 0 || import.meta.env.DEV) && (
+        {(soon.length > 0 || import.meta.env.DEV) && (
           <Reveal as="section" className="soon" labelledBy="soon-title">
             <h2 id="soon-title" className="section-title">
               {t('home.soon.title')}
             </h2>
             <ul className="soon__list">
-              {COMING_SOON.length > 0
-                ? COMING_SOON.map((id) => (
+              {soon.length > 0
+                ? soon.map((id) => (
                     <li key={id} className="soon__item">
                       <span className="soon__icon" aria-hidden="true">
                         <SparkleIcon />

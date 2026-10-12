@@ -1554,5 +1554,241 @@
   "game.music.skip": {
     "message": "Next track",
     "description": "Game top bar button: skip to another random music track"
+  },
+  "privacy.title": {
+    "message": "Privacy policy",
+    "description": "Privacy policy page title"
+  },
+  "privacy.updated": {
+    "message": "Last updated: {date}",
+    "description": "Under the privacy policy title; date = formatted date of the last change"
+  },
+  "privacy.link": {
+    "message": "Privacy policy",
+    "description": "Link to the privacy policy page"
+  },
+  "privacy.contact": {
+    "message": "Questions or requests about your data:",
+    "description": "Before the contact email at the end of the privacy policy"
+  },
+  "privacy.short.title": {
+    "message": "The short version",
+    "description": "privacy policy page"
+  },
+  "privacy.short.1": {
+    "message": "You can play Ouril without an account. As a guest, your games, stats and settings stay on your device, and the app sends nothing anywhere unless you allow anonymous usage statistics.",
+    "description": "privacy policy page"
+  },
+  "privacy.short.2": {
+    "message": "If you sign in with Google, we keep your account, profile, game history and settings on our server so they follow you to your other devices.",
+    "description": "privacy policy page"
+  },
+  "privacy.short.3": {
+    "message": "We don't show ads, we don't sell your data or share it for advertising, and we don't use it to build a profile of you.",
+    "description": "privacy policy page"
+  },
+  "privacy.who.title": {
+    "message": "Who we are",
+    "description": "privacy policy page"
+  },
+  "privacy.who.1": {
+    "message": "Ouril is made by {name}, an independent developer, who is responsible for the personal data described here (the “controller” under the EU's General Data Protection Regulation).",
+    "description": "privacy policy page; name = the developer's name"
+  },
+  "privacy.who.2": {
+    "message": "For any question or request about your data, email {email}. You'll get an answer within 30 days.",
+    "description": "privacy policy page; email = contact address"
+  },
+  "privacy.guest.title": {
+    "message": "Playing as a guest",
+    "description": "privacy policy page"
+  },
+  "privacy.guest.1": {
+    "message": "Your games, stats, settings and the game in progress are stored in your browser, on this device only. Clearing the site's data in your browser removes them.",
+    "description": "privacy policy page"
+  },
+  "privacy.guest.2": {
+    "message": "Apart from loading the app itself from our hosting provider, a guest's device sends nothing to us or anyone else, unless you allow anonymous usage statistics.",
+    "description": "privacy policy page"
+  },
+  "privacy.account.title": {
+    "message": "If you sign in",
+    "description": "privacy policy page"
+  },
+  "privacy.account.1": {
+    "message": "From Google we receive an account identifier, your name, and your email address if Google has confirmed it. We never see your Google password. We don't use your email to contact you or to combine accounts.",
+    "description": "privacy policy page"
+  },
+  "privacy.account.2": {
+    "message": "Your profile: your display name, an optional unique handle, and an optional language and country.",
+    "description": "privacy policy page"
+  },
+  "privacy.account.3": {
+    "message": "Your finished games (moves, result, rule variant, computer level and dates) and your game settings, so your history and stats are the same on every device.",
+    "description": "privacy policy page"
+  },
+  "privacy.account.4": {
+    "message": "Your sign-in sessions: when each one started and was last used, and the app version that opened it. Sign-in tokens are stored only as secure hashes.",
+    "description": "privacy policy page"
+  },
+  "privacy.usage.title": {
+    "message": "Anonymous usage statistics (optional)",
+    "description": "privacy policy page"
+  },
+  "privacy.usage.1": {
+    "message": "Only if you agree when asked, or turn them on in Settings, the app sends which screens are opened and game events, such as the level and result of a finished game, to our own analytics server (Matomo, run by the developer).",
+    "description": "privacy policy page"
+  },
+  "privacy.usage.2": {
+    "message": "These statistics use a random ID created on your device, not your account. They use no cookies, the server shortens IP addresses so they can't identify you, and it doesn't look up your location.",
+    "description": "privacy policy page"
+  },
+  "privacy.usage.3": {
+    "message": "You can turn them off, or reset the random ID, in Settings at any time.",
+    "description": "privacy policy page"
+  },
+  "privacy.use.title": {
+    "message": "Why we use your data",
+    "description": "privacy policy page"
+  },
+  "privacy.use.1": {
+    "message": "To provide what you ask for when you sign in: your account, syncing, and your history and stats; and to keep the service safe, for example by limiting repeated requests. This is needed to run the service you signed up for, and is in our legitimate interest.",
+    "description": "privacy policy page"
+  },
+  "privacy.use.2": {
+    "message": "Usage statistics are only used to improve the game, and only with your consent, which you can withdraw at any time.",
+    "description": "privacy policy page"
+  },
+  "privacy.processors.title": {
+    "message": "Who processes data for us",
+    "description": "privacy policy page"
+  },
+  "privacy.processors.1": {
+    "message": "Vercel (United States) hosts the website and passes the app's requests on to our server.",
+    "description": "privacy policy page"
+  },
+  "privacy.processors.2": {
+    "message": "Fly.io (United States company, servers in Frankfurt, Germany) runs our server.",
+    "description": "privacy policy page"
+  },
+  "privacy.processors.3": {
+    "message": "Neon (United States company, servers in Frankfurt, Germany) stores our database.",
+    "description": "privacy policy page"
+  },
+  "privacy.processors.4": {
+    "message": "Google handles “Sign in with Google”, under Google's own privacy policy.",
+    "description": "privacy policy page"
+  },
+  "privacy.processors.5": {
+    "message": "These providers process data only to run the service. Some are United States companies, so data may be transferred there under their standard contractual safeguards. Like any web service, they see your IP address when you connect and may keep it in their logs for a short time.",
+    "description": "privacy policy page"
+  },
+  "privacy.retention.title": {
+    "message": "How long we keep data",
+    "description": "privacy policy page"
+  },
+  "privacy.retention.1": {
+    "message": "Account data is kept until you delete your account. Deleting it immediately removes your Google link, email, profile, game history, settings and sessions from our database. Only an anonymous “Deleted player” placeholder remains, with no personal data.",
+    "description": "privacy policy page"
+  },
+  "privacy.retention.2": {
+    "message": "Deleted data can remain in database backups for up to {days} days, until they're replaced.",
+    "description": "privacy policy page; days = backup retention in days"
+  },
+  "privacy.retention.3": {
+    "message": "Our own server logs record requests without IP addresses, and are kept only for a short time to fix problems.",
+    "description": "privacy policy page"
+  },
+  "privacy.rights.title": {
+    "message": "Your choices and rights",
+    "description": "privacy policy page"
+  },
+  "privacy.rights.1": {
+    "message": "You can change your profile in Settings, and delete your account there or as described on the “Delete your account” page.",
+    "description": "privacy policy page"
+  },
+  "privacy.rights.2": {
+    "message": "You can also email us to get a copy of your data, correct it, delete it, or object to how we use it. If you live in the EU, the UK or a place with similar laws, you can also complain to your data-protection authority.",
+    "description": "privacy policy page"
+  },
+  "privacy.children.title": {
+    "message": "Children",
+    "description": "privacy policy page"
+  },
+  "privacy.children.1": {
+    "message": "Signing in is meant for players aged 13 or older, or 16 where local law requires. Younger players can play as guests, which sends no personal data.",
+    "description": "privacy policy page"
+  },
+  "privacy.changes.title": {
+    "message": "Changes to this policy",
+    "description": "privacy policy page"
+  },
+  "privacy.changes.1": {
+    "message": "If this policy changes, we'll post the new version here with a new date.",
+    "description": "privacy policy page"
+  },
+  "delete_account.title": {
+    "message": "Delete your Ouril account",
+    "description": "Account deletion page title"
+  },
+  "delete_account.link": {
+    "message": "Delete your account",
+    "description": "Link to the account deletion page"
+  },
+  "delete_account.intro": {
+    "message": "You can delete your Ouril account, and the data we keep on our server, at any time. You never need an account to play as a guest.",
+    "description": "Account deletion page"
+  },
+  "delete_account.how.title": {
+    "message": "Delete it in the app",
+    "description": "Account deletion page"
+  },
+  "delete_account.how.1": {
+    "message": "Sign in to Ouril with the Google account you used.",
+    "description": "Account deletion page: step 1"
+  },
+  "delete_account.how.2": {
+    "message": "Open Settings, choose “Delete account”, and confirm.",
+    "description": "Account deletion page: step 2"
+  },
+  "delete_account.go_settings": {
+    "message": "Open Settings",
+    "description": "Account deletion page: button for a signed-in player"
+  },
+  "delete_account.email.title": {
+    "message": "Can't sign in?",
+    "description": "Account deletion page"
+  },
+  "delete_account.email.body": {
+    "message": "Email {email} from the address of your Google account and ask us to delete your Ouril account. We'll confirm when it's done, within 30 days.",
+    "description": "Account deletion page; email = contact address"
+  },
+  "delete_account.what.title": {
+    "message": "What's deleted",
+    "description": "Account deletion page"
+  },
+  "delete_account.what.1": {
+    "message": "Straight away: your Google link and email, your profile (name, handle, language and country), your game history and settings on our server, and your sign-in sessions.",
+    "description": "Account deletion page"
+  },
+  "delete_account.what.2": {
+    "message": "The games and settings stored on the device you delete from are removed too. Other devices keep their own copy until you clear the site's data there.",
+    "description": "Account deletion page"
+  },
+  "delete_account.kept.title": {
+    "message": "What's kept",
+    "description": "Account deletion page"
+  },
+  "delete_account.kept.1": {
+    "message": "An anonymous “Deleted player” placeholder with no personal data, so that other players' game records stay complete. Copies in database backups are replaced within {days} days.",
+    "description": "Account deletion page; days = backup retention in days"
+  },
+  "delete_account.privacy_link": {
+    "message": "Read the privacy policy",
+    "description": "Account deletion page: link to the privacy policy"
+  },
+  "account.sign_in.privacy": {
+    "message": "When you sign in, we keep your profile, games and settings on our server as explained in our",
+    "description": "Sign-in screen, before the privacy policy link"
   }
 }
