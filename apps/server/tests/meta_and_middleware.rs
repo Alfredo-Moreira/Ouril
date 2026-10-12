@@ -3,6 +3,8 @@
 
 mod common;
 
+use std::time::Duration;
+
 use axum::http::{Method, StatusCode};
 use common::*;
 use serde_json::json;
@@ -31,6 +33,17 @@ async fn readyz_is_503_when_the_database_is_gone(db: PgPool) {
     let res = app.call(Req::get("/readyz")).await;
     res.assert_status(StatusCode::SERVICE_UNAVAILABLE);
     assert_eq!(res.text(), "unavailable");
+}
+
+#[sqlx::test]
+async fn startup_ping_reports_a_reachable_database(db: PgPool) {
+    assert!(ouril_server::log_database_status(&db, 1, Duration::ZERO).await);
+}
+
+#[sqlx::test]
+async fn startup_ping_gives_up_without_failing_when_the_database_is_gone(db: PgPool) {
+    db.close().await;
+    assert!(!ouril_server::log_database_status(&db, 2, Duration::from_millis(10)).await);
 }
 
 #[sqlx::test]

@@ -48,6 +48,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         "sign-in providers configured"
     );
 
+    // Log whether the database answers, in the background so serving (and /healthz) isn't
+    // delayed while an idle Neon compute wakes up.
+    let ping_pool = pool.clone();
+    tokio::spawn(async move {
+        ouril_server::log_database_status(&ping_pool, 3, Duration::from_secs(2)).await;
+    });
+
     let addr: SocketAddr = format!("{}:{}", config.host, config.port).parse()?;
     let state = AppState::new(config, pool);
     let app = ouril_server::app(state);

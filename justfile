@@ -69,6 +69,11 @@ migrate:
     {{db_up}}
     {{tb}} sqlx migrate run --source {{migrations}}
 
+# Create an empty server migration, e.g. `just migration add_friends` (forward-only, applied on
+# deploy by the release command; see docs/architecture/backend.md#migrations)
+migration name:
+    {{tb}} sqlx migrate add --source {{migrations}} {{name}}
+
 # Open a shell in the toolbox container
 shell:
     {{dc}} run --rm toolbox bash

@@ -85,6 +85,7 @@ docker compose up db server web
 | `just lint` / `just fmt` | rustfmt, clippy (warnings are errors), ESLint, Prettier and tsc / format Rust and web code |
 | `just bindings` | Build `core/wasm/pkg` (WASM only for now; UniFFI comes with iOS/Android) |
 | `just protocol-ts` | Export the API and core TypeScript types to `apps/web/src/generated/protocol/` |
+| `just migration <name>` | Create an empty server migration in `apps/server/migrations` ([migrations](docs/architecture/backend.md#migrations)) |
 | `just migrate` / `just db-reset` | Apply migrations / drop, recreate and migrate the local database |
 | `just build-server-image` | Build the production server image (`apps/server/Dockerfile`, never with `dev-auth`) |
 | `just shell` | Open a shell in the `toolbox` container |
