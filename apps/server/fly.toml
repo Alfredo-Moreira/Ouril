@@ -1,9 +1,11 @@
-# Fly.io config for the staging app (ADR 0019). Placeholder: not deployed yet.
-# Production uses a copy with app = "ouril-server-prod" and min_machines_running = 2.
-# Deploy from the repo root:  flyctl deploy --config apps/server/fly.toml --dockerfile apps/server/Dockerfile .
-# Secrets (DATABASE_URL, JWT_SECRET, GOOGLE_CLIENT_ID, APPLE_*, SENTRY_DSN) via `fly secrets set`.
+# Fly.io config for the production app, the only deployed environment (ADR 0019, ADR 0028: local
+# Docker is the staging environment). .github/workflows/deploy-server.yml deploys a release tag
+# here when run by hand.
+# The deploy workflow creates the app and sets DATABASE_URL (from the GitHub environment, Neon's
+# direct connection string, ADR 0027) and JWT_SECRET (generated once). Later secrets
+# (GOOGLE_CLIENT_ID, APPLE_*, SENTRY_DSN) also go in Fly's secrets.
 
-app = "ouril-server-staging"
+app = "ouril-server-prod"
 primary_region = "fra"
 
 [build]
@@ -18,24 +20,28 @@ primary_region = "fra"
   HOST = "0.0.0.0"
   PORT = "8080"
   RUST_LOG = "info"
+  LOG_FORMAT = "json"
   ACCESS_TOKEN_TTL_SECS = "900"
   REFRESH_TOKEN_TTL_DAYS = "30"
   # ADR 0020: the web app's exact origin(s). Required in release builds (https only).
   # TODO(domain): replace the placeholder once the domain is chosen.
-  ALLOWED_ORIGINS = "https://staging.ouril.example"
+  ALLOWED_ORIGINS = "https://ouril.example"
 
 [http_service]
   internal_port = 8080
   force_https = true
+  # Two machines always running: zero-downtime rolling deploys (ADR 0019).
   auto_stop_machines = "stop"
   auto_start_machines = true
-  min_machines_running = 1
+  min_machines_running = 2
 
   [http_service.concurrency]
     type = "requests"
     soft_limit = 200
     hard_limit = 250
 
+  # Liveness only: a database check every 15 s would keep Neon awake all month (ADR 0027).
+  # Check the database by hand with /readyz.
   [[http_service.checks]]
     method = "GET"
     path = "/healthz"
