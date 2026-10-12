@@ -51,6 +51,11 @@ pub fn router(state: AppState) -> Router {
         .layer(middleware::from_fn_with_state(
             state.clone(),
             crate::ratelimit::rate_limit,
+        ))
+        // Outermost on /v1: requests that bypass the web app's proxy stop here (ADR 0029).
+        .layer(middleware::from_fn_with_state(
+            state.clone(),
+            crate::proxy::require_proxy,
         ));
 
     Router::new()

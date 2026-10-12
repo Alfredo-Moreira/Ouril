@@ -14,8 +14,8 @@ interface ImportMetaEnv {
   /** Matomo site ID for this app. */
   readonly VITE_MATOMO_SITE_ID?: string;
   /**
-   * Origin of the API in production, e.g. `https://api.ouril.example` (same site as the web
-   * app, ADR 0020). Empty/absent = same origin (the Vite dev proxy, or a `/v1` reverse proxy).
+   * Origin of the API, only if it isn't same-origin. Empty/absent = same origin: the Vite dev
+   * proxy locally, the `/v1` proxy in vercel.json in production (ADR 0029).
    */
   readonly VITE_API_BASE_URL?: string;
   /**

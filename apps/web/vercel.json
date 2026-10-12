@@ -3,9 +3,26 @@
   "git": {
     "deploymentEnabled": false
   },
+  "routes": [
+    {
+      "src": "^/v1/(.*)$",
+      "dest": "https://ouril-server-prod.fly.dev/v1/$1",
+      "transforms": [
+        {
+          "type": "request.headers",
+          "op": "set",
+          "target": {
+            "key": "x-ouril-origin-secret"
+          },
+          "args": "$ORIGIN_SECRET",
+          "env": ["ORIGIN_SECRET"]
+        }
+      ]
+    }
+  ],
   "rewrites": [
     {
-      "source": "/((?!assets/|icons/|audio/|sw\\.js|workbox-|manifest\\.webmanifest).*)",
+      "source": "/((?!v1/|assets/|icons/|audio/|sw\\.js|workbox-|manifest\\.webmanifest).*)",
       "destination": "/index.html"
     }
   ],
@@ -58,6 +75,15 @@
         {
           "key": "Cache-Control",
           "value": "no-cache"
+        }
+      ]
+    },
+    {
+      "source": "/v1/(.*)",
+      "headers": [
+        {
+          "key": "x-vercel-enable-rewrite-caching",
+          "value": "0"
         }
       ]
     }
