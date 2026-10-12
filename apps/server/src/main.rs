@@ -22,9 +22,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let pool = PgPoolOptions::new()
         .max_connections(config.db_max_connections)
         .acquire_timeout(Duration::from_secs(5))
+        // Close idle connections before Neon suspends an idle compute (5 minutes, ADR 0027).
+        .idle_timeout(Duration::from_secs(4 * 60))
         .connect_lazy(&config.database_url)?;
 
     if std::env::args().nth(1).as_deref() == Some("migrate") {
+        ouril_server::ensure_writable(&pool).await?;
         MIGRATOR.run(&pool).await?;
         tracing::info!("migrations applied");
         return Ok(());

@@ -1,4 +1,4 @@
-//! `/healthz`, `/v1/meta` and the cross-cutting middleware: 404 fallback, security headers,
+//! `/healthz`, `/readyz`, `/v1/meta` and the cross-cutting middleware: 404 fallback, security headers,
 //! CORS, `X-Ouril-Client` (426), rate limiting (429), body limits and JSON error bodies.
 
 mod common;
@@ -14,6 +14,45 @@ async fn healthz_is_plain_ok(db: PgPool) {
     let res = app.call(Req::get("/healthz")).await;
     res.assert_status(StatusCode::OK);
     assert_eq!(res.text(), "ok");
+}
+
+#[sqlx::test]
+async fn readyz_is_ok_when_the_database_answers(db: PgPool) {
+    let app = TestApp::new(db);
+    let res = app.call(Req::get("/readyz")).await;
+    res.assert_status(StatusCode::OK);
+    assert_eq!(res.text(), "ok");
+}
+
+#[sqlx::test]
+async fn readyz_is_503_when_the_database_is_gone(db: PgPool) {
+    let app = TestApp::new(db.clone());
+    db.close().await;
+    let res = app.call(Req::get("/readyz")).await;
+    res.assert_status(StatusCode::SERVICE_UNAVAILABLE);
+    assert_eq!(res.text(), "unavailable");
+}
+
+#[sqlx::test]
+async fn ensure_writable_accepts_the_primary(db: PgPool) {
+    ouril_server::ensure_writable(&db).await.expect("writable");
+}
+
+#[sqlx::test]
+async fn ensure_writable_rejects_a_read_only_database(db: PgPool) {
+    // A replica answers pg_is_in_recovery() = true; a read-only session is the closest local
+    // stand-in, and the check treats both the same way.
+    let opts = (*db.connect_options())
+        .clone()
+        .options([("default_transaction_read_only", "on")]);
+    let read_only = sqlx::postgres::PgPoolOptions::new()
+        .connect_with(opts)
+        .await
+        .expect("read-only pool");
+    let err = ouril_server::ensure_writable(&read_only)
+        .await
+        .expect_err("read-only database must be rejected");
+    assert!(err.contains("read replica"), "{err}");
 }
 
 #[sqlx::test]

@@ -9,9 +9,9 @@ The web app is a static Vite build (Vercel is the hosting candidate, [overview](
 ## Decision
 - Serve the web app from the main domain on **Vercel** (for example `ouril.example`), and the API from **`api.<same domain>`** on Fly.io (a custom domain on the Fly app). Both are the same *site*, so the `SameSite=Lax` refresh cookie is sent on API calls.
 - The web build sets `VITE_API_BASE_URL=https://api.<domain>`. The client then calls the API cross-origin with `credentials: 'include'`. Without the variable it stays same-origin, as in local development behind the Vite proxy.
-- The server's `ALLOWED_ORIGINS` lists the exact web origin(s) (`https://<domain>`, plus the staging origin), which CORS with credentials requires.
+- The server's `ALLOWED_ORIGINS` lists the exact web origin(s) (`https://<domain>`), which CORS with credentials requires.
 - Vercel serves `apps/web/vercel.json`: SPA routing, a strict Content Security Policy (`connect-src` includes the API origin), HSTS and other security headers.
-- Each environment gets its own pair, for example `staging.<domain>` with `api-staging.<domain>`.
+- Only production is deployed ([ADR 0028](0028-production-only-local-staging.md)); local development keeps using the Vite proxy on one origin.
 
 ## Alternatives considered
 - **Proxy `/v1` through Vercel (one origin):** simplest for cookies. But Fly would see Vercel's addresses instead of players' IPs, which breaks per-player rate limiting unless a trusted forwarding header is added. It's also an extra network hop on every API call.

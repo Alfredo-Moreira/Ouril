@@ -7,13 +7,13 @@ Each phase ships something usable. The order may change, but every phase depends
 ```mermaid
 flowchart LR
   P0[0 · Docs] --> P1[1 · MVP<br/>web, standalone]
-  P1 --> P2[2 · Reach<br/>and replay]
-  P2 --> P3[3 · Accounts<br/>and sync]
+  P1 --> P2[2 · Accounts<br/>and sync]
+  P2 --> P3[3 · Reach<br/>and replay]
   P3 --> P4[4 · Play with<br/>friends]
   P4 --> P5[5 · iOS and<br/>Android]
   P5 --> P6[6 · Live<br/>games]
   P6 --> P7[7 · Leaderboards]
-  ON[Ongoing: languages · variants · community] -.-> P2
+  ON[Ongoing: languages · variants · community] -.-> P3
 ```
 
 ## Phase 0: Documentation ✅ *(done)*
@@ -32,19 +32,20 @@ See [mvp.md](mvp.md) and [ADR 0025](../decisions/0025-web-first-static-mvp.md): 
 - ✅ Deploy pipeline to Vercel ([deployment](../architecture/deployment.md)). ⏳ Vercel project, secrets and domain.
 - Built but switched off for the MVP: sign-in, sync, Stats and replays, and the server (`apps/server`, [API](../../apps/server/API.md)) on Postgres. Google and Apple sign-in answer `501 not_configured` until keys exist.
 
-Phases 2 to 7 ship in this order (agreed after the MVP). The three "coming soon" items on the home page are phases 3, 4 and 7.
+Phases 2 to 7 ship in this order (agreed after the MVP; accounts and sync moved ahead of reach and replay on 2026-10-11). The three "coming soon" items on the home page are phases 2, 4 and 7.
 
-## Phase 2: Reach and replay
-No server needed: the app stays a static site.
-- **Pass-and-play:** two players on one device.
-- **Share a finished game** as a link or image.
-- **Crash reporting** (Sentry), opt-in through the consent prompt ([ADR 0014](../decisions/0014-telemetry-consent.md)), which appears once it's configured.
-
-## Phase 3: Accounts and sync
-Switch on what's already built ([accounts](features/accounts.md), [backend](../architecture/backend.md)): host the server and database ([ADR 0019](../decisions/0019-host-server-on-fly-io.md)), set up Google and Apple client IDs, and publish a privacy policy.
+## Phase 2: Accounts and sync *(in progress)*
+Switch on what's already built ([accounts](features/accounts.md), [backend](../architecture/backend.md)): host the server and database ([ADR 0019](../decisions/0019-host-server-on-fly-io.md)), set up Google and Apple client IDs, and publish a privacy policy. Moved ahead of "Reach and replay" so the server is live and proven before online play.
+- ✅ Deploy pipeline to Fly.io: production from a release tag, run by hand; local Docker is the staging environment ([deployment](../architecture/deployment.md#the-server-on-flyio)). ⏳ Fly and Neon accounts, secrets and domain.
 - Optional sign-in with Google and Apple; guests stay fully offline.
 - Backup and sync of game history and settings across devices.
 - Stats, history and replays (`VITE_FEATURE_ACCOUNTS`, `VITE_FEATURE_STATS`).
+
+## Phase 3: Reach and replay
+No server needed: these run on the device.
+- **Pass-and-play:** two players on one device.
+- **Share a finished game** as a link or image.
+- **Crash reporting** (Sentry), opt-in through the consent prompt ([ADR 0014](../decisions/0014-telemetry-consent.md)), which appears once it's configured.
 
 ## Phase 4: Play with friends (async)
 Online play against real people, turn by turn. Requires sign-in.

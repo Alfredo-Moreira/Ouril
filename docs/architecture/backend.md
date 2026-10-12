@@ -13,15 +13,16 @@
 
 ## Scope by phase
 
-| Phase | Server responsibilities |
+| Phase ([roadmap](../product/roadmap.md)) | Server responsibilities |
 |---|---|
-| 1 · MVP | None: the web MVP is a static site. The accounts scope below is built and ships right after |
-| Accounts (after the MVP) | Sign in (Google, Apple), profile, account deletion, offline-first sync of game history and settings (guests never call the server) |
-| 2 · More ways to play | No new server work (pass-and-play, variants and languages are on-device) |
-| 3 · Async multiplayer | Async games (HTTP + push), invites, friends list |
-| 4 · Live multiplayer | Live games (WebSocket + server clocks), matchmaking, rated games |
-| 5 · Leaderboards | Glicko-2 ratings, points boards, scopes (global, country, region, city) |
-| 6 · Community | More sign-in providers (X, Meta), tournaments |
+| 1 · MVP | None: the web MVP is a static site |
+| 2 · Accounts and sync | Sign in (Google, Apple), profile, account deletion, offline-first sync of game history and settings (guests never call the server). Built; deployed to Fly.io ([deployment](deployment.md#the-server-on-flyio)) |
+| 3 · Reach and replay | No new server work (pass-and-play and sharing are on-device) |
+| 4 · Play with friends (async) | Async games (HTTP + push), invites, friends list |
+| 5 · iOS and Android | Native push (APNs, FCM) |
+| 6 · Live games | Live games (WebSocket + server clocks), matchmaking, rated games |
+| 7 · Leaderboards | Glicko-2 ratings, points boards, scopes (global, country, region, city) |
+| Ongoing | More sign-in providers (X, Meta), tournaments |
 
 ## Data model
 
@@ -148,7 +149,8 @@ The full contract is in [`apps/server/API.md`](../../apps/server/API.md): reques
 
 | Method | Path | Purpose |
 |---|---|---|
-| `GET` | `/healthz` | Liveness check for Fly.io (`200 ok`, outside `/v1`) |
+| `GET` | `/healthz` | Liveness: the process is up (`200 ok`, outside `/v1`) |
+| `GET` | `/readyz` | Readiness, for manual and post-deploy checks: `200 ok` if the database answers within 2 s, else `503` (outside `/v1`). Not Fly's health check, so the database can sleep ([ADR 0027](../decisions/0027-postgres-on-neon-free-plan.md)) |
 | `GET` | `/v1/meta` | Minimum supported and recommended app versions, API and protocol versions ([versioning](versioning.md)) |
 | `POST` | `/v1/auth/dev` | **Debug builds only** (`dev-auth` feature): sign in as a test user without Google or Apple ([ADR 0017](../decisions/0017-local-first-development.md)). The user is found or created by name (default `dev`). |
 | `POST` | `/v1/auth/google` | Exchange a Google ID token for our session. `501 not_configured` while `GOOGLE_CLIENT_ID` is empty. |
@@ -171,7 +173,7 @@ Multiplayer adds `/v1/games…` (create, invite, async move) and the realtime We
 - **Sync validation:** `game_finished` records are replayed with `ouril-engine` at the exact `variant@version`. A record whose moves are illegal, or whose outcome, stores or end reason don't match, is rejected as `illegal_game`. Forfeits (format 2, reason `resigned`) must replay to a game still in progress, with the other side winning ([ADR 0022](../decisions/0022-forfeit-and-record-format-2.md)). Each mutation runs in its own transaction, and a repeated mutation ID returns the stored outcome.
 - **Middleware:** `X-Ouril-Client` is parsed on every request, and clients below `min_supported` get `426` on every `/v1` route except `/v1/meta`. CORS allows exact origins with credentials. Other middleware: security headers (plus HSTS in release builds), a 1 MiB body limit, a 15 s timeout per request, JSON errors for every failure (including panics and malformed input), and request logs that never record headers or bodies.
 - **Rate limiting:** in-memory fixed windows per server machine, keyed by client network (IPv4 address or IPv6 /64, from `Fly-Client-IP` behind Fly). Sign-in is limited to 60/min; everything else, including refresh and logout, to 600/min. Both are configurable. The map is capped at 50,000 windows and pruned at most every 10 s; when it's full, new clients pass untracked instead of being locked out. `429` comes with `Retry-After`. Counters move to Valkey when multiplayer brings it.
-- **Release safety:** a release build with `dev-auth` fails to compile, and the production image never enables it. Release builds refuse to start with the `.env.example` JWT secret or a non-loopback `http://` origin.
+- **Release safety:** a release build with `dev-auth` fails to compile, and the production image never enables it. Release builds refuse to start with the `.env.example` JWT secret or a non-loopback `http://` origin, and `ouril-server migrate` refuses a read-only database (a read replica's URL, [ADR 0027](../decisions/0027-postgres-on-neon-free-plan.md)).
 
 ## Realtime protocol (sketch)
 
@@ -185,7 +187,7 @@ Server → client: `state(game_id, moves, clocks)`, `moved(ply, pit, events, clo
 
 ## Operations
 
-- **Hosting:** Fly.io, with `ouril-server-staging` and `ouril-server-prod`, managed Postgres in the same European region, migrations as the release command, at least 2 production machines, and secrets in `fly secrets` ([ADR 0019](../decisions/0019-host-server-on-fly-io.md)).
+- **Hosting:** Fly.io, one app `ouril-server-prod` (`apps/server/fly.toml`; no hosted staging, local Docker plays that role, [ADR 0028](../decisions/0028-production-only-local-staging.md)), region `fra`, migrations as the release command, at least 2 production machines, health checks on `/healthz`, JSON logs, and secrets in `fly secrets` ([ADR 0019](../decisions/0019-host-server-on-fly-io.md)). Postgres is on Neon's free plan in AWS Frankfurt, one project ([ADR 0027](../decisions/0027-postgres-on-neon-free-plan.md)). Deploys and setup: [deployment](deployment.md#the-server-on-flyio).
 - Containerized, stateless app instances behind a load balancer. Live games are pinned to an instance, with Redis pub/sub for cross-instance events.
 - Observability: structured logs (`tracing`), metrics, error tracking (for example Sentry).
 - Secrets (Apple private key, push credentials) live in the host's secret manager, never in the repo.

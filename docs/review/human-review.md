@@ -79,7 +79,7 @@ Agent labels: `scaffold`, `build:core`, `build:server`, `build:web`, `tests:core
     - Should Hard allow undo? Undo is currently allowed at every level.
 
     Area: core, web. Source: scaffold, build:core, build:web, docs. File: `docs/architecture/ai.md`.
-17. **`/healthz` is liveness only.** Add a readiness check that touches the database for Fly? Area: infra. Source: build:server. File: `apps/server/fly.toml`.
+17. ✅ **Fixed 2026-10-11: readiness check.** `GET /readyz` answers 200 only when the database responds within 2 s (503 otherwise), for manual and post-deploy checks. Fly's health check stays on `/healthz`, so it doesn't keep the Neon database awake ([ADR 0027](../decisions/0027-postgres-on-neon-free-plan.md)). `/readyz` isn't rate limited (it runs one `SELECT 1`). Area: infra, server. Files: `apps/server/src/routes/mod.rs`, `apps/server/fly.toml`.
 18. **Avatars.** `avatar_url` accepts any https URL, which forces `img-src https:` in the CSP. Proxy or restrict avatars? Area: server, web. Source: sec. File: `apps/server/src/validate.rs`.
 19. **426 `upgrade_required` scope.** It currently applies to every `/v1` route except `/v1/meta`, including unknown routes, rather than only sign-in and sync. `/v1/meta` is still rate limited. Intended? Area: server. Source: build:server, tests:server. Files: `apps/server/src/client.rs`, `apps/server/src/ratelimit.rs`.
 20. **Sessions have only a sliding expiry.** Add an absolute maximum session lifetime? Area: server. Source: build:server.
@@ -88,14 +88,10 @@ Agent labels: `scaffold`, `build:core`, `build:server`, `build:web`, `tests:core
 ## Placeholders to fill (OAuth, secrets, contacts)
 
 1. **OAuth credentials.** These are empty in `.env.example`: `GOOGLE_CLIENT_ID`, `APPLE_SERVICE_ID`, `APPLE_TEAM_ID`, `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY_PATH` (.p8). `APPLE_BUNDLE_ID` still needs adding. Until all are set, `/v1/auth/google` and `/v1/auth/apple` answer 501 `not_configured` and the web buttons stay disabled. Area: server, web, infra. Source: scaffold, build:server, build:web, scan. Files: `.env.example`, `apps/server/src/routes/auth.rs`, `apps/web/src/routes/SignIn.tsx`.
-2. **`JWT_SECRET`.** `.env.example` and the local `.env` hold the dev-only value. Staging and production need a real secret via `fly secrets set` (for example `openssl rand -base64 48`). Release builds, including `just docker-build`, refuse to start with the placeholder. Area: infra. Source: scaffold, sec, apply:server, verify.
-3. **`fly.toml`.**
-   - `ALLOWED_ORIGINS` is a commented TODO (`https://staging.ouril.example`). It must be `https://`, or release builds won't start.
-   - `LOG_FORMAT=json` is missing.
-   - A production copy is needed (`ouril-server-prod`, `min_machines_running = 2`).
-   - Region `fra` is a placeholder, and nothing is deployed yet.
+2. **`JWT_SECRET`.** `.env.example` and the local `.env` hold the dev-only value. Production needs a real secret; the deploy workflow generates one in Fly's secrets on its first run. Release builds, including `just docker-build`, refuse to start with the placeholder. Area: infra. Source: scaffold, sec, apply:server, verify.
+3. **Fly.io setup.** ✅ Done 2026-10-11 in code: `ALLOWED_ORIGINS` set (placeholder hosts), `LOG_FORMAT=json`, one production config (`ouril-server-prod`, `min_machines_running = 2`; no hosted staging, [ADR 0028](../decisions/0028-production-only-local-staging.md)), region `fra`, and `.github/workflows/deploy-server.yml`, which creates the Fly app and its secrets. Still needed: the Fly account and org token, the Neon project ([ADR 0027](../decisions/0027-postgres-on-neon-free-plan.md)), the secrets in the `production` GitHub environment ([deployment](../architecture/deployment.md#one-time-setup-for-the-server)), and the real domain in `ALLOWED_ORIGINS`.
 
-   Area: infra. Source: scaffold, build:server, sec, apply:server, scan. File: `apps/server/fly.toml`.
+   Area: infra. File: `apps/server/fly.toml`.
 4. **Telemetry.** Usage statistics are wired to self-hosted Matomo ([ADR 0026](../decisions/0026-usage-statistics-with-matomo.md), **Proposed**), with the offline queue. Still TODO: `SENTRY_DSN` is empty and Sentry lazy-loading after consent isn't written, so crash reports send nothing; accept ADR 0026; confirm the Matomo instance's IP anonymization and geolocation settings. Area: web, server. Source: build:web, scan. File: `apps/web/src/telemetry/index.ts`.
 5. **`.env.example` is missing documented server keys:** `DB_MAX_CONNECTIONS` (default 10) and `LOG_FORMAT` (json|text). Area: infra. Source: build:server, scan.
 6. **Project contacts.** `[INSERT CONTACT METHOD]` in `CODE_OF_CONDUCT.md`. In `SECURITY.md`, enable GitHub private vulnerability reporting and replace `security@TODO.example`. Area: docs. Source: scan.
@@ -106,7 +102,7 @@ Agent labels: `scaffold`, `build:core`, `build:server`, `build:web`, `tests:core
 11. **Rules and tutorial text.** `rules.*` and `tutorial.*` in `shared/i18n/en.json` paraphrase rules.md and need proofreading against the spec. The tutorial adds one position that is not a rules.md example. Area: web, docs. Source: build:web.
 12. **`just i18n` is a stub.** Its message also says the web "reads shared/i18n/en.json directly", but the web now runs `apps/web/scripts/gen-i18n.mjs`. Area: infra. Source: scaffold, build:web, scan. File: `justfile`.
 
-- **Domain (ADR 0020):** `https://api.ouril.example` in the CSP `connect-src` (`apps/web/vercel.json`), `ALLOWED_ORIGINS = "https://staging.ouril.example"` (`apps/server/fly.toml`), and `VITE_API_BASE_URL` for production web builds. Area: infra, web, server.
+- **Domain (ADR 0020):** `https://api.ouril.example` in the CSP `connect-src` (`apps/web/vercel.json`), `ALLOWED_ORIGINS = "https://ouril.example"` (`apps/server/fly.toml`), and `VITE_API_BASE_URL` for production web builds. Area: infra, web, server.
 - **Apple:** `APPLE_BUNDLE_ID` (once the iOS app exists) and `APPLE_REDIRECT_URI` (web flow) in `.env.example` / `fly secrets`. Area: server.
 ## Deviations from docs/ADRs
 

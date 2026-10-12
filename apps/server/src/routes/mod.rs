@@ -8,8 +8,8 @@ mod sync;
 use std::time::Duration;
 
 use axum::{
-    extract::{DefaultBodyLimit, Request},
-    http::{header, HeaderName, HeaderValue, Method},
+    extract::{DefaultBodyLimit, Request, State},
+    http::{header, HeaderName, HeaderValue, Method, StatusCode},
     middleware,
     response::{IntoResponse, Response},
     routing::get,
@@ -55,6 +55,7 @@ pub fn router(state: AppState) -> Router {
 
     Router::new()
         .route("/healthz", get(healthz))
+        .route("/readyz", get(readyz))
         .nest("/v1", v1)
         .fallback(not_found)
         .layer(DefaultBodyLimit::max(MAX_BODY_BYTES))
@@ -142,8 +143,29 @@ async fn security_headers(req: Request, next: middleware::Next) -> Response {
     res
 }
 
+/// How long [`readyz`] waits for the database before reporting the machine unready.
+pub const READY_DB_TIMEOUT: Duration = Duration::from_secs(2);
+
+/// Liveness: the process is up. Never touches the database.
 async fn healthz() -> &'static str {
     "ok"
+}
+
+/// Readiness (Fly health check): the database answers `SELECT 1` within [`READY_DB_TIMEOUT`].
+/// A machine that fails it stops getting traffic until it recovers.
+async fn readyz(State(state): State<AppState>) -> (StatusCode, &'static str) {
+    let ping = sqlx::query("SELECT 1").execute(&state.db);
+    match tokio::time::timeout(READY_DB_TIMEOUT, ping).await {
+        Ok(Ok(_)) => (StatusCode::OK, "ok"),
+        Ok(Err(e)) => {
+            tracing::warn!(error = %e, "readiness check: database error");
+            (StatusCode::SERVICE_UNAVAILABLE, "unavailable")
+        }
+        Err(_) => {
+            tracing::warn!("readiness check: database timed out");
+            (StatusCode::SERVICE_UNAVAILABLE, "unavailable")
+        }
+    }
 }
 
 async fn not_found() -> AppError {

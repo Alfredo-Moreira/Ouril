@@ -1,6 +1,6 @@
 # Multiplayer
 
-> Product design for online play: live (sync) and turn-by-turn (async). **Status:** Draft. Phases 3 and 4 of the [roadmap](../roadmap.md).
+> Product design for online play: live (sync) and turn-by-turn (async). **Status:** Draft. Phases 4 (async) and 6 (live) of the [roadmap](../roadmap.md).
 
 ## Modes
 

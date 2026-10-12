@@ -25,7 +25,7 @@ flowchart LR
 
 | Layer | Technology | Holds |
 |---|---|---|
-| **Server: primary** | **PostgreSQL** (Fly.io managed Postgres in production, [ADR 0019](../decisions/0019-host-server-on-fly-io.md); Docker locally) | Users, sign-in identities, sessions, profiles, settings, game records (vs AI and online), friends, ratings |
+| **Server: primary** | **PostgreSQL** (Neon in production, [ADR 0027](../decisions/0027-postgres-on-neon-free-plan.md); Docker locally) | Users, sign-in identities, sessions, profiles, settings, game records (vs AI and online), friends, ratings |
 | **Server: cache and realtime** (multiplayer phases) | **Redis** or **Valkey** | Presence, matchmaking queues, pub/sub between instances, rate limits, and leaderboards later. Can be rebuilt from Postgres. |
 | **iOS** | **SQLite** via GRDB | Local cache + outbox |
 | **Android** | **SQLite** via Room | Local cache + outbox |
