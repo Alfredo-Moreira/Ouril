@@ -105,12 +105,12 @@ flowchart TB
 | Variants | Data-driven config, so no per-variant forks |
 | Development | Local-first and Docker-first: `compose.yaml` runs Postgres, the server, the web dev server and the toolchains; only Xcode, the iOS Simulator and the Android Emulator run on the host; dev sign-in ([ADR 0017](../decisions/0017-local-first-development.md)). Build order core → web → iOS → Android, launch together ([ADR 0018](../decisions/0018-platform-build-order.md)). |
 | Identity | Our own user IDs. Providers (Google, Apple; later X and Meta) are linked identities. |
-| Hosting | Server and Postgres on **Fly.io**, with staging and production apps ([ADR 0019](../decisions/0019-host-server-on-fly-io.md)). Web app on Vercel (candidate). |
+| Hosting | Server on **Fly.io** ([ADR 0019](../decisions/0019-host-server-on-fly-io.md)) and Postgres on **Neon**'s free plan ([ADR 0027](../decisions/0027-postgres-on-neon-free-plan.md)), production only; local Docker is the staging environment ([ADR 0028](../decisions/0028-production-only-local-staging.md)). Web app on Vercel (candidate). |
 | Data | Postgres online (source of truth), SQLite / IndexedDB on device. Offline-first outbox + cursor sync ([ADR 0010](../decisions/0010-postgres-and-local-sqlite.md), [ADR 0011](../decisions/0011-offline-first-sync.md)). |
 
 Details: [monorepo](monorepo.md) · [engine](engine.md) · [AI](ai.md) · [data and sync](data-and-sync.md) · [backend](backend.md) · [accounts](../product/features/accounts.md)
 
 ## Open questions
 
-- Web hosting is still a candidate, not a decision. The server is decided: **Fly.io** with managed Postgres in one European region ([ADR 0019](../decisions/0019-host-server-on-fly-io.md)).
+- Web hosting is still a candidate, not a decision. The server is decided: **Fly.io** in one European region ([ADR 0019](../decisions/0019-host-server-on-fly-io.md)), with Postgres on Neon in the same city ([ADR 0027](../decisions/0027-postgres-on-neon-free-plan.md)).
   - **Web app: Vercel.** The Vite build is static. CI builds it with the `toolbox` image, which includes Rust for the WASM engine, and uploads it with `vercel deploy --prebuilt`, so Vercel needs no Rust. A rewrite serves `index.html` for every route, and a rewrite forwarding `/v1/*` to the API keeps one origin for the session cookie and Sign in with Apple. WebSocket traffic for live multiplayer can't go through that rewrite, so it connects to the API host directly.
