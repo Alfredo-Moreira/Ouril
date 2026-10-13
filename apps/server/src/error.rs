@@ -57,6 +57,10 @@ impl AppError {
         )
     }
 
+    pub fn conflict(message: impl Into<String>) -> Self {
+        Self::new(StatusCode::CONFLICT, ErrorCode::Conflict, message)
+    }
+
     pub fn payload_too_large(message: impl Into<String>) -> Self {
         Self::new(
             StatusCode::PAYLOAD_TOO_LARGE,
