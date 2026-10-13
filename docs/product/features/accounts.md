@@ -81,7 +81,7 @@ To try it locally, set `GOOGLE_CLIENT_ID` and `VITE_GOOGLE_CLIENT_ID` to the cli
 
 ## Guest → account
 
-- On first launch the app creates a local **guest profile**: a random ID, with stats and history stored on the device.
+- On first launch the app creates a local **guest profile**: a random ID. A guest's finished games are stored on the device, but **Stats, history and replays are for signed-in players**: guests don't see them, and `/stats` asks them to sign in. The paused game, settings and the telemetry choice also stay on the device.
 - When the guest signs in, their local game records are claimed by the account and synced. If the account already has data from another device, the game histories are **combined** (by game ID), and stats are recomputed from the combined history. No counters are merged, so nothing is double-counted.
 - Signing out keeps the local data on the device but stops syncing.
 - Full details: [data and sync](../../architecture/data-and-sync.md).
