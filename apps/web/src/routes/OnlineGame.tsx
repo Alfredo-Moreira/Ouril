@@ -7,6 +7,7 @@ import type { OnlineGame as Game } from '../api/types';
 import { BoardView } from '../components/BoardView';
 import { useCore } from '../engine/CoreContext';
 import type { GameState, VariantRef } from '../engine/types';
+import { trackInviteAnswer, trackOnlineFinished } from '../online/analytics';
 import { displayPosition, flipPit, resultFor } from '../online/perspective';
 import { usePolling } from '../online/usePolling';
 import { useApp } from '../state/useApp';
@@ -54,7 +55,10 @@ export function OnlineGame() {
   useEffect(() => {
     if (!game) return;
     const finished = game.status === 'finished';
-    if (wasFinished.current === false && finished) notifyLocalChange();
+    if (wasFinished.current === false && finished) {
+      notifyLocalChange();
+      trackOnlineFinished(game);
+    }
     wasFinished.current = finished;
   }, [game, notifyLocalChange]);
 
@@ -74,11 +78,12 @@ export function OnlineGame() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `variant` follows `game`.
   }, [core, game]);
 
-  const act = async (action: () => Promise<Game>) => {
+  const act = async (action: () => Promise<Game>, onDone?: () => void) => {
     setBusy(true);
     setError(null);
     try {
       setGame(await action());
+      onDone?.();
     } catch (e) {
       setError(e instanceof ApiError ? e.code : 'network');
       refresh();
@@ -168,7 +173,12 @@ export function OnlineGame() {
               type="button"
               className="button"
               disabled={busy}
-              onClick={() => void act(() => api().gameAction(game.id, 'accept'))}
+              onClick={() =>
+                void act(
+                  () => api().gameAction(game.id, 'accept'),
+                  () => trackInviteAnswer('accept'),
+                )
+              }
             >
               {t('online.accept')}
             </button>
@@ -176,7 +186,12 @@ export function OnlineGame() {
               type="button"
               className="button button--ghost"
               disabled={busy}
-              onClick={() => void act(() => api().gameAction(game.id, 'decline'))}
+              onClick={() =>
+                void act(
+                  () => api().gameAction(game.id, 'decline'),
+                  () => trackInviteAnswer('decline'),
+                )
+              }
             >
               {t('online.decline')}
             </button>

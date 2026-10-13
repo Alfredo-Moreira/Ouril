@@ -4,6 +4,7 @@ import { Link, useNavigate, useParams } from 'react-router';
 
 import { ApiError } from '../api/client';
 import { rememberReturnTo } from '../auth/returnTo';
+import { trackJoin } from '../online/analytics';
 import { useApp } from '../state/useApp';
 
 /**
@@ -25,7 +26,10 @@ export function JoinGame() {
     sent.current = true;
     void api()
       .joinGame(code)
-      .then((game) => navigate(`/online/${game.id}`, { replace: true }))
+      .then((game) => {
+        trackJoin();
+        navigate(`/online/${game.id}`, { replace: true });
+      })
       .catch((e: unknown) => setError(e instanceof ApiError ? e.code : 'network'));
   }, [api, auth, code, navigate]);
 

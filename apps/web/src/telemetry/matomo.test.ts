@@ -56,6 +56,18 @@ describe('Matomo usage statistics (ADR 0026)', () => {
   it('strips IDs, queries and fragments from paths', () => {
     expect(sanitizePath('/replay/0192b3c4?x=1#y')).toBe('/replay/:id');
     expect(sanitizePath('/rules?from=home')).toBe('/rules');
+    // Games against other players: the game ID and, above all, the invite code stay local.
+    expect(sanitizePath('/online/0192b3c4-d5e6-7f80-9a1b-2c3d4e5f6a7b')).toBe('/online/:id');
+    expect(sanitizePath('/join/8f14e45fceea167a5a36dedd4bea2543')).toBe('/join/:code');
+    expect(sanitizePath('/online')).toBe('/online');
+    expect(sanitizePath('/auth/google#id_token=abc&state=xyz')).toBe('/auth/google');
+    // Any other ID-like segment is replaced as well.
+    expect(sanitizePath('/future/0192b3c4-d5e6-7f80-9a1b-2c3d4e5f6a7b/view')).toBe(
+      '/future/:id/view',
+    );
+    expect(sanitizePath('/x/abcdefgh12345678wxyz')).toBe('/x/:id');
+    expect(sanitizePath('/notifications-settings')).toBe('/notifications-settings');
+    expect(sanitizePath('/delete-account')).toBe('/delete-account');
   });
 
   it('sends page views and events in one bulk request, with no cookies or referrer', async () => {

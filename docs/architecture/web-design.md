@@ -123,7 +123,22 @@ The 3D board is a separate chunk, so it isn't there on the first paint. `BoardVi
 
 ## Unreleased features and content
 
-- **Usage statistics** (`src/telemetry/`, [ADR 0026](../decisions/0026-usage-statistics-with-matomo.md)): only after the player opts in on the first-launch prompt or in Settings ([ADR 0014](../decisions/0014-telemetry-consent.md)), and only when the build sets `VITE_MATOMO_URL` and `VITE_MATOMO_SITE_ID`. Each consent option appears only when its service is configured. A small client for Matomo's HTTP API (no `matomo.js`, no cookies) records a screen view per route (IDs stripped) and `game_finished` events, queues them in `localStorage` (capped, dropped after 23 hours) and sends them in bulk when online. `GuestNetwork.test.tsx` checks that a guest who declines sends nothing and one who opts in only reaches Matomo.
+- **Usage statistics** (`src/telemetry/`, [ADR 0026](../decisions/0026-usage-statistics-with-matomo.md)): only after the player opts in on the first-launch prompt or in Settings ([ADR 0014](../decisions/0014-telemetry-consent.md)), and only when the build sets `VITE_MATOMO_URL` and `VITE_MATOMO_SITE_ID`. Each consent option appears only when its service is configured. A small client for Matomo's HTTP API (no `matomo.js`, no cookies) records a screen view per route and the events below, queues them in `localStorage` (capped, dropped after 23 hours) and sends them in bulk when online. `GuestNetwork.test.tsx` checks that a guest who declines sends nothing and one who opts in only reaches Matomo.
+  - **Screen paths** are cleaned before they leave the device (`sanitizePath`): no query string or fragment, and route parameters become their names (`/replay/:id`, `/online/:id`, `/join/:code`; an invite code would let anyone join the game). Any other segment that looks like an ID (a UUID, or 16+ characters with a digit) becomes `:id`.
+  - **Events** say what happened, never who: no account, handle, game ID or invite code.
+
+    | Event | Properties | When |
+    |---|---|---|
+    | `game_finished` | `level`, `outcome`, `plies` | A game against the computer ends (or is forfeited) |
+    | `sign_in` | `provider` (`google`, `dev`) | A sign-in succeeds |
+    | `sign_out` | | The player signs out |
+    | `account_deleted` | | The account is deleted |
+    | `online_invite` | `via` (`handle`, `link`, `opponent`) | The server accepted a new invitation |
+    | `online_invite_answer` | `answer` (`accept`, `decline`, `cancel`) | An invitation was accepted, declined or withdrawn |
+    | `online_join` | | An invite link was used to join a game |
+    | `online_game_finished` | `outcome` (from your side), `reason`, `plies` | A game against another player ends while it's open in this app; each player counts their own |
+
+    Add new events to this table and to the privacy policy's usage-statistics paragraph.
 - **Feature flags** (`src/features.ts`): sign-in, accounts and sync (`VITE_FEATURE_ACCOUNTS`) and the Stats page with history and replays (`VITE_FEATURE_STATS`) are **off for the MVP**. Stats are also only for signed-in players (`useStatsVisible`): guests get no Stats link, and `/stats` and replays send them to sign in. The page has two sections, against the computer (`mode = vs_ai`) and against other players (every other mode, empty until such games exist). Their code stays in place; with a flag off, its links, routes and settings are hidden. Unit tests run with both on, and `features.test.tsx` checks the MVP (both off).
 - **About the developer** (`/about`): photo, introduction, social links and *Buy me a coffee* (PayPal, Venmo, Zelle). The content lives in `src/content/developer.ts`; empty links and usernames are hidden in production and shown as dashed placeholders in development. PayPal and Venmo open their pages; Zelle has no web link, so its email or phone is shown with a copy button.
 - **Play on a real board:** two recommended physical boards (classic and premium) linking to Amazon, at the bottom of the About page (`/about#buy`) and on the home page. The header's **Buy a board** button opens the About page and scrolls there. Links live in `src/content/boards.ts`; set `affiliate: true` for Amazon Associates links, which adds the required disclosure and `rel="sponsored"`. Empty links are hidden in production, with the header button.
