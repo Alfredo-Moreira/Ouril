@@ -230,6 +230,8 @@ pub async fn delete_account(db: &PgPool, user_id: Uuid) -> Result<(), sqlx::Erro
         "DELETE FROM user_settings WHERE user_id = $1",
         "DELETE FROM games WHERE user_id = $1",
         "DELETE FROM sync_mutation WHERE user_id = $1",
+        // Their own opponent list. Other players keep theirs, now showing "Deleted player".
+        "DELETE FROM user_opponents WHERE user_id = $1",
     ] {
         sqlx::query(sql).bind(user_id).execute(&mut *tx).await?;
     }
