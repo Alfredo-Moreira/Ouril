@@ -13,6 +13,7 @@ import { ScreenErrorBoundary } from './components/ErrorBoundary';
 import { telemetryConfigured, trackPageView } from './telemetry';
 import {
   BagIcon,
+  GlobeIcon,
   InfoIcon,
   LearnIcon,
   LogoMark,
@@ -37,12 +38,15 @@ import { Privacy } from './routes/Privacy';
 import { Rules } from './routes/Rules';
 import { Settings } from './routes/Settings';
 import { GoogleCallback } from './routes/GoogleCallback';
+import { JoinGame } from './routes/JoinGame';
+import { Online } from './routes/Online';
+import { OnlineGame } from './routes/OnlineGame';
 import { SignIn } from './routes/SignIn';
 import { Stats } from './routes/Stats';
 import { Tutorial } from './routes/Tutorial';
 import { AppProvider } from './state/AppProvider';
 import { useImmersive } from './state/immersive';
-import { useApp, useStatsVisible } from './state/useApp';
+import { useApp, useOnlineVisible, useStatsVisible } from './state/useApp';
 
 export interface AppProps {
   /** Test seams: inject the core/AI/API client. Production uses the defaults. */
@@ -87,8 +91,9 @@ function Layout({ animationSpeed }: { animationSpeed?: number }) {
   const { t } = useTranslation();
   const { auth, user, update, consent } = useApp();
   const statsVisible = useStatsVisible();
-  // A guest who opens /stats or a replay link is asked to sign in (or sent home).
-  const statsGate = <Navigate to={FEATURES.accounts ? '/sign-in' : '/'} replace />;
+  const onlineVisible = useOnlineVisible();
+  // A guest who opens a signed-in page (Stats, replays, online games) is asked to sign in.
+  const signInGate = <Navigate to={FEATURES.accounts ? '/sign-in' : '/'} replace />;
   const { pathname } = useLocation();
   // A screen view per route, only with usage-statistics consent (ADR 0014). Re-runs when the
   // choice is made, so the screen the player is on counts too.
@@ -135,6 +140,12 @@ function Layout({ animationSpeed }: { animationSpeed?: number }) {
                 <RulesIcon />
                 <span>{t('menu.rules')}</span>
               </NavLink>
+              {onlineVisible && (
+                <NavLink to="/online">
+                  <GlobeIcon />
+                  <span>{t('menu.online')}</span>
+                </NavLink>
+              )}
               {statsVisible && (
                 <NavLink to="/stats">
                   <StatsIcon />
@@ -196,15 +207,22 @@ function Layout({ animationSpeed }: { animationSpeed?: number }) {
             <Route path="/play" element={<GameRoute animationSpeed={animationSpeed} />} />
             <Route path="/tutorial" element={<Tutorial animationSpeed={animationSpeed} />} />
             {FEATURES.stats && (
-              <Route path="/stats" element={statsVisible ? <Stats /> : statsGate} />
+              <Route path="/stats" element={statsVisible ? <Stats /> : signInGate} />
             )}
             {FEATURES.stats && (
-              <Route path="/replay/:id" element={statsVisible ? <ReplayRoute /> : statsGate} />
+              <Route path="/replay/:id" element={statsVisible ? <ReplayRoute /> : signInGate} />
             )}
             <Route path="/rules" element={<Rules />} />
             <Route path="/settings" element={<Settings />} />
             {FEATURES.accounts && <Route path="/sign-in" element={<SignIn />} />}
             {FEATURES.accounts && <Route path="/auth/google" element={<GoogleCallback />} />}
+            {FEATURES.accounts && (
+              <Route path="/online" element={onlineVisible ? <Online /> : signInGate} />
+            )}
+            {FEATURES.accounts && (
+              <Route path="/online/:id" element={onlineVisible ? <OnlineGame /> : signInGate} />
+            )}
+            {FEATURES.accounts && <Route path="/join/:code" element={<JoinGame />} />}
             <Route path="/about" element={<About />} />
             <Route path="/privacy" element={<Privacy />} />
             {FEATURES.accounts && <Route path="/delete-account" element={<DeleteAccount />} />}

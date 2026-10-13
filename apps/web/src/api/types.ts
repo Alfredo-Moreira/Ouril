@@ -134,3 +134,64 @@ export interface SyncPull {
 
 /** Max mutations per `POST /v1/sync/push`. */
 export const MAX_PUSH_BATCH = 100;
+
+// --- Games against other players (ADR 0031) -------------------------------------------------
+
+export type OnlineGameStatus =
+  'invited' | 'active' | 'finished' | 'declined' | 'cancelled' | 'expired' | (string & {});
+
+export type Seat = 'south' | 'north';
+
+export interface PlayerSummary {
+  user_id: string;
+  display_name: string;
+  handle?: string;
+}
+
+export interface OnlineGameResult {
+  /** `south_wins` | `north_wins` | `draw`. */
+  outcome: string;
+  /** A record end reason: `threshold`, …, `resigned`, `timeout`. */
+  reason: string;
+  stores: [number, number];
+}
+
+/** A game against another player, from your point of view (`GET /v1/games/{id}`). */
+export interface OnlineGame {
+  id: string;
+  variant_id: string;
+  variant_version: number;
+  status: OnlineGameStatus;
+  first_player: Seat;
+  you: Seat;
+  opponent?: PlayerSummary;
+  moves: number[];
+  your_turn: boolean;
+  turn_deadline?: string;
+  result?: OnlineGameResult;
+  /** The invite link's code (inviter only, while nobody has accepted). */
+  invite_code?: string;
+  invited_by_you: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateGameRequest {
+  opponent_handle?: string;
+  opponent_id?: string;
+  variant_id?: string;
+}
+
+export interface GameList {
+  games: OnlineGame[];
+}
+
+export interface OpponentSummary {
+  player: PlayerSummary;
+  games_played: number;
+  last_played_at: string;
+}
+
+export interface OpponentList {
+  opponents: OpponentSummary[];
+}

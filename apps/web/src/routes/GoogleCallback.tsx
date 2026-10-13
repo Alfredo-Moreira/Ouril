@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router';
 
 import { ApiError } from '../api/client';
+import { takeReturnTo } from '../auth/returnTo';
 import { GOOGLE_CALLBACK_PATH, takeGoogleCallback, type GoogleCallback } from '../auth/google';
 import { FEATURES } from '../features';
 import { useApp } from '../state/useApp';
@@ -40,7 +41,7 @@ export function GoogleCallback() {
     sent.current = true;
     app
       .signInGoogle(callback.idToken, callback.nonce)
-      .then(() => navigate(FEATURES.stats ? '/stats' : '/', { replace: true }))
+      .then(() => navigate(takeReturnTo(FEATURES.stats ? '/stats' : '/'), { replace: true }))
       .catch((e: unknown) => {
         setError(e instanceof ApiError ? e.code : 'network');
         setStatus('failed');

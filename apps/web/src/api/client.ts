@@ -18,6 +18,10 @@
  */
 import type {
   ApiErrorBody,
+  CreateGameRequest,
+  GameList,
+  OnlineGame,
+  OpponentList,
   DevSignInRequest,
   GoogleSignInRequest,
   Me,
@@ -160,6 +164,41 @@ export class ApiClient {
 
   me(): Promise<Me> {
     return this.request<Me>('GET', '/v1/me');
+  }
+
+  // --- games against other players (ADR 0031) ---------------------------------------------
+
+  listGames(): Promise<GameList> {
+    return this.request<GameList>('GET', '/v1/games');
+  }
+
+  getGame(id: string): Promise<OnlineGame> {
+    return this.request<OnlineGame>('GET', `/v1/games/${encodeURIComponent(id)}`);
+  }
+
+  /** An invitation for a player (by handle or ID), or an invite link when neither is set. */
+  createGame(request: CreateGameRequest): Promise<OnlineGame> {
+    return this.request<OnlineGame>('POST', '/v1/games', request);
+  }
+
+  joinGame(inviteCode: string): Promise<OnlineGame> {
+    return this.request<OnlineGame>('POST', '/v1/games/join', { invite_code: inviteCode });
+  }
+
+  gameAction(id: string, action: 'accept' | 'decline' | 'cancel' | 'resign'): Promise<OnlineGame> {
+    return this.request<OnlineGame>('POST', `/v1/games/${encodeURIComponent(id)}/${action}`, {});
+  }
+
+  /** `ply` = moves already played; a retry of the same move is answered with the game. */
+  playOnlineMove(id: string, ply: number, pit: number): Promise<OnlineGame> {
+    return this.request<OnlineGame>('POST', `/v1/games/${encodeURIComponent(id)}/moves`, {
+      ply,
+      pit,
+    });
+  }
+
+  opponents(): Promise<OpponentList> {
+    return this.request<OpponentList>('GET', '/v1/opponents');
   }
 
   async deleteMe(): Promise<void> {
