@@ -141,7 +141,9 @@ describe('Play online', () => {
       target: { value: '@Nobody' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Invite' }));
-    await waitFor(() => expect(api.createGame).toHaveBeenCalledWith({ opponent_handle: 'Nobody' }));
+    await waitFor(() =>
+      expect(api.createGame).toHaveBeenCalledWith({ opponent_handle: 'Nobody', rated: true }),
+    );
     expect(await screen.findByRole('alert')).toHaveTextContent('No player with that handle.');
   });
 
@@ -160,7 +162,8 @@ describe('Play online', () => {
 
   it("waits during the opponent's turn and resigns from the menu after confirming", async () => {
     await signInLocally();
-    const api = onlineApi([game({ your_turn: false })], {
+    // North moves first, so it's Ana's turn on the board too.
+    const api = onlineApi([game({ your_turn: false, first_player: 'north' })], {
       gameAction: vi.fn(async () =>
         game({
           status: 'finished',
@@ -229,7 +232,54 @@ describe('Play online', () => {
     const result = await screen.findByRole('dialog', { name: 'You won!' });
     expect(within(result).getByText('Ana resigned.')).toBeInTheDocument();
     fireEvent.click(within(result).getByRole('button', { name: 'Rematch' }));
-    await waitFor(() => expect(api.createGame).toHaveBeenCalledWith({ opponent_id: 'u-ana' }));
+    await waitFor(() =>
+      expect(api.createGame).toHaveBeenCalledWith({ opponent_id: 'u-ana', rated: true }),
+    );
+  });
+
+  it('makes casual invitations when Rated games is turned off', async () => {
+    await signInLocally();
+    const api = onlineApi([]);
+    renderApp({ route: '/online', createApi: () => api });
+    const rated = await screen.findByRole('checkbox', { name: 'Rated games' });
+    expect(rated).toBeChecked();
+    fireEvent.click(rated);
+    expect(screen.getByText(/New invitations are casual/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Create an invite link' }));
+    await waitFor(() => expect(api.createGame).toHaveBeenCalledWith({ rated: false }));
+  });
+
+  it('shows how a rated game moved your ratings', async () => {
+    await signInLocally();
+    const won = game({
+      status: 'finished',
+      your_turn: false,
+      rated: true,
+      result: { outcome: 'south_wins', reason: 'resigned', stores: [0, 0] },
+      rating_changes: [
+        { pool: 'overall', before: 1500, after: 1512 },
+        { pool: 'cv.standard:async', before: 1480, after: 1495 },
+      ],
+    });
+    renderApp({ route: '/online/g1', core: loadCoreSync(), createApi: () => onlineApi([won]) });
+    const result = await screen.findByRole('dialog', { name: 'You won!' });
+    expect(within(result).getByText('Overall')).toBeInTheDocument();
+    expect(within(result).getByText('1500 → 1512')).toBeInTheDocument();
+    expect(within(result).getByText('(+12)')).toBeInTheDocument();
+    expect(within(result).getByText('Standard · Turn by turn')).toBeInTheDocument();
+  });
+
+  it('says a casual game left ratings alone', async () => {
+    await signInLocally();
+    const casual = game({
+      status: 'finished',
+      your_turn: false,
+      rated: false,
+      result: { outcome: 'north_wins', reason: 'threshold', stores: [10, 25] },
+    });
+    renderApp({ route: '/online/g1', core: loadCoreSync(), createApi: () => onlineApi([casual]) });
+    const result = await screen.findByRole('dialog', { name: 'You lost' });
+    expect(within(result).getByText("A casual game: ratings didn't change.")).toBeInTheDocument();
   });
 
   it('an invite link asks a guest to sign in, then joins once signed in', async () => {

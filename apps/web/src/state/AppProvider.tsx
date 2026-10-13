@@ -30,7 +30,7 @@ import {
 import { SyncEngine, type SyncStatus } from '../sync/syncEngine';
 import { configureTelemetry, trackEvent } from '../telemetry';
 import { uuidv7 } from '../util/uuid';
-import { normalizeDisplayName, normalizeHandle } from '../util/profile';
+import { normalizeCountry, normalizeDisplayName, normalizeHandle } from '../util/profile';
 import { clientHeader, updateStatus, type UpdateStatus } from '../util/version';
 import i18n from '../i18n';
 import { AppContext, type AppContextValue, type AuthState, type ProfileNotice } from './useApp';
@@ -259,16 +259,28 @@ export function AppProvider({ children, createApi, coreVersion = '0.0.0' }: AppP
           change.display_name === undefined ? undefined : normalizeDisplayName(change.display_name);
         const handle = change.handle === undefined ? undefined : normalizeHandle(change.handle);
         if (name === null || handle === null) return false;
+        const country = change.country === undefined ? undefined : normalizeCountry(change.country);
+        if (country === null) return false;
         const queued = {
           display_name: name !== undefined && name !== user.display_name ? name : undefined,
           handle: handle !== undefined && handle !== user.handle ? handle : undefined,
+          country: country !== undefined && country !== user.country ? country : undefined,
         };
-        if (queued.display_name === undefined && queued.handle === undefined) return true;
+        if (
+          queued.display_name === undefined &&
+          queued.handle === undefined &&
+          queued.country === undefined
+        )
+          return true;
         await queueProfileChange(queued);
         setProfileNotice(null);
-        if (queued.display_name !== undefined) {
-          // Optimistic: the display name has no uniqueness rule.
-          const next = { ...user, display_name: queued.display_name };
+        if (queued.display_name !== undefined || queued.country !== undefined) {
+          // Optimistic: the display name and country have no uniqueness rule.
+          const next = {
+            ...user,
+            display_name: queued.display_name ?? user.display_name,
+            country: queued.country ?? user.country,
+          };
           setUser(next);
           await setStoredAccount({ user: next });
         }

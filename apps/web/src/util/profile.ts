@@ -18,3 +18,9 @@ export function normalizeHandle(v: string): string | null {
   const s = v.trim().replace(/^@+/, '').toLowerCase();
   return /^[a-z0-9_]{3,20}$/.test(s) ? s : null;
 }
+
+/** Lowercase ISO 3166-1 alpha-2 country code, or null if it isn't two letters. */
+export function normalizeCountry(v: string): string | null {
+  const s = v.trim().toLowerCase();
+  return /^[a-z]{2}$/.test(s) ? s : null;
+}

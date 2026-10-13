@@ -28,9 +28,9 @@ dev: env bindings
 # All tests: core, server, web
 test: test-core test-server test-web
 
-# Rust core tests (engine, ai, sync, protocol, wasm) incl. test vectors
+# Rust core tests (engine, ai, rating, sync, protocol, wasm) incl. test vectors
 test-core:
-    {{tb}} cargo test -p ouril-engine -p ouril-ai -p ouril-sync -p ouril-protocol -p ouril-wasm
+    {{tb}} cargo test -p ouril-engine -p ouril-ai -p ouril-rating -p ouril-sync -p ouril-protocol -p ouril-wasm
 
 # Server tests (starts the db; dev-auth enabled as in local dev)
 test-server:

@@ -1,10 +1,11 @@
-import { useState, type FormEvent } from 'react';
+import { useMemo, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 
 import { ApiError } from '../api/client';
 import { hasMusic } from '../audio/music';
 import { useMusicPrefs } from '../audio/musicPrefs';
+import { countriesByName } from '../content/countries';
 import { FEATURES } from '../features';
 import { SUPPORTED_LOCALES } from '../i18n';
 import { useApp } from '../state/useApp';
@@ -213,13 +214,18 @@ export function Settings() {
   );
 }
 
-/** Display name and handle. Changes are queued and synced (offline-first, data-and-sync.md). */
+/**
+ * Display name, handle and country. Changes are queued and synced (offline-first,
+ * data-and-sync.md). The country places the player on a country leaderboard (ADR 0034).
+ */
 function ProfileForm() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const app = useApp();
   const user = app.user!;
   const [name, setName] = useState(user.display_name);
   const [handle, setHandle] = useState(user.handle ?? '');
+  const [country, setCountry] = useState(user.country ?? '');
+  const countries = useMemo(() => countriesByName(i18n.language), [i18n.language]);
   const [invalid, setInvalid] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -229,6 +235,7 @@ function ProfileForm() {
     const ok = await app.updateProfile({
       display_name: name,
       handle: handle.trim() === '' ? undefined : handle,
+      country: country === '' ? undefined : country,
     });
     setInvalid(!ok);
     setSaved(ok);
@@ -261,6 +268,25 @@ function ProfileForm() {
       </label>
       <p id="handle-help" className="note">
         {t('profile.handle.help')}
+      </p>
+      <label>
+        <span>{t('profile.country')}</span>
+        <select
+          value={country}
+          aria-describedby="country-help"
+          onChange={(e) => setCountry(e.target.value)}
+        >
+          {/* A country can be changed but not cleared (the API has no "none"). */}
+          {!user.country && <option value="">{t('profile.country.none')}</option>}
+          {countries.map((c) => (
+            <option key={c.code} value={c.code}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+      </label>
+      <p id="country-help" className="note">
+        {t('profile.country.help')}
       </p>
       <button type="submit" className="button">
         {t('profile.save')}

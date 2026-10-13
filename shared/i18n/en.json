@@ -1684,7 +1684,7 @@
     "description": "privacy policy page"
   },
   "privacy.retention.1": {
-    "message": "Account data is kept until you delete your account. Deleting it immediately removes your Google link, email, profile, game history, settings and sessions from our database. Only an anonymous “Deleted player” placeholder remains, with no personal data.",
+    "message": "Account data is kept until you delete your account. Deleting it immediately removes your Google link, email, profile, game history, ratings, settings and sessions from our database. Only an anonymous “Deleted player” placeholder remains, with no personal data.",
     "description": "privacy policy page"
   },
   "privacy.retention.2": {
@@ -1764,7 +1764,7 @@
     "description": "Account deletion page"
   },
   "delete_account.what.1": {
-    "message": "Straight away: your Google link and email, your profile (name, handle, language and country), your game history and settings on our server, and your sign-in sessions.",
+    "message": "Straight away: your Google link and email, your profile (name, handle, language and country), your game history, ratings and settings on our server, and your sign-in sessions.",
     "description": "Account deletion page"
   },
   "delete_account.what.2": {
@@ -1923,14 +1923,6 @@
     "message": "You vs {name}",
     "description": "Play online (games against other players): game page title; name = the opponent"
   },
-  "online.game.your_turn": {
-    "message": "Your turn.",
-    "description": "Play online (games against other players)"
-  },
-  "online.game.their_turn": {
-    "message": "Waiting for {name} to move…",
-    "description": "Play online (games against other players)"
-  },
   "online.game.waiting_accept": {
     "message": "Waiting for {name} to accept.",
     "description": "Play online (games against other players)"
@@ -1947,48 +1939,8 @@
     "message": "This game isn't available.",
     "description": "Play online (games against other players)"
   },
-  "online.result.win": {
-    "message": "You won {reason}.",
-    "description": "Play online (games against other players): result line; reason = how the game ended, e.g. 'on time'"
-  },
-  "online.result.loss": {
-    "message": "You lost {reason}.",
-    "description": "Play online (games against other players)"
-  },
-  "online.result.draw": {
-    "message": "Draw {reason}.",
-    "description": "Play online (games against other players)"
-  },
-  "online.reason.resigned": {
-    "message": "by resignation",
-    "description": "Play online (games against other players): how a game ended, completes 'You won …'"
-  },
-  "online.reason.timeout": {
-    "message": "on time",
-    "description": "Play online (games against other players): how a game ended, completes 'You won …'"
-  },
-  "online.reason.threshold": {
-    "message": "on points",
-    "description": "Play online (games against other players)"
-  },
-  "online.reason.no_feed": {
-    "message": "(no seeds to give)",
-    "description": "Play online (games against other players)"
-  },
-  "online.reason.endless_cycle": {
-    "message": "(endless cycle)",
-    "description": "Play online (games against other players)"
-  },
-  "online.reason.no_moves": {
-    "message": "(no moves left)",
-    "description": "Play online (games against other players)"
-  },
   "online.resign": {
     "message": "Resign",
-    "description": "Play online (games against other players)"
-  },
-  "online.resign.confirm": {
-    "message": "Resign this game? It counts as a loss.",
     "description": "Play online (games against other players)"
   },
   "online.resign.yes": {
@@ -2114,5 +2066,141 @@
   "online.over.rematch": {
     "message": "Rematch",
     "description": "Online game screen (a game against another player)"
+  },
+  "menu.leaderboard": {
+    "message": "Leaderboard",
+    "description": "Main menu"
+  },
+  "online.rated": {
+    "message": "Rated games",
+    "description": "Play online: rated and casual games"
+  },
+  "online.rated.on": {
+    "message": "New invitations count for your rating.",
+    "description": "Play online: rated and casual games"
+  },
+  "online.rated.off": {
+    "message": "New invitations are casual: they don't change anyone's rating.",
+    "description": "Play online: rated and casual games"
+  },
+  "online.casual": {
+    "message": "Casual",
+    "description": "Play online: rated and casual games"
+  },
+  "online.over.casual": {
+    "message": "A casual game: ratings didn't change.",
+    "description": "Play online: rated and casual games"
+  },
+  "online.over.unrated": {
+    "message": "This game didn't count for ratings (too short, or too many rated games against the same player today).",
+    "description": "Play online: rated and casual games"
+  },
+  "online.over.rating": {
+    "message": "{before} → {after}",
+    "description": "Result dialog: a rating before and after the game"
+  },
+  "online.over.rating_diff": {
+    "message": "({diff})",
+    "description": "Result dialog: the rating change, with its sign, e.g. (+12)"
+  },
+  "leaderboard.title": {
+    "message": "Leaderboard",
+    "description": "Leaderboard page (ratings, ADR 0034)"
+  },
+  "leaderboard.yours": {
+    "message": "Your ratings",
+    "description": "Leaderboard page (ratings, ADR 0034)"
+  },
+  "leaderboard.rating.provisional": {
+    "message": "{rating}?",
+    "description": "Leaderboard page (ratings, ADR 0034): a rating still uncertain"
+  },
+  "leaderboard.record": {
+    "message": "{wins} W · {draws} D · {losses} L",
+    "description": "Leaderboard page (ratings, ADR 0034): wins, draws, losses"
+  },
+  "leaderboard.pool": {
+    "message": "Ranking",
+    "description": "Leaderboard page (ratings, ADR 0034): choose overall or a variant"
+  },
+  "leaderboard.pool.overall": {
+    "message": "Overall",
+    "description": "Leaderboard page (ratings, ADR 0034)"
+  },
+  "leaderboard.mode.async": {
+    "message": "Turn by turn",
+    "description": "Leaderboard page (ratings, ADR 0034): game mode"
+  },
+  "leaderboard.mode.live": {
+    "message": "Live",
+    "description": "Leaderboard page (ratings, ADR 0034): game mode"
+  },
+  "leaderboard.scope": {
+    "message": "Where",
+    "description": "Leaderboard page (ratings, ADR 0034): world or country"
+  },
+  "leaderboard.scope.world": {
+    "message": "World",
+    "description": "Leaderboard page (ratings, ADR 0034)"
+  },
+  "leaderboard.scope.country": {
+    "message": "My country",
+    "description": "Leaderboard page (ratings, ADR 0034)"
+  },
+  "leaderboard.no_country": {
+    "message": "Set your country in your profile to see its leaderboard.",
+    "description": "Leaderboard page (ratings, ADR 0034)"
+  },
+  "leaderboard.set_country": {
+    "message": "Go to Settings",
+    "description": "Leaderboard page (ratings, ADR 0034)"
+  },
+  "leaderboard.empty": {
+    "message": "Nobody is ranked here yet. Players appear after {games} rated games, with one in the last {days} days.",
+    "description": "Leaderboard page (ratings, ADR 0034)"
+  },
+  "leaderboard.not_listed": {
+    "message": "You'll appear here after {games} rated games in this ranking, with one in the last {days} days.",
+    "description": "Leaderboard page (ratings, ADR 0034)"
+  },
+  "leaderboard.caption": {
+    "message": "{pool} ranking, {scope}",
+    "description": "Leaderboard page (ratings, ADR 0034): table caption for screen readers"
+  },
+  "leaderboard.col.rank": {
+    "message": "#",
+    "description": "Leaderboard page (ratings, ADR 0034): column"
+  },
+  "leaderboard.col.player": {
+    "message": "Player",
+    "description": "Leaderboard page (ratings, ADR 0034): column"
+  },
+  "leaderboard.col.rating": {
+    "message": "Rating",
+    "description": "Leaderboard page (ratings, ADR 0034): column"
+  },
+  "leaderboard.col.games": {
+    "message": "Games",
+    "description": "Leaderboard page (ratings, ADR 0034): column"
+  },
+  "leaderboard.you": {
+    "message": "you",
+    "description": "Leaderboard page (ratings, ADR 0034)"
+  },
+  "profile.country": {
+    "message": "Country",
+    "description": "Settings, profile"
+  },
+  "profile.country.none": {
+    "message": "Not set",
+    "description": "Settings, profile"
+  },
+  "profile.country.help": {
+    "message": "Puts you on your country's leaderboard. Other signed-in players see it next to your name there.",
+    "description": "Settings, profile"
+  },
+  "privacy.account.6": {
+    "message": "Rated games against other players give you a rating, which we keep with your results. If you have played enough rated games recently, other signed-in players can see your display name, handle, country and rating on the leaderboards.",
+    "description": "Privacy policy, account section"
   }
 }

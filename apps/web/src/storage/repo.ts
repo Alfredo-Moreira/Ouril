@@ -242,11 +242,15 @@ export async function listGames(): Promise<GameRow[]> {
 export async function queueProfileChange(change: {
   display_name?: string;
   handle?: string;
+  country?: string;
 }): Promise<void> {
   const db = getDb();
   await db.transaction('rw', db.outbox, db.kv, async () => {
-    if (change.display_name !== undefined) {
-      await enqueue('profile_updated', { display_name: change.display_name });
+    if (change.display_name !== undefined || change.country !== undefined) {
+      const payload: { display_name?: string; country?: string } = {};
+      if (change.display_name !== undefined) payload.display_name = change.display_name;
+      if (change.country !== undefined) payload.country = change.country;
+      await enqueue('profile_updated', payload);
     }
     if (change.handle !== undefined) await enqueue('handle_requested', { handle: change.handle });
   });

@@ -18,8 +18,8 @@ use ouril_engine::{
 };
 use ouril_protocol::{
     CreateGameRequest, GameList, MoveRequest, OnlineGame, OnlineGameResult, OnlineGameStatus,
-    OpponentList, OpponentSummary, PlayerSummary, Seat, INVITE_TTL_DAYS, MAX_OPEN_INVITES,
-    TURN_DEADLINE_DAYS,
+    OpponentList, OpponentSummary, PlayerSummary, RatingChange, Seat, INVITE_TTL_DAYS,
+    MAX_OPEN_INVITES, TURN_DEADLINE_DAYS,
 };
 use ouril_sync::{
     GameMode, GameRecord, GameRecordResult, RecordEndReason, RecordOpponent, VariantRef,
@@ -32,6 +32,7 @@ use uuid::Uuid;
 use crate::{
     error::{AppError, AppResult},
     opponents,
+    ratings::{self, FinishedGame},
     sync::insert_game_record,
 };
 
@@ -47,7 +48,7 @@ macro_rules! columns {
     () => {
         "id, variant_id, variant_version, first_player, south_user, north_user,
     invited_user, invite_code, status, moves, turn_deadline, result_outcome, result_reason,
-    store_south, store_north, created_at, updated_at, started_at"
+    store_south, store_north, created_at, updated_at, started_at, mode, rated, rating_applied"
     };
 }
 
@@ -71,6 +72,9 @@ struct Row {
     created_at: OffsetDateTime,
     updated_at: OffsetDateTime,
     started_at: Option<OffsetDateTime>,
+    mode: String,
+    rated: bool,
+    rating_applied: bool,
 }
 
 impl Row {
@@ -198,6 +202,16 @@ async fn summary(conn: &mut PgConnection, user_id: Uuid) -> AppResult<PlayerSumm
 
 /// The game as `me` sees it.
 async fn view(conn: &mut PgConnection, row: &Row, me: Uuid) -> AppResult<OnlineGame> {
+    view_with(conn, row, me, None).await
+}
+
+/// [`view`], with `me`'s rating changes already fetched (`None`: fetch them if needed).
+async fn view_with(
+    conn: &mut PgConnection,
+    row: &Row,
+    me: Uuid,
+    rating_changes: Option<Vec<RatingChange>>,
+) -> AppResult<OnlineGame> {
     let you = row.seat_of(me).ok_or_else(AppError::not_found)?;
     let opponent = match row.user_at(other(you)) {
         Some(id) => Some(summary(conn, id).await?),
@@ -216,6 +230,11 @@ async fn view(conn: &mut PgConnection, row: &Row, me: Uuid) -> AppResult<OnlineG
         _ => None,
     };
     let invited_by_you = row.south_user == me;
+    let rating_changes = match rating_changes {
+        Some(c) => c,
+        None if row.rating_applied => ratings::changes_for(conn, row.id, me).await?,
+        None => Vec::new(),
+    };
     Ok(OnlineGame {
         id: row.id.to_string(),
         variant_id: row.variant_id.clone(),
@@ -237,6 +256,8 @@ async fn view(conn: &mut PgConnection, row: &Row, me: Uuid) -> AppResult<OnlineG
             .clone()
             .filter(|_| invited_by_you && row.status == "invited"),
         invited_by_you,
+        rated: row.rated,
+        rating_changes,
         created_at: rfc3339(row.created_at)?,
         updated_at: rfc3339(row.updated_at)?,
     })
@@ -299,6 +320,7 @@ async fn settle(conn: &mut PgConnection, row: &mut Row, now: OffsetDateTime) -> 
             RecordEndReason::Timeout,
             pos.stores,
             ended,
+            true,
         )
         .await?;
     }
@@ -306,7 +328,8 @@ async fn settle(conn: &mut PgConnection, row: &mut Row, now: OffsetDateTime) -> 
 }
 
 /// End a game: store the result, copy it into both players' history (skipping a deleted
-/// account), and count it in `user_opponents`. The row must be locked.
+/// account), count it in `user_opponents`, and, with `rate` for a rated game, update both
+/// players' ratings (ADR 0034). The row must be locked.
 async fn finish(
     conn: &mut PgConnection,
     row: &mut Row,
@@ -314,6 +337,7 @@ async fn finish(
     reason: RecordEndReason,
     stores: [u8; 2],
     ended: OffsetDateTime,
+    rate: bool,
 ) -> AppResult<()> {
     sqlx::query(
         "UPDATE online_games
@@ -375,6 +399,23 @@ async fn finish(
         insert_game_record(conn, me, &record).await?;
     }
     opponents::record_game_between(&mut *conn, row.south_user, north, ended).await?;
+    if rate && row.rated {
+        ratings::rate_finished_game(
+            conn,
+            &FinishedGame {
+                id: row.id,
+                variant_id: row.variant_id.clone(),
+                mode: row.mode.clone(),
+                south: row.south_user,
+                north,
+                outcome,
+                plies: row.moves.len(),
+                ended,
+            },
+        )
+        .await?;
+        *row = reload(conn, row.id).await?;
+    }
     Ok(())
 }
 
@@ -424,8 +465,8 @@ pub async fn create(db: &PgPool, me: Uuid, req: CreateGameRequest) -> AppResult<
     let id = Uuid::now_v7();
     sqlx::query(
         "INSERT INTO online_games (id, variant_id, variant_version, first_player, south_user,
-                                   invited_user, invite_code)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)",
+                                   invited_user, invite_code, rated)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
     )
     .bind(id)
     .bind(&v.id)
@@ -434,6 +475,7 @@ pub async fn create(db: &PgPool, me: Uuid, req: CreateGameRequest) -> AppResult<
     .bind(me)
     .bind(opponent)
     .bind(opponent.is_none().then(invite_code))
+    .bind(req.rated.unwrap_or(true))
     .execute(&mut *tx)
     .await?;
     let row = reload(&mut tx, id).await?;
@@ -444,9 +486,10 @@ pub async fn create(db: &PgPool, me: Uuid, req: CreateGameRequest) -> AppResult<
 
 /// `GET /v1/games`: open and active games, plus the last `RECENT_DAYS` of the rest.
 pub async fn list(db: &PgPool, me: Uuid) -> AppResult<GameList> {
-    let mut tx = db.begin().await?;
     let now = OffsetDateTime::now_utc();
-    // Settle what time has decided first, in a fixed order (no deadlocks between players).
+    // Settle what time has decided first. Each game in its own transaction: settling a rated
+    // game locks the player's ratings, and holding those while locking the next game could
+    // deadlock with a request on that game (which locks the game, then the ratings).
     let due: Vec<Uuid> = sqlx::query_scalar(
         "SELECT id FROM online_games
           WHERE (south_user = $1 OR north_user = $1 OR invited_user = $1)
@@ -457,13 +500,16 @@ pub async fn list(db: &PgPool, me: Uuid) -> AppResult<GameList> {
     .bind(me)
     .bind(now)
     .bind(INVITE_TTL_DAYS as i32)
-    .fetch_all(&mut *tx)
+    .fetch_all(db)
     .await?;
     for id in due {
+        let mut tx = db.begin().await?;
         if let Some(mut row) = lock(&mut tx, id).await? {
             settle(&mut tx, &mut row, now).await?;
         }
+        tx.commit().await?;
     }
+    let mut tx = db.begin().await?;
     let rows: Vec<Row> = sqlx::query_as(concat!(
         "SELECT ",
         columns!(),
@@ -479,9 +525,17 @@ pub async fn list(db: &PgPool, me: Uuid) -> AppResult<GameList> {
     .bind(LIST_LIMIT)
     .fetch_all(&mut *tx)
     .await?;
+    // Every listed game's rating changes in one query, not one per game.
+    let rated: Vec<Uuid> = rows
+        .iter()
+        .filter(|r| r.rating_applied)
+        .map(|r| r.id)
+        .collect();
+    let mut changes = ratings::changes_for_games(&mut tx, &rated, me).await?;
     let mut games = Vec::with_capacity(rows.len());
     for row in &rows {
-        games.push(view(&mut tx, row, me).await?);
+        let mine = changes.remove(&row.id).unwrap_or_default();
+        games.push(view_with(&mut tx, row, me, Some(mine)).await?);
     }
     tx.commit().await?;
     Ok(GameList { games })
@@ -639,6 +693,7 @@ pub async fn play(db: &PgPool, me: Uuid, id: Uuid, req: MoveRequest) -> AppResul
             reason,
             result.state.stores,
             OffsetDateTime::now_utc(),
+            true,
         )
         .await?;
     }
@@ -662,6 +717,7 @@ pub async fn resign(db: &PgPool, me: Uuid, id: Uuid) -> AppResult<OnlineGame> {
         RecordEndReason::Resigned,
         stores,
         OffsetDateTime::now_utc(),
+        true,
     )
     .await?;
     let game = view(&mut tx, &row, me).await?;
@@ -718,6 +774,8 @@ pub async fn end_for_deleted_account(conn: &mut PgConnection, me: Uuid) -> AppRe
             RecordEndReason::Resigned,
             stores,
             OffsetDateTime::now_utc(),
+            // An account being deleted doesn't hand out rating points.
+            false,
         )
         .await?;
     }

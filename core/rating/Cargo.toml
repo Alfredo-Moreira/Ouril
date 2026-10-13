@@ -1,0 +1,14 @@
+[package]
+name = "ouril-rating"
+description = "Ouril skill ratings: Glicko-2 with fractional rating periods (ADR 0034). Pure, no I/O or clocks."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+
+[dev-dependencies]
+# Property-based tests (docs/architecture/engine.md "Testing strategy"). No fork/timeout.
+proptest = { version = "1", default-features = false, features = ["std"] }

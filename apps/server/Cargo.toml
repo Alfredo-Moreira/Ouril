@@ -26,6 +26,7 @@ dev-auth = []
 [dependencies]
 ouril-engine = { path = "../../core/engine" }
 ouril-protocol = { path = "../../core/protocol" }
+ouril-rating = { path = "../../core/rating" }
 ouril-sync = { path = "../../core/sync" }
 axum = { version = "0.8", features = ["macros"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "signal", "sync", "time"] }

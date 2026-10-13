@@ -8,7 +8,7 @@
 ouril/
 ├── core/                   # Rust workspace members shared by every platform
 │   ├── engine/             # ouril-engine: rules + variants/*.toml (base.oware, cv.standard)  ✅ built
-│   ├── rating/             # ouril-rating: Glicko-2 with fractional rating periods (ADR 0034)
+│   ├── rating/             # ouril-rating: Glicko-2 with fractional rating periods (ADR 0034) ✅ built
 │   ├── ai/                 # ouril-ai: computer opponent                                     ✅ built
 │   ├── protocol/           # ouril-protocol: API types (auth, me, sync); realtime later       ✅ built
 │   ├── sync/               # ouril-sync: GameRecord, mutation payloads, derive_stats           ✅ built
