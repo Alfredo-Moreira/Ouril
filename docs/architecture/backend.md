@@ -18,7 +18,7 @@
 | 1 · MVP | None: the web MVP is a static site |
 | 2 · Accounts and sync | Sign in (Google, Apple), profile, account deletion, offline-first sync of game history and settings (guests never call the server). Built; deployed on Vercel ([deployment](deployment.md#the-server-on-vercel)) |
 | 3 · Reach and replay | No new server work (pass-and-play and sharing are on-device) |
-| 4 · Play with friends (async) | Async games (HTTP + push), invites, friends list |
+| 4 · Play with friends (async) | ✅ Turn-by-turn games over HTTP with invitations by handle, link or past opponent ([ADR 0031](../decisions/0031-online-games-over-http.md)). Still to come: friends list, push notifications |
 | 5 · iOS and Android | Native push (APNs, FCM) |
 | 6 · Live games | Live games (WebSocket + server clocks), matchmaking, rated games |
 | 7 · Leaderboards | Glicko-2 ratings, points boards, scopes (global, country, region, city) |
@@ -26,7 +26,7 @@
 
 ## Data model
 
-The MVP schema is implemented in [`apps/server/migrations/20261004000001_init.sql`](../../apps/server/migrations/20261004000001_init.sql). Multiplayer will add `GAME_PLAYER` and `MOVE` tables, as sketched in the [Later](#later-multiplayer) diagram below.
+The MVP schema is implemented in [`apps/server/migrations/20261004000001_init.sql`](../../apps/server/migrations/20261004000001_init.sql). Games against other players add `online_games` and `user_opponents` ([below](#games-against-other-players)).
 
 ```mermaid
 erDiagram
@@ -122,40 +122,41 @@ erDiagram
 - Synced tables carry `change_seq` (one Postgres sequence, `change_seq`) for [offline sync](data-and-sync.md). `GAMES` also has `deleted_at` for deletion markers.
 - **Account deletion** deletes sessions (and their refresh tokens), identities, settings, games, sync history and the player's own opponent list, as the privacy policy states. Other players keep their rows about them, which then show the anonymized player. It turns the `USERS` row into an anonymized "Deleted player" (`deleted_at` set).
 
-### Opponents (built, not used yet)
+### Games against other players
 
-`user_opponents` ([`20261013000001_user_opponents.sql`](../../apps/server/migrations/20261013000001_user_opponents.sql), `apps/server/src/opponents.rs`) records who has played against whom: one row per player per opponent, stored in both directions, with the games played and the first and **last played at**. It's the foundation for "people you've played against" and friends (roadmap Phase 4). Nothing writes to it until games between players exist; games against the computer never do. When it starts filling, the privacy policy must say so.
+Built for turn-by-turn play ([ADR 0031](../decisions/0031-online-games-over-http.md), [API](../../apps/server/API.md#games-against-other-players), `apps/server/src/online.rs`).
+
+- **`online_games`** ([`20261013000002_online_games.sql`](../../apps/server/migrations/20261013000002_online_games.sql)) holds each game: the variant (pinned `id@version`), who plays South (the inviter) and North, the invited player or the invite link's code, the `status`, the **moves** (one array, replayed with the engine), the turn deadline and the result. The server accepts a move only from the player to move, at the expected `ply`, when the engine says it's legal. Time-based changes (a missed deadline, an expired invitation) are applied whenever a game is read or written; there's no background job.
+- **When a game ends**, each player gets a format-3 record in `GAMES` (`mode = vs_player`, their side, the opponent), which sync pull delivers, and the pair counts in `user_opponents`.
+- **`user_opponents`** ([`20261013000001_user_opponents.sql`](../../apps/server/migrations/20261013000001_user_opponents.sql), `apps/server/src/opponents.rs`) records who has played against whom: one row per player per opponent, stored in both directions, with the games played and the first and **last played at**. It feeds "people you've played" (`GET /v1/opponents`) and, later, friends. Games against the computer never appear in it.
+- **Account deletion** cancels the player's invitations, resigns their active games (the opponent wins and keeps the game against "Deleted player"), and deletes their own opponent list.
 
 ```mermaid
 erDiagram
+  USERS ||--o{ ONLINE_GAMES : "plays South (invites)"
+  USERS |o--o{ ONLINE_GAMES : "plays North"
   USERS ||--o{ USER_OPPONENTS : "has played"
+  ONLINE_GAMES {
+    uuid id
+    text variant_id
+    int variant_version
+    text first_player
+    uuid south_user
+    uuid north_user
+    uuid invited_user
+    text invite_code
+    text status
+    int_array moves
+    timestamptz turn_deadline
+    text result_outcome
+    text result_reason
+  }
   USER_OPPONENTS {
     uuid user_id
     uuid opponent_id
     int games_played
     timestamptz first_played_at
     timestamptz last_played_at
-  }
-```
-
-### Later: multiplayer
-
-```mermaid
-erDiagram
-  USERS ||--o{ GAME_PLAYER : plays
-  GAMES ||--|{ GAME_PLAYER : has
-  GAMES ||--o{ MOVE : contains
-  GAME_PLAYER {
-    uuid game_id
-    uuid user_id
-    int seat
-    int final_store
-  }
-  MOVE {
-    uuid game_id
-    int ply
-    int pit
-    timestamptz played_at
   }
 ```
 
@@ -178,7 +179,7 @@ The full contract is in [`apps/server/API.md`](../../apps/server/API.md): reques
 | `POST` | `/v1/sync/push` | Upload queued local changes (game records, profile, settings, handle). Repeats are ignored by mutation ID. |
 | `GET` | `/v1/sync/pull?cursor=N&limit=M` | Download the user's changes since cursor `N` |
 
-Multiplayer adds `/v1/games…` (create, invite, async move) and the realtime WebSocket at `/v1/live`.
+Games against other players use `/v1/games…` and `/v1/opponents` (built, [API](../../apps/server/API.md#games-against-other-players)). A realtime WebSocket (`/v1/live`) would only come with a host that keeps connections open.
 
 ## As built (MVP)
 
@@ -210,13 +211,15 @@ Rules:
 
 ## Realtime protocol (sketch)
 
+Not built. On the current hosting, games travel over HTTP with polling ([ADR 0031](../decisions/0031-online-games-over-http.md)); this sketch is for timed live games if a host with long-lived connections is added later.
+
 Client → server: `join(game_id)`, `move(game_id, ply, pit)`, `resign`, `offer_draw`, `accept_draw`.
 Server → client: `state(game_id, moves, clocks)`, `moved(ply, pit, events, clocks)`, `game_over(result)`, `opponent_connection(status)`.
 
 - Each move carries its **ply number**, so the server rejects stale or duplicate moves (idempotent).
 - The server owns the clocks and timestamps every move.
 - Clients apply their own move **optimistically** with the same engine. A rejection only happens if the client was tampered with.
-- **Async** games use `POST /v1/games/{id}/moves` over HTTP. A background job enforces deadlines and sends push notifications.
+- **Async** games use `POST /v1/games/{id}/moves` over HTTP (built). Deadlines are settled when a game is read or written; push notifications are still to come.
 
 ## Operations
 

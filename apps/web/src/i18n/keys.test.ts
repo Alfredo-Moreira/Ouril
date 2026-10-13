@@ -72,6 +72,11 @@ describe('i18n keys', () => {
       ]),
       'home.steps': [1, 2, 3, 4].flatMap((n) => [`${n}.title`, `${n}.body`]),
       'home.features': ['offline', 'levels', 'guest'].flatMap((k) => [`${k}.title`, `${k}.body`]),
+      'online.result': ['win', 'loss', 'draw'],
+      'online.status': ['invited', 'declined', 'cancelled', 'expired'],
+      'online.reason': ['resigned', 'timeout', 'threshold', 'no_feed', 'endless_cycle', 'no_moves'],
+      'online.error': ['not_found', 'bad_request', 'conflict'],
+      'online.join.error': ['not_found', 'conflict', 'bad_request'],
       // Error codes the client can produce itself (others fall back to error.internal).
       error: ['internal', 'network'],
     };
@@ -120,6 +125,11 @@ describe('i18n keys', () => {
       'tutorial.',
       'rules.',
       'privacy.',
+      'online.result.',
+      'online.status.',
+      'online.reason.',
+      'online.error.',
+      'online.join.error.',
     ];
     const unknown: string[] = [];
     for (const f of files) {

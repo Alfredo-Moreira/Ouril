@@ -1,6 +1,6 @@
 # 0005. Server-authoritative multiplayer on a Rust backend
 
-- **Status:** Accepted
+- **Status:** Accepted (how games travel, deadlines and notifications refined by [0031](0031-online-games-over-http.md): HTTP and polling, no WebSockets or background job on the current hosting)
 - **Date:** 2026-10-03
 
 ## Context

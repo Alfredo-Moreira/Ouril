@@ -220,7 +220,7 @@ pub async fn apple_tokens(
 /// privacy policy (`apps/web/src/content/privacy.ts`) promises exactly this. Signing in again with the same
 /// provider creates a new, empty account. Apple tokens are revoked by the caller
 /// (`routes::me::delete_me`) with [`apple_tokens`] read before this runs.
-pub async fn delete_account(db: &PgPool, user_id: Uuid) -> Result<(), sqlx::Error> {
+pub async fn delete_account(db: &PgPool, user_id: Uuid) -> crate::error::AppResult<()> {
     let mut tx = db.begin().await?;
     for sql in [
         // Refresh tokens go with their sessions (ON DELETE CASCADE); access tokens stop
@@ -245,6 +245,8 @@ pub async fn delete_account(db: &PgPool, user_id: Uuid) -> Result<(), sqlx::Erro
     .bind(DELETED_DISPLAY_NAME)
     .execute(&mut *tx)
     .await?;
+    // After anonymizing, so opponents' records show "Deleted player".
+    crate::online::end_for_deleted_account(&mut tx, user_id).await?;
     tx.commit().await?;
     Ok(())
 }

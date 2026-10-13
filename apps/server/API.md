@@ -41,6 +41,7 @@ Every non-2xx response has the body `ApiError`:
 | 403 | `forbidden` | Origin not allowed for a cookie request, or (only with the optional `ORIGIN_SECRET` set) a `/v1` request without the proxy secret |
 | 404 | `not_found` | Unknown route (also `/v1/auth/dev` in builds without `dev-auth`) |
 | 409 | `handle_taken` | `PATCH /v1/me` with a handle someone else has |
+| 409 | `conflict` | The request doesn't fit the game's current state: a move for the wrong turn or an old `ply`, accepting a game that isn't an invitation for you, resigning a finished game. Refresh and try again |
 | 413 | `payload_too_large` | Body > 1 MiB or more than 100 mutations |
 | 426 | `upgrade_required` | `X-Ouril-Client` version below `min_supported` |
 | 429 | `rate_limited` | Too many requests (`Retry-After` header). In-memory, per server machine, per client network (IPv4 address or IPv6 /64): 60/min on sign-in (`/v1/auth/{dev,google,apple}`), 600/min on everything else including refresh and logout. Configurable with `RATE_LIMIT_AUTH_PER_MINUTE` / `RATE_LIMIT_DEFAULT_PER_MINUTE` |
@@ -67,6 +68,13 @@ Every non-2xx response has the body `ApiError`:
 | `DELETE` | `/v1/me` | Bearer | — | `204`. Deletes personal data and every session (and revokes the Apple token when configured), clears the cookie. |
 | `POST` | `/v1/sync/push` | Bearer | `SyncPush` | `200 SyncPushResult` |
 | `GET` | `/v1/sync/pull?cursor=N&limit=M` | Bearer | query | `200 SyncPull` |
+| `GET` | `/v1/games` | Bearer | — | `200 GameList` |
+| `POST` | `/v1/games` | Bearer | `CreateGameRequest` | `201 OnlineGame` · `404` unknown handle · `400` yourself or unknown variant · `409` too many open invitations |
+| `POST` | `/v1/games/join` | Bearer | `JoinGameRequest` | `200 OnlineGame` · `404` unknown or used link · `400` your own link |
+| `GET` | `/v1/games/{id}` | Bearer | — | `200 OnlineGame` · `404` not yours |
+| `POST` | `/v1/games/{id}/accept`, `/decline`, `/cancel`, `/resign` | Bearer | `{}` | `200 OnlineGame` · `409 conflict` |
+| `POST` | `/v1/games/{id}/moves` | Bearer | `MoveRequest` | `200 OnlineGame` · `400` illegal move · `409 conflict` |
+| `GET` | `/v1/opponents` | Bearer | — | `200 OpponentList` |
 
 ### `GET /v1/meta`
 
@@ -194,6 +202,17 @@ Response, one entry per mutation in request order:
 - `change_seq` comes from one Postgres sequence and only goes up. Changes are ordered by `change_seq`.
 - `deleted: true` is a deletion marker (no `data`).
 - When `has_more` is true, pull again right away with the new cursor.
+
+### Games against other players
+
+Turn-by-turn games through the server ([ADR 0031](../../docs/decisions/0031-online-games-over-http.md)). Types in `core/protocol` (`OnlineGame`, `CreateGameRequest`, `MoveRequest`, …).
+
+- **Start:** `POST /v1/games` with `opponent_handle` (`"@ana"` or `"ana"`) or `opponent_id` (a past opponent) invites that player; with neither, it makes an invite link: the response's `invite_code` (shown to the inviter only) goes in `/join/<code>`, and `POST /v1/games/join` accepts it once. At most 20 open invitations per player. The inviter plays South; `first_player` is a coin toss.
+- **Lifecycle (`status`):** `invited` → `active` (accepted) → `finished`; or `declined` (by the invited player), `cancelled` (by the inviter, or when either deletes their account) and `expired` (nobody accepted within 7 days).
+- **Moves:** `{ "ply": N, "pit": P }`, where `N` is the number of moves already played. The server checks that you're to move and that the engine accepts the pit. Sending the same move again for a `ply` already played returns the game unchanged (safe retries); a different one is `409 conflict`. `moves` in `OnlineGame` replays with the engine (`first_player`, `variant_id@variant_version`).
+- **Deadlines:** 3 days per move (`turn_deadline`). The server settles a game whenever it's read or written: past the deadline, the player to move loses (`result.reason = "timeout"`).
+- **Finishing:** by the rules, `resign`, or a timeout. Each player then gets a format-3 game record through sync pull (`mode: "vs_player"`, `opponent`, `human_player` = their side), and the game counts in `/v1/opponents`. `game_finished` pushes with `mode: "vs_player"`, an `opponent` or `reason: "timeout"` are rejected (`invalid_payload`): only the server writes them.
+- **Polling:** there are no live connections. The web app asks for an open game every 2 s while waiting for the opponent (15 s otherwise), and for the list every 10 s.
 
 ## Configuration
 

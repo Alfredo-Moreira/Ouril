@@ -2,7 +2,7 @@
 //! The foundation for "people you've played against" and friends (roadmap Phase 4). Nothing
 //! records games between players yet; games against the computer never appear here.
 
-use sqlx::PgPool;
+use sqlx::{PgExecutor, PgPool};
 use time::OffsetDateTime;
 use uuid::Uuid;
 
@@ -18,8 +18,8 @@ pub struct Opponent {
 /// Record one finished game between `a` and `b`, ended at `played_at`, for both players. Call
 /// it exactly once per game (it isn't idempotent: a second call counts the game twice). Out of
 /// order calls are fine: first and last played at only ever widen.
-pub async fn record_game_between(
-    db: &PgPool,
+pub async fn record_game_between<'e>(
+    db: impl PgExecutor<'e>,
     a: Uuid,
     b: Uuid,
     played_at: OffsetDateTime,

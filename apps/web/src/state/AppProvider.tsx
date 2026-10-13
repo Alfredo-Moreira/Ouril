@@ -201,6 +201,7 @@ export function AppProvider({ children, createApi, coreVersion = '0.0.0' }: AppP
       async signInGoogle(idToken, nonce) {
         await finishSignIn(await api().googleSignIn({ id_token: idToken, nonce }));
       },
+      api,
       async signOut() {
         syncRef.current?.stop();
         syncRef.current = null;

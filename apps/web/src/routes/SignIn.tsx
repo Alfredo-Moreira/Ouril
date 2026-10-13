@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router';
 
 import { ApiError } from '../api/client';
 import { googleClientId, startGoogleSignIn } from '../auth/google';
+import { takeReturnTo } from '../auth/returnTo';
 import { useApp } from '../state/useApp';
 
 /**
@@ -47,7 +48,7 @@ export function SignIn() {
     setError(null);
     try {
       await app.signInDev();
-      navigate('/stats');
+      navigate(takeReturnTo('/stats'));
     } catch (e) {
       setError(e instanceof ApiError ? e.code : 'network');
     } finally {

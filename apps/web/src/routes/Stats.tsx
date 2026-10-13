@@ -151,7 +151,13 @@ function StatsSection({
             <li key={record.id} className={`history__item history__item--${outcome}`}>
               <span className="history__result">{t(`stats.result.${outcome}`)}</span>
               <span>{t('stats.score', { you: mine, ai: theirs })}</span>
-              <span>{record.ai_level ? t(`game.level.${record.ai_level}`) : ''}</span>
+              <span>
+                {record.opponent
+                  ? t('stats.vs_name', { name: record.opponent.display_name })
+                  : record.ai_level
+                    ? t(`game.level.${record.ai_level}`)
+                    : ''}
+              </span>
               <time dateTime={record.ended_at}>{dateFmt.format(new Date(record.ended_at))}</time>
               {syncRejected && <span className="note">{t('stats.not_backed_up')}</span>}
               <Link to={`/replay/${record.id}`} className="history__replay">

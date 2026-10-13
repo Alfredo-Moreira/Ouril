@@ -8,7 +8,8 @@ use ouril_protocol::{
     Change, Me, Mutation, MutationResult, MutationStatus,
 };
 use ouril_sync::{
-    GameRecord, HandleRequest, ProfileUpdate, RecordEndReason, SettingsUpdate, GAME_RECORD_FORMAT,
+    GameMode, GameRecord, HandleRequest, ProfileUpdate, RecordEndReason, SettingsUpdate,
+    GAME_RECORD_FORMAT,
 };
 use serde_json::{Map, Value};
 use sqlx::{Acquire, PgConnection, PgPool, Row};
@@ -99,6 +100,14 @@ fn check_game_record(
     if r.format == 0 || r.format > GAME_RECORD_FORMAT {
         return Err(reasons::INVALID_PAYLOAD);
     }
+    // Games against another player are written by the server for both players (ADR 0031);
+    // a client can't push one.
+    if r.mode != GameMode::VsAi
+        || r.opponent.is_some()
+        || r.result.reason == RecordEndReason::Timeout
+    {
+        return Err(reasons::INVALID_PAYLOAD);
+    }
     Uuid::parse_str(&r.id).map_err(|_| reasons::INVALID_PAYLOAD)?;
     if r.moves.len() > MAX_MOVES_PER_GAME || r.core_version.len() > 64 {
         return Err(reasons::INVALID_PAYLOAD);
@@ -184,7 +193,7 @@ pub async fn validate_game_record_blocking(
 enum Prepared {
     /// A `game_finished` mutation of a supported schema: the validated record, or why it
     /// isn't applied.
-    Game(Result<GameRecord, NotApplied>),
+    Game(Result<Box<GameRecord>, NotApplied>),
     /// Everything else is checked inside the transaction.
     Other,
 }
@@ -198,7 +207,7 @@ async fn prepare(m: &Mutation) -> AppResult<Prepared> {
         Err(reason) => return Ok(Prepared::Game(Err(NotApplied::Rejected(reason)))),
     };
     let (record, check) = validate_game_record_blocking(record).await?;
-    Ok(Prepared::Game(check.map(|()| record)))
+    Ok(Prepared::Game(check.map(|()| Box::new(record))))
 }
 
 /// Why this server can't process `m` yet, if so (checked before anything is recorded).
@@ -320,9 +329,35 @@ async fn game_finished(
     user_id: Uuid,
     record: &GameRecord,
 ) -> AppResult<Result<(), &'static str>> {
+    if insert_game_record(conn, user_id, record).await? {
+        return Ok(Ok(()));
+    }
     let game_id = Uuid::parse_str(&record.id).expect("validated");
-    let started = parse_time(&record.started_at).expect("validated");
-    let ended = parse_time(&record.ended_at).expect("validated");
+    // Same game pushed again (union by ID): fine if it's ours, rejected if the ID belongs to
+    // someone else.
+    let owner: Option<Uuid> = sqlx::query_scalar("SELECT user_id FROM games WHERE id = $1")
+        .bind(game_id)
+        .fetch_optional(&mut *conn)
+        .await?;
+    Ok(if owner == Some(user_id) {
+        Ok(())
+    } else {
+        Err(reasons::INVALID_PAYLOAD)
+    })
+}
+
+/// Insert a finished game into a player's history (`games`), which sync pull delivers to
+/// their devices. `record` must be valid: a client's, checked by [`validate_game_record`], or
+/// one the server built (games against other players, `crate::online`). Returns false when
+/// a game with that ID already exists.
+pub(crate) async fn insert_game_record(
+    conn: &mut PgConnection,
+    user_id: Uuid,
+    record: &GameRecord,
+) -> AppResult<bool> {
+    let game_id = Uuid::parse_str(&record.id).map_err(|_| AppError::internal())?;
+    let started = parse_time(&record.started_at).ok_or_else(AppError::internal)?;
+    let ended = parse_time(&record.ended_at).ok_or_else(AppError::internal)?;
     let canonical = serde_json::to_value(record).map_err(|_| AppError::internal())?;
 
     let inserted = sqlx::query(
@@ -359,20 +394,7 @@ async fn game_finished(
     .bind(ended)
     .fetch_optional(&mut *conn)
     .await?;
-    if inserted.is_some() {
-        return Ok(Ok(()));
-    }
-    // Same game pushed again (union by ID): fine if it's ours, rejected if the ID belongs to
-    // someone else.
-    let owner: Option<Uuid> = sqlx::query_scalar("SELECT user_id FROM games WHERE id = $1")
-        .bind(game_id)
-        .fetch_optional(&mut *conn)
-        .await?;
-    Ok(if owner == Some(user_id) {
-        Ok(())
-    } else {
-        Err(reasons::INVALID_PAYLOAD)
-    })
+    Ok(inserted.is_some())
 }
 
 /// The serde string of a unit enum (`Player::South` -> `"south"`).
@@ -647,6 +669,7 @@ mod tests {
             mode: GameMode::VsAi,
             ai_level: Some("easy".into()),
             human_player: Some(Player::South),
+            opponent: None,
         }
     }
 

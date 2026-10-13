@@ -41,7 +41,18 @@ Both modes support **rated** games (which affect the [skill rating](leaderboards
 - Engine-assistance detection (comparing moves to strong AI play) is a later concern.
 - Block and report players.
 
+## As built (async, ADR 0031)
+
+Turn-by-turn games are built ([ADR 0031](../../decisions/0031-online-games-over-http.md)), on the web at **Online** (`/online`, signed-in players):
+
+- **Start:** invite by @handle, challenge someone from "People you've played", or create an invite link (`/join/<code>`) to share; anyone signed in can accept it once. A guest who opens the link is asked to sign in and comes back to it.
+- **Play:** the inviter plays South, and who moves first is a coin toss. The board is drawn from your side. You have **3 days per move**; missing it loses the game. An invitation nobody accepts expires after 7 days.
+- **Near-live:** while both players have the game open, the opponent's move shows up within about 2 seconds (the app polls; there's no live connection).
+- **Notifications:** in the app only. The games list shows invitations for you and games waiting for your move. Push notifications come later.
+- **After the game:** both players get it in their history, and in Stats under "Against other players", and the opponent appears under "People you've played".
+- **Not yet:** timed live games and matchmaking, rated games and the rating, draw offers, preset messages, rematch, block and report, and the friends list.
+
 ## Open questions
 
-- Async timeout length, and whether players can choose it.
+- Whether players can choose the turn deadline (3 days for now).
 - Takebacks in casual games?

@@ -315,6 +315,7 @@ pub fn played_record() -> GameRecord {
         mode: GameMode::VsAi,
         ai_level: Some("easy".into()),
         human_player: Some(Player::South),
+        opponent: None,
     }
 }
 

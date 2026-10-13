@@ -3,6 +3,7 @@ import { createContext, useContext } from 'react';
 
 import { FEATURES } from '../features';
 
+import type { ApiClient } from '../api/client';
 import type { Me } from '../api/types';
 import type { Settings, TelemetryConsent } from '../storage/repo';
 import type { SyncStatus } from '../sync/syncEngine';
@@ -27,6 +28,8 @@ export interface AppContextValue {
   /** Google sign-in: the ID token and nonce from the redirect back from Google. */
   signInGoogle(idToken: string, nonce: string): Promise<void>;
   signOut(): Promise<void>;
+  /** The API client (signed-in features only: guests never call the server). */
+  api(): ApiClient;
   deleteAccount(): Promise<void>;
   /** Call after a local change (finished game, settings) so a signed-in player syncs soon. */
   notifyLocalChange(): void;
@@ -63,4 +66,10 @@ export function useApp(): AppContextValue {
 export function useStatsVisible(): boolean {
   const { auth } = useApp();
   return FEATURES.stats && auth !== 'guest';
+}
+
+/** Games against other players (ADR 0031): accounts on, and signed in. */
+export function useOnlineVisible(): boolean {
+  const { auth } = useApp();
+  return FEATURES.accounts && auth !== 'guest';
 }

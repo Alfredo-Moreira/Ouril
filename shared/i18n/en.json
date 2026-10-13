@@ -1798,5 +1798,249 @@
   "stats.vs_players.empty": {
     "message": "Games against other players will show here once you can play them.",
     "description": "Stats page: empty section for games against other people (not available yet)"
+  },
+  "menu.online": {
+    "message": "Online",
+    "description": "Navigation: games against other players (signed-in players)"
+  },
+  "stats.vs_name": {
+    "message": "vs {name}",
+    "description": "Stats history: the opponent of a game against another player; name = their display name"
+  },
+  "online.title": {
+    "message": "Play online",
+    "description": "Play online (games against other players)"
+  },
+  "online.intro": {
+    "message": "Play turn by turn against other players. You have 3 days for each move.",
+    "description": "Play online (games against other players)"
+  },
+  "online.invite.label": {
+    "message": "Invite a player by handle",
+    "description": "Play online (games against other players): label of the handle field"
+  },
+  "online.invite.placeholder": {
+    "message": "@handle",
+    "description": "Play online (games against other players): placeholder of the handle field"
+  },
+  "online.invite.send": {
+    "message": "Invite",
+    "description": "Play online (games against other players): send an invitation"
+  },
+  "online.invite_link.create": {
+    "message": "Create an invite link",
+    "description": "Play online (games against other players): button; the link can be shared with anyone"
+  },
+  "online.invite_link.copy": {
+    "message": "Copy link",
+    "description": "Play online (games against other players)"
+  },
+  "online.invite_link.copied": {
+    "message": "Copied",
+    "description": "Play online (games against other players)"
+  },
+  "online.invite_link.anyone": {
+    "message": "Invite link",
+    "description": "Play online (games against other players): shown instead of a name for an invite link nobody accepted yet"
+  },
+  "online.section.invitations": {
+    "message": "Invitations for you",
+    "description": "Play online (games against other players): section heading"
+  },
+  "online.section.your_turn": {
+    "message": "Your turn",
+    "description": "Play online (games against other players): section heading"
+  },
+  "online.section.their_turn": {
+    "message": "Their turn",
+    "description": "Play online (games against other players): section heading"
+  },
+  "online.section.sent": {
+    "message": "Invitations you sent",
+    "description": "Play online (games against other players): section heading"
+  },
+  "online.section.finished": {
+    "message": "Recent games",
+    "description": "Play online (games against other players): section heading"
+  },
+  "online.section.opponents": {
+    "message": "People you've played",
+    "description": "Play online (games against other players): section heading (past opponents)"
+  },
+  "online.empty": {
+    "message": "No games yet. Invite someone to start.",
+    "description": "Play online (games against other players)"
+  },
+  "online.accept": {
+    "message": "Accept",
+    "description": "Play online (games against other players)"
+  },
+  "online.decline": {
+    "message": "Decline",
+    "description": "Play online (games against other players)"
+  },
+  "online.cancel": {
+    "message": "Cancel invitation",
+    "description": "Play online (games against other players)"
+  },
+  "online.play": {
+    "message": "Play",
+    "description": "Play online (games against other players)"
+  },
+  "online.view": {
+    "message": "Open",
+    "description": "Play online (games against other players)"
+  },
+  "online.challenge": {
+    "message": "Challenge",
+    "description": "Play online (games against other players): invite a past opponent to a new game"
+  },
+  "online.opponent.games": {
+    "message": "{count, plural, one {# game} other {# games}}",
+    "description": "Play online (games against other players): games played against this person"
+  },
+  "online.moves": {
+    "message": "{count, plural, =0 {no moves yet} one {# move} other {# moves}}",
+    "description": "Play online (games against other players): moves played so far"
+  },
+  "online.status.invited": {
+    "message": "waiting for an answer",
+    "description": "Play online (games against other players)"
+  },
+  "online.status.declined": {
+    "message": "Invitation declined",
+    "description": "Play online (games against other players)"
+  },
+  "online.status.cancelled": {
+    "message": "Invitation cancelled",
+    "description": "Play online (games against other players)"
+  },
+  "online.status.expired": {
+    "message": "Invitation expired",
+    "description": "Play online (games against other players)"
+  },
+  "online.you": {
+    "message": "You",
+    "description": "Play online (games against other players): your side of the board"
+  },
+  "online.back": {
+    "message": "All online games",
+    "description": "Play online (games against other players): link back to the list"
+  },
+  "online.game.title": {
+    "message": "You vs {name}",
+    "description": "Play online (games against other players): game page title; name = the opponent"
+  },
+  "online.game.your_turn": {
+    "message": "Your turn.",
+    "description": "Play online (games against other players)"
+  },
+  "online.game.their_turn": {
+    "message": "Waiting for {name} to move…",
+    "description": "Play online (games against other players)"
+  },
+  "online.game.waiting_accept": {
+    "message": "Waiting for {name} to accept.",
+    "description": "Play online (games against other players)"
+  },
+  "online.game.invited_you": {
+    "message": "{name} invited you to a game.",
+    "description": "Play online (games against other players)"
+  },
+  "online.game.deadline": {
+    "message": "Next move due by {date}.",
+    "description": "Play online (games against other players): the turn deadline; date = formatted date and time"
+  },
+  "online.game.not_found": {
+    "message": "This game isn't available.",
+    "description": "Play online (games against other players)"
+  },
+  "online.result.win": {
+    "message": "You won {reason}.",
+    "description": "Play online (games against other players): result line; reason = how the game ended, e.g. 'on time'"
+  },
+  "online.result.loss": {
+    "message": "You lost {reason}.",
+    "description": "Play online (games against other players)"
+  },
+  "online.result.draw": {
+    "message": "Draw {reason}.",
+    "description": "Play online (games against other players)"
+  },
+  "online.reason.resigned": {
+    "message": "by resignation",
+    "description": "Play online (games against other players): how a game ended, completes 'You won …'"
+  },
+  "online.reason.timeout": {
+    "message": "on time",
+    "description": "Play online (games against other players): how a game ended, completes 'You won …'"
+  },
+  "online.reason.threshold": {
+    "message": "on points",
+    "description": "Play online (games against other players)"
+  },
+  "online.reason.no_feed": {
+    "message": "(no seeds to give)",
+    "description": "Play online (games against other players)"
+  },
+  "online.reason.endless_cycle": {
+    "message": "(endless cycle)",
+    "description": "Play online (games against other players)"
+  },
+  "online.reason.no_moves": {
+    "message": "(no moves left)",
+    "description": "Play online (games against other players)"
+  },
+  "online.resign": {
+    "message": "Resign",
+    "description": "Play online (games against other players)"
+  },
+  "online.resign.confirm": {
+    "message": "Resign this game? It counts as a loss.",
+    "description": "Play online (games against other players)"
+  },
+  "online.resign.yes": {
+    "message": "Yes, resign",
+    "description": "Play online (games against other players)"
+  },
+  "online.error.not_found": {
+    "message": "No player with that handle.",
+    "description": "Play online (games against other players): the handle doesn't exist"
+  },
+  "online.error.bad_request": {
+    "message": "That can't be done. Check the handle and try again.",
+    "description": "Play online (games against other players)"
+  },
+  "online.error.conflict": {
+    "message": "The game changed in the meantime. It has been refreshed.",
+    "description": "Play online (games against other players)"
+  },
+  "online.join.title": {
+    "message": "Join a game",
+    "description": "Play online (games against other players): invite link page"
+  },
+  "online.join.sign_in": {
+    "message": "Sign in to accept this invitation. Playing online needs an account.",
+    "description": "Play online (games against other players)"
+  },
+  "online.join.working": {
+    "message": "Joining the game…",
+    "description": "Play online (games against other players)"
+  },
+  "online.join.error.not_found": {
+    "message": "This invite link isn't valid any more.",
+    "description": "Play online (games against other players)"
+  },
+  "online.join.error.conflict": {
+    "message": "This invitation has already been accepted or closed.",
+    "description": "Play online (games against other players)"
+  },
+  "online.join.error.bad_request": {
+    "message": "This is your own invite link. Share it with someone else.",
+    "description": "Play online (games against other players)"
+  },
+  "privacy.account.5": {
+    "message": "If you play online against other players, they see your display name and handle, and each of you keeps the game in your history. We also record who you've played against, how many games, and when you last played, to show “People you've played”.",
+    "description": "privacy policy page"
   }
 }

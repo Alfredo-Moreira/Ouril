@@ -1,6 +1,7 @@
 //! HTTP routes and middleware. See `apps/server/API.md` for the contract.
 
 mod auth;
+mod games;
 mod me;
 mod meta;
 mod sync;
@@ -41,6 +42,7 @@ pub fn router(state: AppState) -> Router {
         .route("/meta", get(meta::meta))
         .merge(auth::router())
         .merge(me::router())
+        .merge(games::router())
         .merge(sync::router())
         .fallback(not_found)
         .layer(middleware::from_fn(request_timeout))
