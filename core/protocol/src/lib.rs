@@ -342,6 +342,157 @@ pub struct SyncPull {
 }
 
 // ---------------------------------------------------------------------------------------
+// Games against other players (ADR 0031)
+// ---------------------------------------------------------------------------------------
+
+/// Longest a player has to make a move in an active game, before they lose on time.
+pub const TURN_DEADLINE_DAYS: i64 = 3;
+/// How long an invitation stays open before it expires.
+pub const INVITE_TTL_DAYS: i64 = 7;
+/// Most invitations a player can have open at once.
+pub const MAX_OPEN_INVITES: i64 = 20;
+
+/// Lifecycle of a game against another player.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(TS), ts(export))]
+#[serde(rename_all = "snake_case")]
+pub enum OnlineGameStatus {
+    /// Waiting for the invited player (or anyone with the invite link) to accept.
+    Invited,
+    Active,
+    Finished,
+    /// The invited player said no.
+    Declined,
+    /// The inviter withdrew the invitation.
+    Cancelled,
+    /// Nobody accepted within `INVITE_TTL_DAYS`.
+    Expired,
+}
+
+/// A seat at the board. The inviter plays South.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(TS), ts(export))]
+#[serde(rename_all = "snake_case")]
+pub enum Seat {
+    South,
+    North,
+}
+
+/// Another player, as shown to you.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(TS), ts(export))]
+pub struct PlayerSummary {
+    pub user_id: String,
+    pub display_name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub handle: Option<String>,
+}
+
+/// How a finished game ended. `outcome` is `south_wins`, `north_wins` or `draw`; `reason` is
+/// a record end reason (`threshold`, …, `resigned`, `timeout`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(TS), ts(export))]
+pub struct OnlineGameResult {
+    pub outcome: String,
+    pub reason: String,
+    /// Final `[south, north]` stores.
+    pub stores: [u8; 2],
+}
+
+/// A game against another player, from the requesting player's point of view.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(TS), ts(export))]
+pub struct OnlineGame {
+    pub id: String,
+    pub variant_id: String,
+    pub variant_version: u16,
+    pub status: OnlineGameStatus,
+    pub first_player: Seat,
+    /// Your seat.
+    pub you: Seat,
+    /// The other player; absent for an invite link nobody has accepted yet.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub opponent: Option<PlayerSummary>,
+    /// Moves so far (pit indices); replay them with the engine.
+    pub moves: Vec<u8>,
+    /// Active, and you are to move.
+    pub your_turn: bool,
+    /// Active: when the player to move loses on time (RFC 3339).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub turn_deadline: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub result: Option<OnlineGameResult>,
+    /// The code for the invite link, shown to the inviter while nobody has accepted.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub invite_code: Option<String>,
+    /// Whether you sent the invitation.
+    pub invited_by_you: bool,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+/// `POST /v1/games`. With `opponent_handle` or `opponent_id`, an invitation for that player;
+/// with neither, an invite link anyone signed in can accept.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(TS), ts(export))]
+pub struct CreateGameRequest {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub opponent_handle: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub opponent_id: Option<String>,
+    /// Defaults to `cv.standard`; the server pins its latest version.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub variant_id: Option<String>,
+}
+
+/// `POST /v1/games/join`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(TS), ts(export))]
+pub struct JoinGameRequest {
+    pub invite_code: String,
+}
+
+/// `POST /v1/games/{id}/moves`. `ply` is the number of moves already played; a repeat of the
+/// last accepted move is answered with the current game (safe retries).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(TS), ts(export))]
+pub struct MoveRequest {
+    pub ply: u32,
+    pub pit: u8,
+}
+
+/// `GET /v1/games`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(TS), ts(export))]
+pub struct GameList {
+    pub games: Vec<OnlineGame>,
+}
+
+/// Someone you've played against (`GET /v1/opponents`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(TS), ts(export))]
+pub struct OpponentSummary {
+    pub player: PlayerSummary,
+    pub games_played: u32,
+    pub last_played_at: String,
+}
+
+/// `GET /v1/opponents`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(TS), ts(export))]
+pub struct OpponentList {
+    pub opponents: Vec<OpponentSummary>,
+}
+
+// ---------------------------------------------------------------------------------------
 // Errors
 // ---------------------------------------------------------------------------------------
 
@@ -360,6 +511,9 @@ pub enum ErrorCode {
     NotFound,
     /// 409: handle already taken.
     HandleTaken,
+    /// 409: the request doesn't fit the current state (e.g. a move for the wrong turn, or
+    /// accepting a game that's no longer an invitation). Refresh and try again.
+    Conflict,
     /// 413: request body or batch too large.
     PayloadTooLarge,
     /// 426: client below `min_supported` (from `X-Ouril-Client`).
@@ -437,6 +591,7 @@ mod tests {
             (ErrorCode::Forbidden, "forbidden"),
             (ErrorCode::NotFound, "not_found"),
             (ErrorCode::HandleTaken, "handle_taken"),
+            (ErrorCode::Conflict, "conflict"),
             (ErrorCode::PayloadTooLarge, "payload_too_large"),
             (ErrorCode::UpgradeRequired, "upgrade_required"),
             (ErrorCode::RateLimited, "rate_limited"),

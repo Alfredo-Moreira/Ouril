@@ -18,7 +18,13 @@ use ts_rs::TS;
 /// - **2:** adds `reason: "resigned"`, a player forfeited before the rules ended the game
 ///   (ADR 0022). Clients write format 2 only for forfeited games, so servers that only know
 ///   format 1 keep accepting every other game and defer forfeits until they're updated.
-pub const GAME_RECORD_FORMAT: u16 = 2;
+/// - **3:** a game against another player (ADR 0031): `mode: "vs_player"`, `opponent`, and
+///   `reason: "timeout"` when a player missed their turn deadline. Only the server writes
+///   format 3 (it keeps both players' records); clients read it from sync and never push it.
+pub const GAME_RECORD_FORMAT: u16 = 3;
+
+/// Format of a game against another player, written by the server (ADR 0031).
+pub const GAME_RECORD_FORMAT_VS_PLAYER: u16 = 3;
 
 /// Format of a game the rules ended (still the format clients write for those games).
 pub const GAME_RECORD_FORMAT_RULES: u16 = 1;
@@ -34,6 +40,9 @@ pub enum RecordEndReason {
     NoMoves,
     /// The losing side forfeited (format 2). The engine never produces this.
     Resigned,
+    /// The losing side missed their turn deadline in a game against another player
+    /// (format 3). The engine never produces this.
+    Timeout,
 }
 
 impl From<EndReason> for RecordEndReason {
@@ -70,6 +79,20 @@ pub struct GameRecordResult {
 #[serde(rename_all = "snake_case")]
 pub enum GameMode {
     VsAi,
+    /// Against another signed-in player, played through the server (format 3, ADR 0031).
+    VsPlayer,
+}
+
+/// The other player of a `vs_player` game, as the server knew them when the game ended.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(TS), ts(export))]
+pub struct RecordOpponent {
+    /// The opponent's account ID.
+    pub user_id: String,
+    pub display_name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub handle: Option<String>,
 }
 
 /// A finished game: everything needed to replay it (format 1).
@@ -97,10 +120,14 @@ pub struct GameRecord {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[cfg_attr(feature = "ts", ts(optional))]
     pub ai_level: Option<String>,
-    /// The side the local player played (vs AI). Needed to count wins and losses.
+    /// The side the local player played. Needed to count wins and losses.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[cfg_attr(feature = "ts", ts(optional))]
     pub human_player: Option<Player>,
+    /// The other player, for `vs_player` games (format 3).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub opponent: Option<RecordOpponent>,
 }
 
 fn vs_ai() -> GameMode {
@@ -297,6 +324,7 @@ mod tests {
             mode: GameMode::VsAi,
             ai_level: Some(level.into()),
             human_player: human,
+            opponent: None,
         }
     }
 

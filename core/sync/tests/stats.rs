@@ -35,6 +35,7 @@ fn rec(
         mode: GameMode::VsAi,
         ai_level: level.map(Into::into),
         human_player: human,
+        opponent: None,
     }
 }
 
@@ -361,4 +362,47 @@ fn a_forfeit_record_round_trips_as_json() {
         serde_json::from_str::<serde_json::Value>(&serde_json::to_string(&r).unwrap()).unwrap(),
         serde_json::from_str::<serde_json::Value>(json).unwrap()
     );
+}
+
+#[test]
+fn a_game_against_a_player_round_trips_as_format_3() {
+    let mut r = rec(
+        "p1",
+        "2026-10-02T00:00:00Z",
+        GameResult::NorthWins,
+        Some(Player::North),
+        None,
+    );
+    r.format = GAME_RECORD_FORMAT_VS_PLAYER;
+    r.mode = GameMode::VsPlayer;
+    r.result.reason = RecordEndReason::Timeout;
+    r.opponent = Some(RecordOpponent {
+        user_id: "0192b3c4-0000-7000-8000-000000000001".into(),
+        display_name: "Ana".into(),
+        handle: Some("ana".into()),
+    });
+    let json = serde_json::to_value(&r).unwrap();
+    assert_eq!(json["format"], 3);
+    assert_eq!(json["mode"], "vs_player");
+    assert_eq!(json["result"]["reason"], "timeout");
+    assert_eq!(json["opponent"]["handle"], "ana");
+    let back: GameRecord = serde_json::from_value(json).unwrap();
+    assert_eq!(back, r);
+    // Counted from the player's own side, like any game.
+    let s = derive_stats(&[back]);
+    assert_eq!((s.overall.played, s.overall.wins), (1, 1));
+    assert!(s.by_level.is_empty());
+}
+
+#[test]
+fn older_records_without_mode_or_opponent_still_read() {
+    let json = serde_json::json!({
+        "format": 1, "id": "old", "variant": {"id": "cv.standard", "version": 1},
+        "first_player": "south", "moves": [], "core_version": "0.1.0",
+        "result": {"outcome": "draw", "stores": [24, 24], "reason": "threshold"},
+        "started_at": "2026-10-01T00:00:00Z", "ended_at": "2026-10-01T00:05:00Z"
+    });
+    let r: GameRecord = serde_json::from_value(json).unwrap();
+    assert_eq!(r.mode, GameMode::VsAi);
+    assert_eq!(r.opponent, None);
 }

@@ -67,7 +67,7 @@ type Status = 'playing' | 'south_wins' | 'north_wins' | 'draw';
 type Level = 'easy' | 'medium' | 'hard';
 type GameResult = 'south_wins' | 'north_wins' | 'draw';
 type EndReason = 'threshold' | 'no_feed' | 'endless_cycle' | 'no_moves';
-type RecordEndReason = EndReason | 'resigned'; // records only (format 2, ADR 0022)
+type RecordEndReason = EndReason | 'resigned' | 'timeout'; // records only (format 2, ADR 0022; format 3, ADR 0031)
 type MoveErrorCode =
   | 'not_own_pit' | 'empty_pit' | 'single_seed_rule'
   | 'must_feed' | 'grand_slam_forbidden' | 'game_over';
@@ -122,9 +122,10 @@ interface GameRecord {
   result: { outcome: GameResult; stores: [number, number]; reason: RecordEndReason };
   started_at: string;            // RFC 3339
   ended_at: string;              // RFC 3339
-  mode?: 'vs_ai';                // default 'vs_ai'
+  mode?: 'vs_ai' | 'vs_player';  // default 'vs_ai'; 'vs_player' = format 3, from the server
   ai_level?: Level;
   human_player?: Player;         // side the local player played; needed for wins/losses
+  opponent?: { user_id: string; display_name: string; handle?: string }; // vs_player only
 }
 
 interface WinLoss { played: number; wins: number; losses: number; draws: number }
