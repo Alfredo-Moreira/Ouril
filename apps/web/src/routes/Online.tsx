@@ -14,11 +14,12 @@ import { useApp } from '../state/useApp';
 const LIST_POLL_MS = 10_000;
 
 /**
- * `/online` (signed-in players, ADR 0031): invite someone by handle, make an invite link,
- * challenge a past opponent, and see your games: invitations for you, games waiting for your
- * move or theirs, invitations you sent, and recent finished games.
+ * The Online tab of the Game page (`/game?tab=online`, signed-in players, ADR 0031): invite
+ * someone by handle, make an invite link, challenge a past opponent, and see your games:
+ * invitations for you, games waiting for your move or theirs, invitations you sent, and
+ * recent finished games.
  */
-export function Online() {
+export function OnlineLobby() {
   const { t } = useTranslation();
   const { api } = useApp();
   const navigate = useNavigate();
@@ -69,8 +70,7 @@ export function Online() {
   const finished = games?.filter((g) => !['invited', 'active'].includes(g.status)) ?? [];
 
   return (
-    <section className="online">
-      <h1>{t('online.title')}</h1>
+    <div className="online">
       <p className="note">{t('online.intro')}</p>
 
       <InviteForm
@@ -220,7 +220,7 @@ export function Online() {
           </ul>
         </section>
       )}
-    </section>
+    </div>
   );
 }
 

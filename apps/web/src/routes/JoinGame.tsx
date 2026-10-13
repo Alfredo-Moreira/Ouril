@@ -59,7 +59,7 @@ export function JoinGame() {
               defaultValue: t(`error.${error}`, { defaultValue: t('error.internal') }),
             })}
           </p>
-          <Link to="/online">{t('online.back')}</Link>
+          <Link to="/game?tab=online">{t('online.back')}</Link>
         </>
       ) : (
         <p role="status">{t('online.join.working')}</p>

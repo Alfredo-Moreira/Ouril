@@ -1799,17 +1799,9 @@
     "message": "Games against other players will show here once you can play them.",
     "description": "Stats page: empty section for games against other people (not available yet)"
   },
-  "menu.online": {
-    "message": "Online",
-    "description": "Navigation: games against other players (signed-in players)"
-  },
   "stats.vs_name": {
     "message": "vs {name}",
     "description": "Stats history: the opponent of a game against another player; name = their display name"
-  },
-  "online.title": {
-    "message": "Play online",
-    "description": "Play online (games against other players)"
   },
   "online.intro": {
     "message": "Play turn by turn against other players. You have 3 days for each move.",
@@ -2042,5 +2034,29 @@
   "privacy.account.5": {
     "message": "If you play online against other players, they see your display name and handle, and each of you keeps the game in your history. We also record who you've played against, how many games, and when you last played, to show “People you've played”.",
     "description": "privacy policy page"
+  },
+  "play.title": {
+    "message": "Play",
+    "description": "Game page title: choose who to play"
+  },
+  "play.mode": {
+    "message": "Who to play",
+    "description": "Game page: label of the tabs to choose an opponent"
+  },
+  "play.mode.computer": {
+    "message": "Against the computer",
+    "description": "Game page tab"
+  },
+  "play.mode.online": {
+    "message": "Online",
+    "description": "Game page tab: games against other players"
+  },
+  "play.online.sign_in.title": {
+    "message": "Play other people online",
+    "description": "Game page, Online tab, for a guest"
+  },
+  "play.online.sign_in.body": {
+    "message": "Sign in to invite friends and play them turn by turn. Playing the computer never needs an account.",
+    "description": "Game page, Online tab, for a guest"
   }
 }
