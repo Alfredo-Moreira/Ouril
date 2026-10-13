@@ -18,6 +18,7 @@ pub mod online;
 pub mod opponents;
 pub mod proxy;
 pub mod ratelimit;
+pub mod ratings;
 pub mod routes;
 pub mod state;
 pub mod sync;

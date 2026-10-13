@@ -3,6 +3,7 @@ resolver = "2"
 members = [
     "core/engine",
     "core/ai",
+    "core/rating",
     "core/sync",
     "core/protocol",
     "core/wasm",

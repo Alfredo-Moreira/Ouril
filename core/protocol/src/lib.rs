@@ -432,6 +432,14 @@ pub struct OnlineGame {
     pub invite_code: Option<String>,
     /// Whether you sent the invitation.
     pub invited_by_you: bool,
+    /// Whether the game was created as rated (ADR 0034). A rated game may still not count
+    /// (see `rating_changes`).
+    #[serde(default)]
+    pub rated: bool,
+    /// Finished and counted: how your ratings changed (the overall pool and the game's own).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub rating_changes: Vec<RatingChange>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -451,6 +459,10 @@ pub struct CreateGameRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[cfg_attr(feature = "ts", ts(optional))]
     pub variant_id: Option<String>,
+    /// Whether the game counts for ratings (ADR 0034). Defaults to `true`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub rated: Option<bool>,
 }
 
 /// `POST /v1/games/join`.
@@ -490,6 +502,98 @@ pub struct OpponentSummary {
 #[cfg_attr(feature = "ts", derive(TS), ts(export))]
 pub struct OpponentList {
     pub opponents: Vec<OpponentSummary>,
+}
+
+// ---------------------------------------------------------------------------------------
+// Ratings and leaderboards (ADR 0034)
+// ---------------------------------------------------------------------------------------
+
+/// The pool every rated game counts in.
+pub const RATING_POOL_OVERALL: &str = "overall";
+/// Game modes with their own pools: `<variant_id>:<mode>`. `live` comes with live games.
+pub const RATING_MODES: [&str; 2] = ["async", "live"];
+/// Rated games a player needs in a pool before they appear on its boards.
+pub const LEADERBOARD_MIN_GAMES: u32 = 10;
+/// ...and how recently they must have played a rated game in it.
+pub const LEADERBOARD_ACTIVE_DAYS: i64 = 60;
+/// Most entries on a board.
+pub const LEADERBOARD_SIZE: u32 = 100;
+/// Rated games between the same two players that count in any 24 hours.
+pub const RATED_GAMES_PER_PAIR_PER_DAY: i64 = 3;
+
+/// One rating change from a finished game.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(TS), ts(export))]
+pub struct RatingChange {
+    /// `overall` or `<variant_id>:<mode>`.
+    pub pool: String,
+    pub before: i32,
+    pub after: i32,
+}
+
+/// A player's rating in one pool, rounded for display.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(TS), ts(export))]
+pub struct PoolRating {
+    pub pool: String,
+    pub rating: i32,
+    /// Rating deviation now (it grows while the player doesn't play rated games).
+    pub deviation: i32,
+    /// Too uncertain to rank yet (shown as `1520?`).
+    pub provisional: bool,
+    pub games: u32,
+    pub wins: u32,
+    pub draws: u32,
+    pub losses: u32,
+    pub peak: i32,
+}
+
+/// `GET /v1/ratings/me`: every pool you have played rated games in.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(TS), ts(export))]
+pub struct MyRatings {
+    pub ratings: Vec<PoolRating>,
+}
+
+/// A leaderboard's scope.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(TS), ts(export))]
+#[serde(rename_all = "snake_case")]
+pub enum LeaderboardScope {
+    World,
+    Country,
+}
+
+/// One row of a leaderboard.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(TS), ts(export))]
+pub struct LeaderboardEntry {
+    pub rank: u32,
+    pub player: PlayerSummary,
+    /// ISO 3166-1 alpha-2, lowercase.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub country: Option<String>,
+    pub rating: i32,
+    pub games: u32,
+}
+
+/// `GET /v1/leaderboard?pool=…&scope=world|country[&country=cv]`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(TS), ts(export))]
+pub struct Leaderboard {
+    pub pool: String,
+    pub scope: LeaderboardScope,
+    /// The country of a country board.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub country: Option<String>,
+    /// The top `LEADERBOARD_SIZE` eligible players.
+    pub entries: Vec<LeaderboardEntry>,
+    /// You, when you're eligible for this board (whether or not you're in the top).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub you: Option<LeaderboardEntry>,
 }
 
 // ---------------------------------------------------------------------------------------

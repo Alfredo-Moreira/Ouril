@@ -32,6 +32,7 @@ use uuid::Uuid;
 use crate::{
     error::{AppError, AppResult},
     opponents,
+    ratings::{self, FinishedGame},
     sync::insert_game_record,
 };
 
@@ -47,7 +48,7 @@ macro_rules! columns {
     () => {
         "id, variant_id, variant_version, first_player, south_user, north_user,
     invited_user, invite_code, status, moves, turn_deadline, result_outcome, result_reason,
-    store_south, store_north, created_at, updated_at, started_at"
+    store_south, store_north, created_at, updated_at, started_at, mode, rated, rating_applied"
     };
 }
 
@@ -71,6 +72,9 @@ struct Row {
     created_at: OffsetDateTime,
     updated_at: OffsetDateTime,
     started_at: Option<OffsetDateTime>,
+    mode: String,
+    rated: bool,
+    rating_applied: bool,
 }
 
 impl Row {
@@ -216,6 +220,11 @@ async fn view(conn: &mut PgConnection, row: &Row, me: Uuid) -> AppResult<OnlineG
         _ => None,
     };
     let invited_by_you = row.south_user == me;
+    let rating_changes = if row.rating_applied {
+        ratings::changes_for(conn, row.id, me).await?
+    } else {
+        Vec::new()
+    };
     Ok(OnlineGame {
         id: row.id.to_string(),
         variant_id: row.variant_id.clone(),
@@ -237,6 +246,8 @@ async fn view(conn: &mut PgConnection, row: &Row, me: Uuid) -> AppResult<OnlineG
             .clone()
             .filter(|_| invited_by_you && row.status == "invited"),
         invited_by_you,
+        rated: row.rated,
+        rating_changes,
         created_at: rfc3339(row.created_at)?,
         updated_at: rfc3339(row.updated_at)?,
     })
@@ -299,6 +310,7 @@ async fn settle(conn: &mut PgConnection, row: &mut Row, now: OffsetDateTime) -> 
             RecordEndReason::Timeout,
             pos.stores,
             ended,
+            true,
         )
         .await?;
     }
@@ -306,7 +318,8 @@ async fn settle(conn: &mut PgConnection, row: &mut Row, now: OffsetDateTime) -> 
 }
 
 /// End a game: store the result, copy it into both players' history (skipping a deleted
-/// account), and count it in `user_opponents`. The row must be locked.
+/// account), count it in `user_opponents`, and, with `rate` for a rated game, update both
+/// players' ratings (ADR 0034). The row must be locked.
 async fn finish(
     conn: &mut PgConnection,
     row: &mut Row,
@@ -314,6 +327,7 @@ async fn finish(
     reason: RecordEndReason,
     stores: [u8; 2],
     ended: OffsetDateTime,
+    rate: bool,
 ) -> AppResult<()> {
     sqlx::query(
         "UPDATE online_games
@@ -375,6 +389,23 @@ async fn finish(
         insert_game_record(conn, me, &record).await?;
     }
     opponents::record_game_between(&mut *conn, row.south_user, north, ended).await?;
+    if rate && row.rated {
+        ratings::rate_finished_game(
+            conn,
+            &FinishedGame {
+                id: row.id,
+                variant_id: row.variant_id.clone(),
+                mode: row.mode.clone(),
+                south: row.south_user,
+                north,
+                outcome,
+                plies: row.moves.len(),
+                ended,
+            },
+        )
+        .await?;
+        *row = reload(conn, row.id).await?;
+    }
     Ok(())
 }
 
@@ -424,8 +455,8 @@ pub async fn create(db: &PgPool, me: Uuid, req: CreateGameRequest) -> AppResult<
     let id = Uuid::now_v7();
     sqlx::query(
         "INSERT INTO online_games (id, variant_id, variant_version, first_player, south_user,
-                                   invited_user, invite_code)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)",
+                                   invited_user, invite_code, rated)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
     )
     .bind(id)
     .bind(&v.id)
@@ -434,6 +465,7 @@ pub async fn create(db: &PgPool, me: Uuid, req: CreateGameRequest) -> AppResult<
     .bind(me)
     .bind(opponent)
     .bind(opponent.is_none().then(invite_code))
+    .bind(req.rated.unwrap_or(true))
     .execute(&mut *tx)
     .await?;
     let row = reload(&mut tx, id).await?;
@@ -639,6 +671,7 @@ pub async fn play(db: &PgPool, me: Uuid, id: Uuid, req: MoveRequest) -> AppResul
             reason,
             result.state.stores,
             OffsetDateTime::now_utc(),
+            true,
         )
         .await?;
     }
@@ -662,6 +695,7 @@ pub async fn resign(db: &PgPool, me: Uuid, id: Uuid) -> AppResult<OnlineGame> {
         RecordEndReason::Resigned,
         stores,
         OffsetDateTime::now_utc(),
+        true,
     )
     .await?;
     let game = view(&mut tx, &row, me).await?;
@@ -718,6 +752,8 @@ pub async fn end_for_deleted_account(conn: &mut PgConnection, me: Uuid) -> AppRe
             RecordEndReason::Resigned,
             stores,
             OffsetDateTime::now_utc(),
+            // An account being deleted doesn't hand out rating points.
+            false,
         )
         .await?;
     }

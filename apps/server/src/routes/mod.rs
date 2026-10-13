@@ -4,6 +4,7 @@ mod auth;
 mod games;
 mod me;
 mod meta;
+mod ratings;
 mod sync;
 
 use std::time::Duration;
@@ -43,6 +44,7 @@ pub fn router(state: AppState) -> Router {
         .merge(auth::router())
         .merge(me::router())
         .merge(games::router())
+        .merge(ratings::router())
         .merge(sync::router())
         .fallback(not_found)
         .layer(middleware::from_fn(request_timeout))
