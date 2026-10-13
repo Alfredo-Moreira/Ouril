@@ -2,9 +2,9 @@ import { screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { getDb } from '../storage/db';
-import { saveFinishedGame, setConsent } from '../storage/repo';
+import { listGames, saveFinishedGame, setConsent } from '../storage/repo';
 import { createFakeCore, makeRecord } from '../test/fakeCore';
-import { freshDb, renderApp } from '../test/render';
+import { freshDb, offlineApi, renderApp, signInLocally } from '../test/render';
 import { loadCoreSync } from '../test/wasm';
 
 const tile = (label: string) => {
@@ -17,13 +17,28 @@ describe('Stats screen', () => {
     freshDb();
     // Skip the first-launch consent dialog.
     await setConsent({ decided: true, crashReports: false, usageStats: false, installId: 'x' });
+    // Stats are for signed-in players.
+    await signInLocally();
   });
 
-  it('shows the empty state and the guest note when there are no games', async () => {
-    renderApp({ route: '/stats' });
+  it('shows both sections, empty, when there are no games', async () => {
+    renderApp({ route: '/stats', createApi: offlineApi });
     expect(await screen.findByRole('heading', { level: 1 })).toBeInTheDocument();
-    expect(screen.getByText(/No finished games yet/)).toBeInTheDocument();
-    expect(screen.getByText(/Your stats are stored on this device/)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: 'Against the computer' })).toBeVisible();
+    expect(screen.getByText(/No games against the computer yet/)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: 'Against other players' })).toBeVisible();
+    expect(screen.getByText(/once you can play them/)).toBeInTheDocument();
+  });
+
+  it('puts games against the computer in their own section; the players section stays empty', async () => {
+    await saveFinishedGame(makeRecord({ id: 'ai-game' }));
+    renderApp({ route: '/stats', core: loadCoreSync(), createApi: offlineApi });
+    const computer = await screen.findByRole('region', { name: 'Against the computer' });
+    expect(within(computer).getAllByRole('listitem')).toHaveLength(1);
+    expect(within(computer).getByRole('table')).toBeInTheDocument();
+    const players = screen.getByRole('region', { name: 'Against other players' });
+    expect(within(players).queryByRole('listitem')).toBeNull();
+    expect(within(players).getByText(/once you can play them/)).toBeInTheDocument();
   });
 
   it('renders exactly the stats the engine derives from the stored records', async () => {
@@ -40,7 +55,7 @@ describe('Stats screen', () => {
         best_streak: 4,
       },
     });
-    renderApp({ route: '/stats', core });
+    renderApp({ route: '/stats', core, createApi: offlineApi });
     await screen.findByText('Played', { selector: 'dt' });
 
     // Derived by the engine from the records, never counted by the UI.
@@ -76,7 +91,7 @@ describe('Stats screen', () => {
         result: { outcome: 'north_wins', stores: [12, 30], reason: 'threshold' },
       }),
     );
-    renderApp({ route: '/stats', core: loadCoreSync() });
+    renderApp({ route: '/stats', core: loadCoreSync(), createApi: offlineApi });
     const items = within(await screen.findByRole('list')).getAllByRole('listitem');
     expect(items).toHaveLength(2);
     expect(items[0]).toHaveTextContent('Loss');
@@ -94,7 +109,7 @@ describe('Stats screen', () => {
         result: { outcome: 'north_wins', stores: [10, 26], reason: 'threshold' },
       }),
     );
-    renderApp({ route: '/stats' });
+    renderApp({ route: '/stats', createApi: offlineApi });
     const item = within(await screen.findByRole('list')).getByRole('listitem');
     expect(item).toHaveTextContent('Win');
     expect(item).toHaveTextContent('26–10');
@@ -103,7 +118,7 @@ describe('Stats screen', () => {
   it('marks games the server rejected as not backed up', async () => {
     await saveFinishedGame(makeRecord({ id: 'bad' }));
     await getDb().games.update('bad', { syncRejected: 'illegal_game' });
-    renderApp({ route: '/stats' });
+    renderApp({ route: '/stats', createApi: offlineApi });
     expect(await screen.findByText(/not backed up/i)).toBeInTheDocument();
   });
 
@@ -115,9 +130,39 @@ describe('Stats screen', () => {
       endedAt: '2026-03-01T00:00:00.000Z',
       record: makeRecord({ id: 'someone-else' }),
     });
-    renderApp({ route: '/stats' });
+    renderApp({ route: '/stats', createApi: offlineApi });
     await screen.findByRole('list');
     expect(within(screen.getByRole('list')).getAllByRole('listitem')).toHaveLength(1);
     expect(tile('Played')).toBe('1');
+  });
+});
+
+describe('Stats for guests', () => {
+  beforeEach(async () => {
+    freshDb();
+    await setConsent({ decided: true, crashReports: false, usageStats: false, installId: 'x' });
+  });
+
+  it('hides Stats and sends /stats and replays to sign-in, though games stay on the device', async () => {
+    await saveFinishedGame(makeRecord({ id: 'guest-game' }));
+    renderApp({ route: '/' });
+    await screen.findByRole('heading', { level: 1 });
+    expect(screen.queryByRole('link', { name: 'Stats' })).toBeNull();
+
+    for (const route of ['/stats', '/replay/guest-game']) {
+      const { unmount } = renderApp({ route });
+      expect(await screen.findByRole('heading', { level: 1, name: 'Sign in' })).toBeInTheDocument();
+      unmount();
+    }
+    expect(await listGames()).toHaveLength(1);
+  });
+
+  it('shows Stats in the menu once signed in', async () => {
+    await signInLocally();
+    renderApp({ route: '/', createApi: offlineApi });
+    expect((await screen.findAllByRole('link', { name: 'Stats' }))[0]).toHaveAttribute(
+      'href',
+      '/stats',
+    );
   });
 });

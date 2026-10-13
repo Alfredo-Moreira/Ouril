@@ -6,7 +6,7 @@ import type { Me, Meta } from '../api/types';
 import type { GameRecord } from '../engine/types';
 import { getDb } from '../storage/db';
 import { saveFinishedGame, setConsent } from '../storage/repo';
-import { freshDb, renderApp } from '../test/render';
+import { freshDb, offlineApi, renderApp, signInLocally } from '../test/render';
 
 const ME: Me = {
   id: 'user-1',
@@ -94,6 +94,8 @@ describe('replay', () => {
   beforeEach(async () => {
     freshDb();
     await setConsent({ decided: true, crashReports: false, usageStats: false, installId: 'x' });
+    // Replays are for signed-in players.
+    await signInLocally();
   });
 
   it('steps through a stored game with the engine', async () => {
@@ -112,7 +114,7 @@ describe('replay', () => {
       human_player: 'south',
     };
     await saveFinishedGame(record);
-    renderApp({ route: '/replay/g-replay' });
+    renderApp({ route: '/replay/g-replay', createApi: offlineApi });
 
     expect(await screen.findByText(/Move 0 of 2/)).toBeInTheDocument();
     expect(screen.getByText('Starting position')).toBeInTheDocument();
@@ -125,7 +127,7 @@ describe('replay', () => {
   });
 
   it('says so when the game is not on this device', async () => {
-    renderApp({ route: '/replay/unknown' });
+    renderApp({ route: '/replay/unknown', createApi: offlineApi });
     expect(await screen.findByText("This game isn't on this device.")).toBeInTheDocument();
   });
 });

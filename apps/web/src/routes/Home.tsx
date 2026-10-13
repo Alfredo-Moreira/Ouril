@@ -35,7 +35,7 @@ import type { GameState } from '../engine/types';
 import { buildFrames, frameDelay, type Frame } from '../game/animation';
 import { forfeitGame } from '../game/forfeit';
 import { defaultVariantRef } from '../game/session';
-import { useApp } from '../state/useApp';
+import { useApp, useStatsVisible } from '../state/useApp';
 import { getCurrentGame, type CurrentGame } from '../storage/repo';
 
 export type { NewGameRequest } from '../components/NewGameForm';
@@ -50,6 +50,7 @@ export function Home() {
   const { t } = useTranslation();
   const soon = comingSoon(FEATURES);
   const { auth, user, dataVersion, notifyLocalChange } = useApp();
+  const statsVisible = useStatsVisible();
   const [current, setCurrent] = useState<CurrentGame | null | undefined>(undefined);
 
   useEffect(() => {
@@ -157,7 +158,7 @@ export function Home() {
           )}
           {forfeited && (
             <p className="card resume-note" role="status">
-              {t('home.forfeited')} {FEATURES.stats && <Link to="/stats">{t('menu.stats')}</Link>}
+              {t('home.forfeited')} {statsVisible && <Link to="/stats">{t('menu.stats')}</Link>}
             </p>
           )}
           {confirmForfeit && current && (
@@ -267,7 +268,7 @@ export function Home() {
         </Reveal>
 
         <nav className="tiles" aria-label={t('home.more')}>
-          {TILES.map(({ to, Icon, key }) => (
+          {TILES.filter((tile) => tile.key !== 'stats' || statsVisible).map(({ to, Icon, key }) => (
             <Link key={to} to={to} className="tile">
               <span className="tile__icon">
                 <Icon />

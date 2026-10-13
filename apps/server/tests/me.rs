@@ -234,6 +234,7 @@ async fn delete_me_removes_personal_data_and_revokes_sessions(db: PgPool) {
         ("user_settings", "SELECT count(*) FROM user_settings WHERE user_id = $1"),
         ("games", "SELECT count(*) FROM games WHERE user_id = $1"),
         ("sync_mutation", "SELECT count(*) FROM sync_mutation WHERE user_id = $1"),
+        ("user_opponents", "SELECT count(*) FROM user_opponents WHERE user_id = $1"),
         (
             "session_refresh_tokens",
             "SELECT count(*) FROM session_refresh_tokens t JOIN sessions s ON s.id = t.session_id WHERE s.user_id = $1",

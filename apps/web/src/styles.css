@@ -1394,6 +1394,10 @@ main.main--wide {
 
 /* --- Stats --------------------------------------------------------------------------------- */
 
+.stats__section + .stats__section {
+  margin-top: 2.5rem;
+}
+
 .stat-tiles {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));

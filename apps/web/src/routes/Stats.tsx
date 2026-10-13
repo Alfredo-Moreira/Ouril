@@ -11,11 +11,17 @@ import { listGames } from '../storage/repo';
 
 const RECENT = 20;
 
-/** Local stats (derived by the core from game records, never stored as counters) + history. */
+/** Games against the computer; every other mode is a game against another player. */
+const isVsComputer = (row: GameRow) => row.record.mode === 'vs_ai';
+
+/**
+ * `/stats`, signed-in players only (`useStatsVisible`): stats derived by the core from game
+ * records (never stored as counters) and recent games, in two sections: against the computer
+ * and against other players. The second stays empty until games between players exist.
+ */
 export function Stats() {
-  const { t, i18n } = useTranslation();
-  const { core } = useCore();
-  const { auth, dataVersion } = useApp();
+  const { t } = useTranslation();
+  const { dataVersion } = useApp();
   const [rows, setRows] = useState<GameRow[] | null>(null);
 
   useEffect(() => {
@@ -30,6 +36,53 @@ export function Stats() {
 
   if (!rows) return <p role="status">{t('common.loading')}</p>;
 
+  return (
+    <section className="stats">
+      <h1>{t('stats.title')}</h1>
+      <StatsSection
+        id="vs-computer"
+        title={t('stats.vs_computer')}
+        rows={rows.filter(isVsComputer)}
+        empty={t('stats.empty')}
+        byLevel
+      />
+      <StatsSection
+        id="vs-players"
+        title={t('stats.vs_players')}
+        rows={rows.filter((row) => !isVsComputer(row))}
+        empty={t('stats.vs_players.empty')}
+      />
+    </section>
+  );
+}
+
+function StatsSection({
+  id,
+  title,
+  rows,
+  empty,
+  byLevel = false,
+}: {
+  id: string;
+  title: string;
+  rows: GameRow[];
+  empty: string;
+  /** Show the table by computer level (games against the computer only). */
+  byLevel?: boolean;
+}) {
+  const { t, i18n } = useTranslation();
+  const { core } = useCore();
+  const headingId = `stats-${id}`;
+
+  if (rows.length === 0) {
+    return (
+      <section className="stats__section" aria-labelledby={headingId}>
+        <h2 id={headingId}>{title}</h2>
+        <p className="note">{empty}</p>
+      </section>
+    );
+  }
+
   const stats: CoreStats = core.deriveStats(rows.map((r) => r.record));
   const dateFmt = new Intl.DateTimeFormat(i18n.language, {
     dateStyle: 'medium',
@@ -37,28 +90,20 @@ export function Stats() {
   });
 
   return (
-    <section className="stats">
-      <h1>{t('stats.title')}</h1>
-      {auth === 'guest' && (
-        <p className="note">
-          {t('stats.guest_note')} <Link to="/sign-in">{t('account.sign_in')}</Link>
-        </p>
-      )}
+    <section className="stats__section" aria-labelledby={headingId}>
+      <h2 id={headingId}>{title}</h2>
+      <dl className="stat-tiles">
+        <Tile label={t('stats.played')} value={stats.overall.played} />
+        <Tile label={t('stats.wins')} value={stats.overall.wins} />
+        <Tile label={t('stats.losses')} value={stats.overall.losses} />
+        <Tile label={t('stats.draws')} value={stats.overall.draws} />
+        <Tile label={t('stats.current_streak')} value={stats.current_streak} />
+        <Tile label={t('stats.best_streak')} value={stats.best_streak} />
+      </dl>
 
-      {stats.overall.played === 0 ? (
-        <p>{t('stats.empty')}</p>
-      ) : (
+      {byLevel && (
         <>
-          <dl className="stat-tiles">
-            <Tile label={t('stats.played')} value={stats.overall.played} />
-            <Tile label={t('stats.wins')} value={stats.overall.wins} />
-            <Tile label={t('stats.losses')} value={stats.overall.losses} />
-            <Tile label={t('stats.draws')} value={stats.overall.draws} />
-            <Tile label={t('stats.current_streak')} value={stats.current_streak} />
-            <Tile label={t('stats.best_streak')} value={stats.best_streak} />
-          </dl>
-
-          <h2>{t('stats.by_level')}</h2>
+          <h3>{t('stats.by_level')}</h3>
           <div className="table-wrap">
             <table>
               <thead>
@@ -91,33 +136,31 @@ export function Stats() {
               </tbody>
             </table>
           </div>
-
-          <h2>{t('stats.recent')}</h2>
-          <ol className="history">
-            {rows.slice(0, RECENT).map(({ record, syncRejected }) => {
-              const me = record.human_player ?? 'south';
-              const outcome = outcomeFor(record.result.outcome, me);
-              const [south, north] = record.result.stores;
-              const mine = me === 'south' ? south : north;
-              const theirs = me === 'south' ? north : south;
-              return (
-                <li key={record.id} className={`history__item history__item--${outcome}`}>
-                  <span className="history__result">{t(`stats.result.${outcome}`)}</span>
-                  <span>{t('stats.score', { you: mine, ai: theirs })}</span>
-                  <span>{record.ai_level ? t(`game.level.${record.ai_level}`) : ''}</span>
-                  <time dateTime={record.ended_at}>
-                    {dateFmt.format(new Date(record.ended_at))}
-                  </time>
-                  {syncRejected && <span className="note">{t('stats.not_backed_up')}</span>}
-                  <Link to={`/replay/${record.id}`} className="history__replay">
-                    {t('replay.open')}
-                  </Link>
-                </li>
-              );
-            })}
-          </ol>
         </>
       )}
+
+      <h3>{t('stats.recent')}</h3>
+      <ol className="history">
+        {rows.slice(0, RECENT).map(({ record, syncRejected }) => {
+          const me = record.human_player ?? 'south';
+          const outcome = outcomeFor(record.result.outcome, me);
+          const [south, north] = record.result.stores;
+          const mine = me === 'south' ? south : north;
+          const theirs = me === 'south' ? north : south;
+          return (
+            <li key={record.id} className={`history__item history__item--${outcome}`}>
+              <span className="history__result">{t(`stats.result.${outcome}`)}</span>
+              <span>{t('stats.score', { you: mine, ai: theirs })}</span>
+              <span>{record.ai_level ? t(`game.level.${record.ai_level}`) : ''}</span>
+              <time dateTime={record.ended_at}>{dateFmt.format(new Date(record.ended_at))}</time>
+              {syncRejected && <span className="note">{t('stats.not_backed_up')}</span>}
+              <Link to={`/replay/${record.id}`} className="history__replay">
+                {t('replay.open')}
+              </Link>
+            </li>
+          );
+        })}
+      </ol>
     </section>
   );
 }

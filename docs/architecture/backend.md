@@ -120,7 +120,23 @@ erDiagram
 - `GAMES` holds finished games vs AI in the MVP (`mode = vs_ai`, ID generated on the device). `record` is the exact `GameRecord` the client pushed, once the server has replayed it. Online games will reuse this table, so there's one history.
 - **Stats aren't stored as counters.** They're derived from game records by `ouril-sync` (`derive_stats`), and may be cached in a table that can be rebuilt.
 - Synced tables carry `change_seq` (one Postgres sequence, `change_seq`) for [offline sync](data-and-sync.md). `GAMES` also has `deleted_at` for deletion markers.
-- **Account deletion** deletes sessions (and their refresh tokens), identities, settings, games and sync history, as the privacy policy states. It turns the `USERS` row into an anonymized "Deleted player" (`deleted_at` set).
+- **Account deletion** deletes sessions (and their refresh tokens), identities, settings, games, sync history and the player's own opponent list, as the privacy policy states. Other players keep their rows about them, which then show the anonymized player. It turns the `USERS` row into an anonymized "Deleted player" (`deleted_at` set).
+
+### Opponents (built, not used yet)
+
+`user_opponents` ([`20261013000001_user_opponents.sql`](../../apps/server/migrations/20261013000001_user_opponents.sql), `apps/server/src/opponents.rs`) records who has played against whom: one row per player per opponent, stored in both directions, with the games played and the first and **last played at**. It's the foundation for "people you've played against" and friends (roadmap Phase 4). Nothing writes to it until games between players exist; games against the computer never do. When it starts filling, the privacy policy must say so.
+
+```mermaid
+erDiagram
+  USERS ||--o{ USER_OPPONENTS : "has played"
+  USER_OPPONENTS {
+    uuid user_id
+    uuid opponent_id
+    int games_played
+    timestamptz first_played_at
+    timestamptz last_played_at
+  }
+```
 
 ### Later: multiplayer
 
