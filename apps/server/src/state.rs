@@ -6,6 +6,7 @@ use crate::{
     auth::{apple::AppleClient, oidc::OidcVerifier, tokens::AccessTokens},
     config::Config,
     ratelimit::RateLimiter,
+    relay::Relay,
 };
 
 /// Shared application state, cheap to clone.
@@ -21,6 +22,8 @@ pub struct AppState {
     pub apple: Option<Arc<OidcVerifier>>,
     /// Apple code exchange and token revocation. Present exactly when `apple` is.
     pub apple_client: Option<Arc<AppleClient>>,
+    /// The live-game relay (ADR 0033). `None` = not configured: live games poll.
+    pub relay: Option<Arc<Relay>>,
 }
 
 impl AppState {
@@ -54,7 +57,9 @@ impl AppState {
             config.rate_limit_auth_per_minute,
             config.rate_limit_default_per_minute,
         ));
+        let relay = config.relay.clone().map(|r| Arc::new(Relay::new(r)));
         AppState {
+            relay,
             config: Arc::new(config),
             db,
             tokens: Arc::new(tokens),

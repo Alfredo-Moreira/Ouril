@@ -367,6 +367,10 @@ pub enum OnlineGameStatus {
     Cancelled,
     /// Nobody accepted within `INVITE_TTL_DAYS`.
     Expired,
+    /// A live game where a player didn't make their first move in time
+    /// (`LIVE_FIRST_MOVE_SECS`), or that a player called off before both had moved. No
+    /// result, no rating.
+    Aborted,
 }
 
 /// A seat at the board. The inviter plays South.
@@ -440,6 +444,20 @@ pub struct OnlineGame {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     #[cfg_attr(feature = "ts", ts(as = "Option<Vec<RatingChange>>", optional))]
     pub rating_changes: Vec<RatingChange>,
+    /// `async` (turn by turn) or `live` (ADR 0033).
+    #[serde(default)]
+    pub mode: GamePace,
+    /// Live games: the clock both players got.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub time_control: Option<TimeControl>,
+    /// Live games: each side's time left when the current turn started.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub clocks: Option<Clocks>,
+    /// The server's time when it answered (RFC 3339), so clients can count down accurately.
+    #[serde(default)]
+    pub server_now: String,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -463,6 +481,10 @@ pub struct CreateGameRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[cfg_attr(feature = "ts", ts(optional))]
     pub rated: Option<bool>,
+    /// A live game with this clock (one of `LIVE_TIME_CONTROLS`); absent for turn by turn.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub time_control: Option<TimeControl>,
 }
 
 /// `POST /v1/games/join`.
@@ -502,6 +524,198 @@ pub struct OpponentSummary {
 #[cfg_attr(feature = "ts", derive(TS), ts(export))]
 pub struct OpponentList {
     pub opponents: Vec<OpponentSummary>,
+}
+
+// ---------------------------------------------------------------------------------------
+// Live games and the realtime relay (ADR 0033)
+// ---------------------------------------------------------------------------------------
+
+/// How a game against another player is paced.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(TS), ts(export))]
+#[serde(rename_all = "snake_case")]
+pub enum GamePace {
+    /// Turn by turn, `TURN_DEADLINE_DAYS` per move.
+    #[default]
+    Async,
+    /// Both players at the board, each with a clock.
+    Live,
+}
+
+impl GamePace {
+    /// The name used in rating pools and the database (`async`, `live`).
+    pub fn as_str(self) -> &'static str {
+        match self {
+            GamePace::Async => "async",
+            GamePace::Live => "live",
+        }
+    }
+}
+
+/// A live game's clock: minutes each, plus seconds added after every move.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(TS), ts(export))]
+pub struct TimeControl {
+    pub initial_secs: u32,
+    pub increment_secs: u32,
+}
+
+/// The clocks players can choose (ADR 0033; to tune with playtesting): 3+2, 5+3, 10+5.
+pub const LIVE_TIME_CONTROLS: [TimeControl; 3] = [
+    TimeControl {
+        initial_secs: 180,
+        increment_secs: 2,
+    },
+    TimeControl {
+        initial_secs: 300,
+        increment_secs: 3,
+    },
+    TimeControl {
+        initial_secs: 600,
+        increment_secs: 5,
+    },
+];
+/// Each player must make their first move within this, or the game is aborted.
+pub const LIVE_FIRST_MOVE_SECS: i64 = 30;
+/// A seek with no heartbeat for this long is no longer paired.
+pub const SEEK_STALE_SECS: i64 = 30;
+
+/// Each side's time left (milliseconds) when the current turn started. The side to move is
+/// down by the time since `turn_started_at`; clocks only run once both players have moved.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(TS), ts(export))]
+pub struct Clocks {
+    pub south_ms: i64,
+    pub north_ms: i64,
+    /// When the current turn began (RFC 3339); absent once the game is over.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub turn_started_at: Option<String>,
+    /// Whether the side to move is losing time (false until both players have moved).
+    pub running: bool,
+}
+
+/// `POST /v1/live/seek`: look for an opponent (also the heartbeat while waiting).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(TS), ts(export))]
+pub struct SeekRequest {
+    pub time_control: TimeControl,
+    /// Defaults to `cv.standard`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub variant_id: Option<String>,
+    /// Defaults to `true`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub rated: Option<bool>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(TS), ts(export))]
+#[serde(rename_all = "snake_case")]
+pub enum SeekState {
+    /// Not looking for a game.
+    Idle,
+    Waiting,
+    /// Paired: `game_id` is the new live game.
+    Matched,
+}
+
+/// The answer to every `/v1/live/seek` request.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(TS), ts(export))]
+pub struct SeekStatus {
+    pub state: SeekState,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub game_id: Option<String>,
+    /// Players currently looking for a game, for any clock.
+    pub players_seeking: u32,
+}
+
+/// `POST /v1/live/token`: a token for the realtime relay. With `game_id`, it also covers that
+/// game's channel (you must be playing it).
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(TS), ts(export))]
+pub struct LiveTokenRequest {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub game_id: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(TS), ts(export))]
+pub struct LiveToken {
+    /// Send as the first WebSocket message: `{"token": "…"}`.
+    pub token: String,
+    /// The relay's WebSocket URL.
+    pub url: String,
+    pub expires_in: u32,
+}
+
+/// Relay tokens: who issues them and for whom.
+pub const RELAY_ISSUER: &str = "ouril";
+pub const RELAY_AUDIENCE: &str = "ouril-relay";
+/// A relay token's lifetime; the relay closes the connection when it expires.
+pub const RELAY_TOKEN_TTL_SECS: u32 = 600;
+/// Most channels one token may list.
+pub const RELAY_MAX_CHANNELS: usize = 4;
+
+/// The claims of a relay token (HS256, signed with `RELAY_TOKEN_SECRET`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RelayClaims {
+    pub iss: String,
+    pub aud: String,
+    /// The player's user ID.
+    pub sub: String,
+    pub iat: u64,
+    pub exp: u64,
+    /// The channels this token may read.
+    pub ch: Vec<String>,
+}
+
+/// The channel for a game's updates.
+pub fn game_channel(game_id: &str) -> String {
+    format!("game:{game_id}")
+}
+
+/// The channel for a player's own notifications.
+pub fn user_channel(user_id: &str) -> String {
+    format!("user:{user_id}")
+}
+
+/// `game:<uuid>` or `user:<uuid>` (lowercase, hyphenated).
+pub fn is_valid_channel(channel: &str) -> bool {
+    let Some((kind, id)) = channel.split_once(':') else {
+        return false;
+    };
+    let uuid_like = id.len() == 36
+        && id.char_indices().all(|(i, c)| match i {
+            8 | 13 | 18 | 23 => c == '-',
+            _ => c.is_ascii_digit() || ('a'..='f').contains(&c),
+        });
+    matches!(kind, "game" | "user") && uuid_like
+}
+
+/// `POST /publish` on the relay (server only): deliver `event` to `channel`'s subscribers.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RelayPublish {
+    pub channel: String,
+    pub event: RelayEvent,
+}
+
+/// What the relay carries. Only IDs and counts: players fetch the details from the server,
+/// so the relay never sees game contents or personal data.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(TS), ts(export))]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum RelayEvent {
+    /// A game changed (a move, a result): `moves` is how many moves it has now.
+    GameChanged { game_id: String, moves: u32 },
+    /// Your seek was paired: open `game_id`.
+    Matched { game_id: String },
+    /// Your games list changed (an invitation, an answer).
+    GamesChanged,
 }
 
 // ---------------------------------------------------------------------------------------
