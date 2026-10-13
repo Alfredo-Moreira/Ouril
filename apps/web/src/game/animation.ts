@@ -103,3 +103,9 @@ export function frameDelay(kind: FrameKind, speed: number): number {
   };
   return base[kind] * speed;
 }
+
+/** Animation speed for a game screen: 1, or shorter delays with prefers-reduced-motion. */
+export function defaultSpeed(): number {
+  if (typeof window === 'undefined' || !window.matchMedia) return 1;
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0.4 : 1;
+}

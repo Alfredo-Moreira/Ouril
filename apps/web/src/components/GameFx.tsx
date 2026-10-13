@@ -6,6 +6,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { useCountUp } from './useCountUp';
+
 function prefersReducedMotion(): boolean {
   return (
     typeof window !== 'undefined' &&
@@ -111,4 +113,33 @@ export function Celebration() {
     };
   }, []);
   return <div ref={ref} className="celebration" aria-hidden="true" />;
+}
+
+/** The final score in the result dialog, counting up once when it appears. */
+export function FinalScore({
+  you,
+  them,
+  themLabel,
+}: {
+  you: number;
+  them: number;
+  /** The other side: the computer, or the opponent's name online. */
+  themLabel: string;
+}) {
+  const { t } = useTranslation();
+  const y = useCountUp(you);
+  const a = useCountUp(them);
+  return (
+    <div className="result__score" aria-hidden="true">
+      <span className="result__side">
+        <span className="result__num">{y}</span>
+        <span className="result__label">{t('game.over.you')}</span>
+      </span>
+      <span className="result__dash">–</span>
+      <span className="result__side">
+        <span className="result__num">{a}</span>
+        <span className="result__label">{themLabel}</span>
+      </span>
+    </div>
+  );
 }

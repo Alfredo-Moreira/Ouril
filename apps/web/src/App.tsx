@@ -220,7 +220,12 @@ function Layout({ animationSpeed }: { animationSpeed?: number }) {
             {/* The online lobby is the Game page's Online tab. */}
             <Route path="/online" element={<Navigate to="/game?tab=online" replace />} />
             {FEATURES.accounts && (
-              <Route path="/online/:id" element={onlineVisible ? <OnlineGame /> : signInGate} />
+              <Route
+                path="/online/:id"
+                element={
+                  onlineVisible ? <OnlineGame animationSpeed={animationSpeed} /> : signInGate
+                }
+              />
             )}
             {FEATURES.accounts && <Route path="/join/:code" element={<JoinGame />} />}
             <Route path="/about" element={<About />} />

@@ -6,7 +6,7 @@ import { hasMusic, skipTrack } from '../audio/music';
 import { useMusicPrefs } from '../audio/musicPrefs';
 import { useBoardPace } from '../board3d/pace';
 import { BoardView } from '../components/BoardView';
-import { Celebration, ScoreValue } from '../components/GameFx';
+import { Celebration, FinalScore, ScoreValue } from '../components/GameFx';
 import {
   BulbIcon,
   ExitFullscreenIcon,
@@ -22,11 +22,11 @@ import {
   StarIcon,
   UndoIcon,
 } from '../components/Icons';
-import { useCountUp } from '../components/useCountUp';
 import { useFullscreen } from '../components/useFullscreen';
 import { Dialog } from '../components/Dialog';
 import { MoveAnnouncer } from '../components/MoveAnnouncer';
 import { useCore } from '../engine/CoreContext';
+import { defaultSpeed } from '../game/animation';
 import { forfeitGame } from '../game/forfeit';
 import {
   PLAYABLE_VARIANTS,
@@ -49,11 +49,6 @@ import { NewGameForm, type NewGameRequest } from '../components/NewGameForm';
 export interface GameRouteProps {
   /** 1 = normal speed, 0 = no animation delays (tests). Defaults from prefers-reduced-motion. */
   animationSpeed?: number;
-}
-
-function defaultSpeed(): number {
-  if (typeof window === 'undefined' || !window.matchMedia) return 1;
-  return window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0.4 : 1;
 }
 
 /** `/play`: starts a new game (from Home) or resumes the unfinished one. */
@@ -379,7 +374,8 @@ function GameView({ initial, speed: baseSpeed }: { initial: CurrentGame; speed: 
             <p className="result__tagline">{t(`game.over.tagline.${c.finished.outcome}`)}</p>
             <FinalScore
               you={c.finished.record.result.stores[0]}
-              ai={c.finished.record.result.stores[1]}
+              them={c.finished.record.result.stores[1]}
+              themLabel={t('game.over.ai')}
             />
             <p className="visually-hidden">
               {t('game.over.score', {
@@ -419,25 +415,5 @@ function GameView({ initial, speed: baseSpeed }: { initial: CurrentGame; speed: 
         </>
       )}
     </section>
-  );
-}
-
-/** The final score, counting up once when the result appears. */
-function FinalScore({ you, ai }: { you: number; ai: number }) {
-  const { t } = useTranslation();
-  const y = useCountUp(you);
-  const a = useCountUp(ai);
-  return (
-    <div className="result__score" aria-hidden="true">
-      <span className="result__side">
-        <span className="result__num">{y}</span>
-        <span className="result__label">{t('game.over.you')}</span>
-      </span>
-      <span className="result__dash">–</span>
-      <span className="result__side">
-        <span className="result__num">{a}</span>
-        <span className="result__label">{t('game.over.ai')}</span>
-      </span>
-    </div>
   );
 }
