@@ -67,6 +67,30 @@ describe('Play online', () => {
     expect(await screen.findByLabelText('Invite a player by handle')).toBeInTheDocument();
   });
 
+  it("offers online play in the landing page's quick start", async () => {
+    await signInLocally();
+    renderApp({ route: '/', createApi: () => onlineApi([]) });
+    await screen.findByRole('heading', { level: 1, name: 'Ouril' });
+    const quick = document.getElementById('play')!;
+    const computer = await within(quick).findByRole('tab', { name: 'Against the computer' });
+    expect(computer).toHaveAttribute('aria-selected', 'true');
+    expect(within(quick).getByRole('button', { name: 'Start game' })).toBeInTheDocument();
+
+    fireEvent.click(within(quick).getByRole('tab', { name: 'Online' }));
+    expect(await within(quick).findByLabelText('Invite a player by handle')).toBeInTheDocument();
+    expect(within(quick).queryByRole('button', { name: 'Start game' })).toBeNull();
+  });
+
+  it("asks a guest to sign in from the landing page's Online tab", async () => {
+    renderApp({ route: '/' });
+    await screen.findByRole('heading', { level: 1, name: 'Ouril' });
+    const quick = document.getElementById('play')!;
+    fireEvent.click(await within(quick).findByRole('tab', { name: 'Online' }));
+    expect(await within(quick).findByText('Play other people online')).toBeInTheDocument();
+    fireEvent.click(within(quick).getByRole('link', { name: 'Sign in' }));
+    expect(sessionStorage.getItem('ouril.return_to')).toBe('/game?tab=online');
+  });
+
   it('asks a guest to sign in on the Online tab, and comes back to it', async () => {
     renderApp({ route: '/game?tab=online' });
     expect(await screen.findByText('Play other people online')).toBeInTheDocument();

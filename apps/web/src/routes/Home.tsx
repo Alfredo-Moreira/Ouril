@@ -15,6 +15,7 @@ import { BoardView } from '../components/BoardView';
 import { BuyBoards } from '../components/BuyBoards';
 import { Dialog } from '../components/Dialog';
 import { NewGameForm } from '../components/NewGameForm';
+import { PlayModeTabs } from '../components/PlayModeTabs';
 import {
   ArrowIcon,
   FlagIcon,
@@ -34,15 +35,17 @@ import { FEATURES } from '../features';
 import type { GameState } from '../engine/types';
 import { buildFrames, frameDelay, type Frame } from '../game/animation';
 import { forfeitGame } from '../game/forfeit';
+import type { PlayMode } from '../game/playModes';
 import { defaultVariantRef } from '../game/session';
 import { useApp, useStatsVisible } from '../state/useApp';
 import { getCurrentGame, type CurrentGame } from '../storage/repo';
+import { OnlinePanel } from './GameHub';
 
 export type { NewGameRequest } from '../components/NewGameForm';
 
 /**
  * The landing page: a vibrant hero with a live board (the computer playing itself, with the
- * hand), quick start, how to play, the game's heritage, and links to the rest of the app.
+ * hand), quick start (against the computer, or online when accounts are on), how to play, the game's heritage, and links to the rest of the app.
  * Motion follows docs/architecture/web-design.md: the hero reveal plays once per session,
  * sections reveal once as they scroll in, and nothing moves with reduced motion.
  */
@@ -52,6 +55,7 @@ export function Home() {
   const { auth, user, dataVersion, notifyLocalChange } = useApp();
   const statsVisible = useStatsVisible();
   const [current, setCurrent] = useState<CurrentGame | null | undefined>(undefined);
+  const [mode, setMode] = useState<PlayMode>('computer');
 
   useEffect(() => {
     let cancelled = false;
@@ -133,57 +137,73 @@ export function Home() {
       </section>
 
       <div className="landing__body">
-        <div className="home__grid" id="play">
-          {resumable && (
-            <div className="card card--accent resume">
-              <div>
-                <h2 className="card__title">{t('home.resume')}</h2>
-                <p>{t('home.resume.body', { level: t(`game.level.${current.level}`) })}</p>
-              </div>
-              <div className="resume__actions">
-                <Link className="button button--primary" to="/play">
-                  {t('home.resume')}
-                  <ArrowIcon />
-                </Link>
-                <button
-                  type="button"
-                  className="button button--ghost button--danger-text"
-                  onClick={() => setConfirmForfeit(true)}
-                >
-                  <FlagIcon />
-                  {t('game.menu.forfeit')}
-                </button>
-              </div>
-            </div>
-          )}
-          {forfeited && (
-            <p className="card resume-note" role="status">
-              {t('home.forfeited')} {statsVisible && <Link to="/stats">{t('menu.stats')}</Link>}
-            </p>
-          )}
-          {confirmForfeit && current && (
-            <Dialog title={t('game.forfeit.title')} onDismiss={() => setConfirmForfeit(false)}>
-              <p>{t('game.forfeit.body')}</p>
-              <div className="dialog__actions dialog__actions--equal">
-                <button type="button" className="button" onClick={() => setConfirmForfeit(false)}>
-                  {t('game.forfeit.cancel')}
-                </button>
-                <button
-                  type="button"
-                  className="button button--danger"
-                  onClick={() => void forfeit()}
-                >
-                  <FlagIcon />
-                  {t('game.forfeit.confirm')}
-                </button>
-              </div>
-            </Dialog>
-          )}
+        <div className="home__quick" id="play">
+          <PlayModeTabs mode={mode} onSelect={setMode} idPrefix="quick">
+            {mode === 'online' ? (
+              <OnlinePanel returnTo="/game?tab=online" />
+            ) : (
+              <div className="home__grid">
+                {resumable && (
+                  <div className="card card--accent resume">
+                    <div>
+                      <h2 className="card__title">{t('home.resume')}</h2>
+                      <p>{t('home.resume.body', { level: t(`game.level.${current.level}`) })}</p>
+                    </div>
+                    <div className="resume__actions">
+                      <Link className="button button--primary" to="/play">
+                        {t('home.resume')}
+                        <ArrowIcon />
+                      </Link>
+                      <button
+                        type="button"
+                        className="button button--ghost button--danger-text"
+                        onClick={() => setConfirmForfeit(true)}
+                      >
+                        <FlagIcon />
+                        {t('game.menu.forfeit')}
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {forfeited && (
+                  <p className="card resume-note" role="status">
+                    {t('home.forfeited')}{' '}
+                    {statsVisible && <Link to="/stats">{t('menu.stats')}</Link>}
+                  </p>
+                )}
+                {confirmForfeit && current && (
+                  <Dialog
+                    title={t('game.forfeit.title')}
+                    onDismiss={() => setConfirmForfeit(false)}
+                  >
+                    <p>{t('game.forfeit.body')}</p>
+                    <div className="dialog__actions dialog__actions--equal">
+                      <button
+                        type="button"
+                        className="button"
+                        onClick={() => setConfirmForfeit(false)}
+                      >
+                        {t('game.forfeit.cancel')}
+                      </button>
+                      <button
+                        type="button"
+                        className="button button--danger"
+                        onClick={() => void forfeit()}
+                      >
+                        <FlagIcon />
+                        {t('game.forfeit.confirm')}
+                      </button>
+                    </div>
+                  </Dialog>
+                )}
 
-          <NewGameForm
-            title={t('home.quick.title')}
-            replaceWarning={!!current && current.state.status === 'playing'}
-          />
+                <NewGameForm
+                  title={t('home.quick.title')}
+                  replaceWarning={!!current && current.state.status === 'playing'}
+                />
+              </div>
+            )}
+          </PlayModeTabs>
         </div>
 
         <Reveal as="section" className="steps" labelledBy="steps-title">
