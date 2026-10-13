@@ -118,7 +118,7 @@ The 3D board is a separate chunk, so it isn't there on the first paint. `BoardVi
 - **Hero:** full-bleed, in the islands' colours (Atlantic blues, a sunset glow) with the flag's ring of ten stars. It has the big *Ouril* title, two calls to action (**Play now**, **Learn to play**), and a **live board**: the computer playing itself with the hand, so the page shows how the game works.
   - The live board plays only while it's on screen. It stops after ten moves (no endless loop) and stays still with reduced motion.
   - The reveal (copy, stars, board) plays once per session.
-- **Sections:** quick start (difficulty and who starts), *How to play* in four steps, *Ten islands, one board* (heritage: the seeds, the ouris, come from the ourinzeira shrub), *Made to play anywhere* (features), and links to the rest of the app.
+- **Sections:** quick start (difficulty and who starts; with accounts on, the Game page's tabs choose **Against the computer** or **Online**, the lobby for signed-in players and a sign-in prompt for guests), *How to play* in four steps, *Ten islands, one board* (heritage: the seeds, the ouris, come from the ourinzeira shrub), *Made to play anywhere* (features), and links to the rest of the app.
   - Sections reveal once as they scroll in, in a short stagger. A section already scrolled past (an anchor link, a jump to the end) counts as seen.
 
 ## Unreleased features and content

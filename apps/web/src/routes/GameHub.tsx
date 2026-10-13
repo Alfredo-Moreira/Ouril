@@ -1,16 +1,15 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useSearchParams } from 'react-router';
 
 import { rememberReturnTo } from '../auth/returnTo';
 import { ArrowIcon } from '../components/Icons';
 import { NewGameForm } from '../components/NewGameForm';
-import { FEATURES } from '../features';
+import { PlayModeTabs } from '../components/PlayModeTabs';
+import { PLAY_MODES, type PlayMode } from '../game/playModes';
 import { useApp, useOnlineVisible } from '../state/useApp';
 import { getCurrentGame, type CurrentGame } from '../storage/repo';
 import { OnlineLobby } from './Online';
-
-type Mode = 'computer' | 'online';
 
 /**
  * `/game`, the menu's "Game": choose who to play. **Against the computer** continues the game in
@@ -21,62 +20,18 @@ type Mode = 'computer' | 'online';
 export function GameHub() {
   const { t } = useTranslation();
   const [params, setParams] = useSearchParams();
-  const modes: Mode[] = FEATURES.accounts ? ['computer', 'online'] : ['computer'];
-  const mode: Mode = modes.includes(params.get('tab') as Mode)
-    ? (params.get('tab') as Mode)
-    : 'computer';
-  const tabs = useRef<(HTMLButtonElement | null)[]>([]);
+  const tab = params.get('tab') as PlayMode;
+  const mode: PlayMode = PLAY_MODES.includes(tab) ? tab : 'computer';
 
-  const select = (next: Mode) =>
+  const select = (next: PlayMode) =>
     setParams(next === 'computer' ? {} : { tab: next }, { replace: true });
-
-  const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
-    const step = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
-    if (!step) return;
-    e.preventDefault();
-    const next = modes[(modes.indexOf(mode) + step + modes.length) % modes.length]!;
-    select(next);
-    tabs.current[modes.indexOf(next)]?.focus();
-  };
 
   return (
     <section className="game-hub">
       <h1>{t('play.title')}</h1>
-      {modes.length > 1 && (
-        <div
-          className="rules__tabs choice-row"
-          role="tablist"
-          aria-label={t('play.mode')}
-          onKeyDown={onKeyDown}
-        >
-          {modes.map((m, i) => (
-            <button
-              key={m}
-              ref={(el) => {
-                tabs.current[i] = el;
-              }}
-              type="button"
-              role="tab"
-              id={`play-tab-${m}`}
-              aria-selected={m === mode}
-              aria-controls="play-panel"
-              tabIndex={m === mode ? 0 : -1}
-              className="choice rules__tab"
-              onClick={() => select(m)}
-            >
-              {t(`play.mode.${m}`)}
-            </button>
-          ))}
-        </div>
-      )}
-      <div
-        id="play-panel"
-        role={modes.length > 1 ? 'tabpanel' : undefined}
-        aria-labelledby={modes.length > 1 ? `play-tab-${mode}` : undefined}
-        className="game-hub__panel"
-      >
-        {mode === 'computer' ? <VsComputer /> : <Online />}
-      </div>
+      <PlayModeTabs mode={mode} onSelect={select} idPrefix="play">
+        {mode === 'computer' ? <VsComputer /> : <OnlinePanel returnTo="/game?tab=online" />}
+      </PlayModeTabs>
     </section>
   );
 }
@@ -119,8 +74,11 @@ function VsComputer() {
   );
 }
 
-/** The online lobby for signed-in players; guests are asked to sign in first. */
-function Online() {
+/**
+ * The online lobby for signed-in players; guests are asked to sign in first, and come back to
+ * `returnTo` afterwards.
+ */
+export function OnlinePanel({ returnTo }: { returnTo: string }) {
   const { t } = useTranslation();
   const signedIn = useOnlineVisible();
   if (signedIn) return <OnlineLobby />;
@@ -131,7 +89,7 @@ function Online() {
       <Link
         className="button button--primary"
         to="/sign-in"
-        onClick={() => rememberReturnTo('/game?tab=online')}
+        onClick={() => rememberReturnTo(returnTo)}
       >
         {t('account.sign_in')}
       </Link>
