@@ -152,13 +152,13 @@ describe('Play online', () => {
     const api = onlineApi([north]);
     renderApp({ route: '/online/g1', core: loadCoreSync(), createApi: () => api });
     expect(await screen.findByRole('heading', { name: 'You vs Ana' })).toBeInTheDocument();
-    expect(screen.getByText('Your turn.')).toBeInTheDocument();
+    expect(screen.getByText('Your turn')).toBeInTheDocument();
     // "Your pit 1" is drawn where South's first pit is: it's really North's pit 6.
     fireEvent.click(screen.getByRole('button', { name: /^Your pit 1,/ }));
     await waitFor(() => expect(api.playOnlineMove).toHaveBeenCalledWith('g1', 1, 6));
   });
 
-  it("waits during the opponent's turn and resigns after confirming", async () => {
+  it("waits during the opponent's turn and resigns from the menu after confirming", async () => {
     await signInLocally();
     const api = onlineApi([game({ your_turn: false })], {
       gameAction: vi.fn(async () =>
@@ -170,12 +170,66 @@ describe('Play online', () => {
       ),
     });
     renderApp({ route: '/online/g1', core: loadCoreSync(), createApi: () => api });
-    expect(await screen.findByText('Waiting for Ana to move…')).toBeInTheDocument();
+    expect(await screen.findByText('Ana’s turn')).toBeInTheDocument();
     expect(screen.getByText(/Next move due by/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Game menu' }));
     fireEvent.click(screen.getByRole('button', { name: 'Resign' }));
     fireEvent.click(screen.getByRole('button', { name: 'Yes, resign' }));
     await waitFor(() => expect(api.gameAction).toHaveBeenCalledWith('g1', 'resign'));
-    expect(await screen.findByText('You lost by resignation.')).toBeInTheDocument();
+    const result = await screen.findByRole('dialog', { name: 'You lost' });
+    expect(within(result).getByText('You resigned.')).toBeInTheDocument();
+  });
+
+  it('is the same screen as a game against the computer', async () => {
+    await signInLocally();
+    renderApp({ route: '/online/g1', core: loadCoreSync(), createApi: () => onlineApi([game()]) });
+    expect(await screen.findByRole('heading', { name: 'You vs Ana' })).toBeInTheDocument();
+    // The whole viewport: no menu bar, like /play.
+    expect(screen.queryByRole('link', { name: 'Game' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Game menu' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Rules' }));
+    expect(await screen.findByRole('dialog', { name: /rules/i })).toBeInTheDocument();
+  });
+
+  it('sows your move at once, before the server answers', async () => {
+    await signInLocally();
+    const api = onlineApi([game({ moves: [], your_turn: true })], {
+      playOnlineMove: vi.fn(() => new Promise<OnlineGame>(() => undefined)),
+    });
+    renderApp({ route: '/online/g1', core: loadCoreSync(), createApi: () => api });
+    fireEvent.click(await screen.findByRole('button', { name: /^Your pit 1, 4 seeds/ }));
+    await waitFor(() => expect(api.playOnlineMove).toHaveBeenCalledWith('g1', 0, 0));
+    expect(await screen.findByRole('button', { name: /^Your pit 1, 0 seeds/ })).toBeInTheDocument();
+  });
+
+  it("sows the opponent's move when it arrives", async () => {
+    await signInLocally();
+    // The answer to your move already holds Ana's reply: both are sown, one after the other.
+    const api = onlineApi([game({ moves: [], your_turn: true })], {
+      playOnlineMove: vi.fn(async () => game({ moves: [0, 9], your_turn: true })),
+    });
+    renderApp({ route: '/online/g1', core: loadCoreSync(), createApi: () => api });
+    fireEvent.click(await screen.findByRole('button', { name: /^Your pit 1, 4 seeds/ }));
+    // Ana's pit 4 (real pit 9) sowed round into yours: your emptied pit 1 holds 1 seed again.
+    expect(
+      await screen.findByRole('button', { name: /^Your pit 1, 1 seed\b/ }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Your turn')).toBeInTheDocument();
+  });
+
+  it('shows the result of a finished game, with who resigned, and offers a rematch', async () => {
+    await signInLocally();
+    const finished = game({
+      status: 'finished',
+      your_turn: false,
+      result: { outcome: 'south_wins', reason: 'resigned', stores: [0, 0] },
+    });
+    const api = onlineApi([finished]);
+    renderApp({ route: '/online/g1', core: loadCoreSync(), createApi: () => api });
+    const result = await screen.findByRole('dialog', { name: 'You won!' });
+    expect(within(result).getByText('Ana resigned.')).toBeInTheDocument();
+    fireEvent.click(within(result).getByRole('button', { name: 'Rematch' }));
+    await waitFor(() => expect(api.createGame).toHaveBeenCalledWith({ opponent_id: 'u-ana' }));
   });
 
   it('an invite link asks a guest to sign in, then joins once signed in', async () => {

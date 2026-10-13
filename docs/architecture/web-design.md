@@ -113,6 +113,8 @@ The 3D board is a separate chunk, so it isn't there on the first paint. `BoardVi
   - a **draw** is teal.
   - Everything is skipped with reduced motion.
 
+- **Online games** (`/online/:id`, `routes/OnlineGame.tsx`): once a game against another player has started, it's this same screen: the whole viewport and the game music, every move (yours at once, before the server answers; the opponent's when it arrives) sown seed by seed with its sounds and announced, the scoreboard with the opponent's name, the rules, full screen, and the menu (*Keep playing*, *Back to your games*, *Resign* after a confirmation). The result dialog says who resigned or ran out of time and offers **Rematch** (a new invitation to the same player). The celebration and end sound play only when the game ends on screen, not when a finished game is opened later. Undo and hints are left out: the moves are on the server, and a hint would be the computer playing for you. An invitation is still a plain page with **Accept** and **Decline**.
+
 ## The landing page
 
 - **Hero:** full-bleed, in the islands' colours (Atlantic blues, a sunset glow) with the flag's ring of ten stars. It has the big *Ouril* title, two calls to action (**Play now**, **Learn to play**), and a **live board**: the computer playing itself with the hand, so the page shows how the game works.
