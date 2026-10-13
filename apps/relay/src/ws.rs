@@ -10,7 +10,6 @@ use std::{
 };
 
 use axum::extract::ws::{CloseFrame, Message, Utf8Bytes, WebSocket};
-use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
 use ouril_protocol::{
     is_valid_channel, RelayClaims, RELAY_AUDIENCE, RELAY_ISSUER, RELAY_MAX_CHANNELS,
 };
@@ -41,20 +40,45 @@ enum ClientMessage {
     Ping,
 }
 
-/// Check a token: signature, issuer, audience, expiry and channels.
+/// Check a token: HS256 only, signature (constant time), issuer, audience, subject, expiry
+/// (no leeway) and channels. Anything else is refused.
 pub fn verify(secret: &str, token: &str) -> Option<RelayClaims> {
-    let mut v = Validation::new(Algorithm::HS256);
-    v.set_audience(&[RELAY_AUDIENCE]);
-    v.set_issuer(&[RELAY_ISSUER]);
-    v.set_required_spec_claims(&["exp", "iss", "aud", "sub"]);
-    v.leeway = 0;
-    let claims = decode::<RelayClaims>(token, &DecodingKey::from_secret(secret.as_bytes()), &v)
-        .ok()?
-        .claims;
-    let channels_ok = !claims.ch.is_empty()
+    use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
+    use hmac::{Hmac, Mac};
+
+    #[derive(Deserialize)]
+    struct JwtHeader {
+        alg: String,
+    }
+
+    let mut parts = token.split('.');
+    let (header, payload, signature) = (parts.next()?, parts.next()?, parts.next()?);
+    if parts.next().is_some() {
+        return None;
+    }
+    let header: JwtHeader = serde_json::from_slice(&URL_SAFE_NO_PAD.decode(header).ok()?).ok()?;
+    if header.alg != "HS256" {
+        return None; // never "none", never another algorithm
+    }
+    let mut mac = Hmac::<sha2::Sha256>::new_from_slice(secret.as_bytes()).ok()?;
+    mac.update(header_and_payload(token)?.as_bytes());
+    mac.verify_slice(&URL_SAFE_NO_PAD.decode(signature).ok()?)
+        .ok()?;
+    let claims: RelayClaims =
+        serde_json::from_slice(&URL_SAFE_NO_PAD.decode(payload).ok()?).ok()?;
+    let valid = claims.iss == RELAY_ISSUER
+        && claims.aud == RELAY_AUDIENCE
+        && !claims.sub.is_empty()
+        && claims.exp > unix_now()
+        && !claims.ch.is_empty()
         && claims.ch.len() <= RELAY_MAX_CHANNELS
         && claims.ch.iter().all(|c| is_valid_channel(c));
-    channels_ok.then_some(claims)
+    valid.then_some(claims)
+}
+
+/// `header.payload`, the signed part of a JWT.
+fn header_and_payload(token: &str) -> Option<&str> {
+    token.rsplit_once('.').map(|(signed, _)| signed)
 }
 
 async fn close(socket: &mut WebSocket, code: u16, reason: &'static str) {
@@ -183,4 +207,69 @@ pub async fn serve(mut socket: WebSocket, state: AppState, slot: Slot) {
         }
     }
     forwarders.iter().for_each(|f| f.abort());
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
+    use hmac::{Hmac, Mac};
+
+    const SECRET: &str = "token-secret-for-unit-tests-0123456789abcdef";
+    const GAME: &str = "game:01a137aa-33cf-7667-a7bb-d673a70b3b19";
+
+    fn b64(v: &serde_json::Value) -> String {
+        URL_SAFE_NO_PAD.encode(v.to_string())
+    }
+
+    fn sign(header: &serde_json::Value, claims: &serde_json::Value, secret: &str) -> String {
+        let signed = format!("{}.{}", b64(header), b64(claims));
+        let mut mac = Hmac::<sha2::Sha256>::new_from_slice(secret.as_bytes()).unwrap();
+        mac.update(signed.as_bytes());
+        format!(
+            "{signed}.{}",
+            URL_SAFE_NO_PAD.encode(mac.finalize().into_bytes())
+        )
+    }
+
+    fn claims() -> serde_json::Value {
+        serde_json::json!({
+            "iss": RELAY_ISSUER, "aud": RELAY_AUDIENCE, "sub": "u",
+            "iat": unix_now(), "exp": unix_now() + 60, "ch": [GAME]
+        })
+    }
+
+    #[test]
+    fn a_good_token_passes() {
+        let t = sign(
+            &serde_json::json!({"alg":"HS256","typ":"JWT"}),
+            &claims(),
+            SECRET,
+        );
+        assert_eq!(verify(SECRET, &t).unwrap().ch, [GAME]);
+    }
+
+    #[test]
+    fn unsigned_other_algorithms_and_tampering_are_refused() {
+        let none = format!(
+            "{}.{}.",
+            b64(&serde_json::json!({"alg":"none"})),
+            b64(&claims())
+        );
+        assert!(verify(SECRET, &none).is_none(), "alg none");
+        let hs512 = sign(&serde_json::json!({"alg":"HS512"}), &claims(), SECRET);
+        assert!(verify(SECRET, &hs512).is_none(), "only HS256");
+        let good = sign(&serde_json::json!({"alg":"HS256"}), &claims(), SECRET);
+        let mut more = claims();
+        more["ch"] = serde_json::json!([GAME, "user:01a137aa-33cb-764c-8eb5-409f541e78da"]);
+        let (head, rest) = good.split_once('.').unwrap();
+        let sig = rest.split_once('.').unwrap().1;
+        let tampered = format!("{head}.{}.{sig}", b64(&more));
+        assert!(
+            verify(SECRET, &tampered).is_none(),
+            "payload changed after signing"
+        );
+        assert!(verify(SECRET, &format!("{good}.extra")).is_none());
+        assert!(verify("another-secret-0123456789abcdefghijklmnop", &good).is_none());
+    }
 }

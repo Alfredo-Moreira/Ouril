@@ -23,9 +23,14 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "json"] }
-# HS256 only. aws-lc-rs, the same backend as the server.
-jsonwebtoken = { version = "11", default-features = false, features = ["aws_lc_rs"] }
+# HS256 token checks in pure Rust (no C toolchain, so the image cross-compiles for the
+# NAS's arm64 without emulation).
+hmac = "0.12"
+sha2 = "0.10"
+base64 = "0.22"
 
 [dev-dependencies]
+# Tests sign tokens the same way the server does.
+jsonwebtoken = { version = "11", default-features = false, features = ["aws_lc_rs"] }
 tokio-tungstenite = "0.28"
 futures-util = { version = "0.3", default-features = false, features = ["sink", "std"] }

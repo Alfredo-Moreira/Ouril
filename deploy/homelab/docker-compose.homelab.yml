@@ -1,0 +1,34 @@
+## TO BE USED IN THE NAS ENVIRONMENT ONLY (ADR 0032).
+##
+## Deploy: run deploy/homelab/build-and-push.sh on a machine on the home network, then paste
+## this file into the UGOS Docker UI. Nothing else goes on the NAS: the relay's settings are
+## baked into its image from deploy/homelab/.env.
+##
+## Expose: Zoraxy routes ouril-live.moreiralabs.org to http://ouril-relay:8090 (WebSockets
+## on, upstream health check /healthz), and the Cloudflare Tunnel has that public hostname
+## pointing at Zoraxy. Nothing is published on the NAS itself.
+services:
+  ouril-relay:
+    image: registry.lan:5000/ouril-relay:0.1.0
+    platform: linux/arm64
+    container_name: ouril-relay
+    restart: unless-stopped
+    environment:
+      # Reachable only through Cloudflare (via Zoraxy), so its client-IP header is trusted
+      # for the per-IP limits.
+      - TRUST_CF_CONNECTING_IP=true
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 128m
+    pids_limit: 128
+    networks:
+      # Zoraxy's network only: the relay can't reach the rest of the lab, and needs no
+      # outbound connections.
+      - internal_public_apps
+
+networks:
+  internal_public_apps:
+    external: true

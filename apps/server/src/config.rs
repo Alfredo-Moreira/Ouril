@@ -55,11 +55,17 @@ pub struct RelayConfig {
     pub api_key: String,
     /// Signs players' relay tokens (`RELAY_TOKEN_SECRET`; never `JWT_SECRET`).
     pub token_secret: String,
+    /// The WebSocket URL given to players, when it differs from `<base>/ws` (`RELAY_WS_URL`,
+    /// local development: the server reaches `http://relay:8090`, browsers `ws://localhost:8090/ws`).
+    pub ws_url_override: Option<String>,
 }
 
 impl RelayConfig {
     /// The WebSocket URL players connect to.
     pub fn ws_url(&self) -> String {
+        if let Some(url) = &self.ws_url_override {
+            return url.clone();
+        }
         let base = self.base_url.trim_end_matches('/');
         let ws = if let Some(rest) = base.strip_prefix("https://") {
             format!("wss://{rest}")
@@ -80,6 +86,7 @@ impl fmt::Debug for RelayConfig {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("RelayConfig")
             .field("base_url", &self.base_url)
+            .field("ws_url_override", &self.ws_url_override)
             .field("api_key", &"<redacted>")
             .field("token_secret", &"<redacted>")
             .finish()
@@ -352,6 +359,7 @@ impl Config {
                     base_url,
                     api_key,
                     token_secret,
+                    ws_url_override: opt("RELAY_WS_URL"),
                 })
             }
             ref parts => {
