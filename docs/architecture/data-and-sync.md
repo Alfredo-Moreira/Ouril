@@ -86,6 +86,7 @@ Deriving stats from games is the key choice. Counters edited offline on two devi
 
 ### Server (`apps/server`)
 - **Push** takes at most 100 mutations (`413` otherwise) and applies each in its own transaction, in request order. Mutation types, all at schema 1: `game_finished`, `profile_updated`, `settings_updated` and `handle_requested`. Rejection reasons: `invalid_payload`, `unknown_type`, `unsupported_schema`, `illegal_game` and `handle_taken`.
+- **Games against other players** are never pushed: the server writes each player's format-3 record when the game ends, and pull delivers it ([ADR 0031](../decisions/0031-online-games-over-http.md)). A pushed `game_finished` with `mode: "vs_player"` is rejected.
 - **`game_finished`** is checked by replaying the moves with `ouril-engine` at the recorded `variant@version`. A forfeit (format 2, [ADR 0022](../decisions/0022-forfeit-and-record-format-2.md)) must replay to a game still in progress, and the side that didn't resign wins. Union by game ID: a game pushed again under a new mutation ID is still stored once, and a game ID owned by another account is `invalid_payload`.
 - **Pull** returns changes in `change_seq` order for three entities, `game`, `profile` and `settings`. `limit` is 1–500 (default 200), and `has_more` tells the client to pull again right away.
 - Contract: [server API](../../apps/server/API.md#endpoints).

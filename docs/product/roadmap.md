@@ -52,8 +52,10 @@ No server needed: these run on the device.
 Online play against real people, turn by turn. Requires sign-in.
 - Invite a friend by handle or link, or accept an open challenge.
 - Many games at once, turn deadlines (for example 3 days), and a notification when it's your turn (web push).
-- Friends list. The table of who has played whom, with the last played at, already exists (`user_opponents`, [backend](../architecture/backend.md#opponents-built-not-used-yet)).
-- Stats already split games against the computer from games against players; the second section fills in with these games.
+- ✅ Turn-by-turn games against other players: invite by handle, invite link or a past opponent; 3 days per move; near-live while both have the game open; resign; results in both players' history and Stats ([ADR 0031](../decisions/0031-online-games-over-http.md)).
+- Friends list. "People you've played" already exists (`user_opponents`, `GET /v1/opponents`, [backend](../architecture/backend.md#games-against-other-players)).
+- Notifications when it's your turn: in the app for now; web push later.
+- ✅ Stats split games against the computer from games against players, with the opponent's name.
 - See [multiplayer.md](features/multiplayer.md).
 
 ## Phase 5: iOS and Android

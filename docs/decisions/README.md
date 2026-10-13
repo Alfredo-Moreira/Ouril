@@ -42,6 +42,7 @@
 | [0028](0028-production-only-local-staging.md) | One deployed environment: production; local Docker is staging | Accepted |
 | [0029](0029-api-through-vercel-proxy.md) | The web app reaches the API through a /v1 proxy on Vercel | Superseded by [0030](0030-server-on-vercel-container-service.md) |
 | [0030](0030-server-on-vercel-container-service.md) | Run the server on Vercel, as a container service next to the web app | Accepted |
+| [0031](0031-online-games-over-http.md) | Games against other players over HTTP, turn by turn, with format-3 records | Accepted |
 
 ## Open questions
 
