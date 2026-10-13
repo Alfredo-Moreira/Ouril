@@ -49,17 +49,37 @@ describe('Play online', () => {
   });
   afterEach(() => sessionStorage.clear());
 
-  it('is in the menu for signed-in players only', async () => {
-    const guest = renderApp({ route: '/' });
-    await screen.findByRole('heading', { level: 1 });
-    expect(screen.queryByRole('link', { name: 'Online' })).toBeNull();
-    guest.unmount();
-
+  it('lives under Game: a tab next to the computer, with no menu item of its own', async () => {
     await signInLocally();
     renderApp({ route: '/', createApi: () => onlineApi([]) });
-    expect((await screen.findAllByRole('link', { name: 'Online' }))[0]).toHaveAttribute(
-      'href',
-      '/online',
+    await screen.findByRole('heading', { level: 1 });
+    const game = screen.getAllByRole('link', { name: 'Game' })[0]!;
+    expect(game).toHaveAttribute('href', '/game');
+    expect(screen.queryByRole('link', { name: 'Online' })).toBeNull();
+
+    fireEvent.click(game);
+    expect(await screen.findByRole('heading', { level: 1, name: 'Play' })).toBeInTheDocument();
+    const computer = screen.getByRole('tab', { name: 'Against the computer' });
+    expect(computer).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('button', { name: 'Start game' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Online' }));
+    expect(await screen.findByLabelText('Invite a player by handle')).toBeInTheDocument();
+  });
+
+  it('asks a guest to sign in on the Online tab, and comes back to it', async () => {
+    renderApp({ route: '/game?tab=online' });
+    expect(await screen.findByText('Play other people online')).toBeInTheDocument();
+    fireEvent.click(within(screen.getByRole('tabpanel')).getByRole('link', { name: 'Sign in' }));
+    expect(sessionStorage.getItem('ouril.return_to')).toBe('/game?tab=online');
+  });
+
+  it('keeps old /online links working', async () => {
+    await signInLocally();
+    renderApp({ route: '/online', createApi: () => onlineApi([]) });
+    expect(await screen.findByRole('tab', { name: 'Online' })).toHaveAttribute(
+      'aria-selected',
+      'true',
     );
   });
 

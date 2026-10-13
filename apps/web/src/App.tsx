@@ -13,7 +13,6 @@ import { ScreenErrorBoundary } from './components/ErrorBoundary';
 import { telemetryConfigured, trackPageView } from './telemetry';
 import {
   BagIcon,
-  GlobeIcon,
   InfoIcon,
   LearnIcon,
   LogoMark,
@@ -39,7 +38,7 @@ import { Rules } from './routes/Rules';
 import { Settings } from './routes/Settings';
 import { GoogleCallback } from './routes/GoogleCallback';
 import { JoinGame } from './routes/JoinGame';
-import { Online } from './routes/Online';
+import { GameHub } from './routes/GameHub';
 import { OnlineGame } from './routes/OnlineGame';
 import { SignIn } from './routes/SignIn';
 import { Stats } from './routes/Stats';
@@ -95,6 +94,8 @@ function Layout({ animationSpeed }: { animationSpeed?: number }) {
   // A guest who opens a signed-in page (Stats, replays, online games) is asked to sign in.
   const signInGate = <Navigate to={FEATURES.accounts ? '/sign-in' : '/'} replace />;
   const { pathname } = useLocation();
+  // The game screens: Game stays lit while playing the computer or an online game.
+  const inGame = pathname === '/play' || pathname.startsWith('/online/');
   // A screen view per route, only with usage-statistics consent (ADR 0014). Re-runs when the
   // choice is made, so the screen the player is on counts too.
   useEffect(() => {
@@ -128,7 +129,12 @@ function Layout({ animationSpeed }: { animationSpeed?: number }) {
             </NavLink>
             {/* One nav for every screen size: a top bar on wide screens, a bottom tab bar on phones. */}
             <nav className="app-nav" aria-label={t('menu.label')}>
-              <NavLink to="/play">
+              {/* Game: choose the computer or online (/game), and stay lit while playing either. */}
+              <NavLink
+                to="/game"
+                className={({ isActive }) => (isActive || inGame ? 'active' : undefined)}
+                aria-current={inGame ? 'page' : undefined}
+              >
                 <PlayIcon />
                 <span>{t('menu.game')}</span>
               </NavLink>
@@ -140,12 +146,6 @@ function Layout({ animationSpeed }: { animationSpeed?: number }) {
                 <RulesIcon />
                 <span>{t('menu.rules')}</span>
               </NavLink>
-              {onlineVisible && (
-                <NavLink to="/online">
-                  <GlobeIcon />
-                  <span>{t('menu.online')}</span>
-                </NavLink>
-              )}
               {statsVisible && (
                 <NavLink to="/stats">
                   <StatsIcon />
@@ -216,9 +216,9 @@ function Layout({ animationSpeed }: { animationSpeed?: number }) {
             <Route path="/settings" element={<Settings />} />
             {FEATURES.accounts && <Route path="/sign-in" element={<SignIn />} />}
             {FEATURES.accounts && <Route path="/auth/google" element={<GoogleCallback />} />}
-            {FEATURES.accounts && (
-              <Route path="/online" element={onlineVisible ? <Online /> : signInGate} />
-            )}
+            <Route path="/game" element={<GameHub />} />
+            {/* The online lobby is the Game page's Online tab. */}
+            <Route path="/online" element={<Navigate to="/game?tab=online" replace />} />
             {FEATURES.accounts && (
               <Route path="/online/:id" element={onlineVisible ? <OnlineGame /> : signInGate} />
             )}

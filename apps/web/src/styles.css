@@ -2119,7 +2119,8 @@ main.main--immersive {
 
 /* --- About the developer ---------------------------------------------------------------------- */
 
-/* Play online (ADR 0031): the lobby's lists and the invite form. */
+/* The Game page (choose the computer or online) and online play (ADR 0031). */
+.game-hub,
 .online,
 .online-game {
   max-width: 52rem;

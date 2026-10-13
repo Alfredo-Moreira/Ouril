@@ -95,9 +95,9 @@ export function OnlineGame() {
   if (missing) {
     return (
       <section>
-        <h1>{t('online.title')}</h1>
+        <h1>{t('play.title')}</h1>
         <p>{t('online.game.not_found')}</p>
-        <Link to="/online">{t('online.back')}</Link>
+        <Link to="/game?tab=online">{t('online.back')}</Link>
       </section>
     );
   }
@@ -226,7 +226,7 @@ export function OnlineGame() {
               {t('online.resign')}
             </button>
           ))}
-        <Link className="button button--ghost" to="/online">
+        <Link className="button button--ghost" to="/game?tab=online">
           {t('online.back')}
         </Link>
       </div>
