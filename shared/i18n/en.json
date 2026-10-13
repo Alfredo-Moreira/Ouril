@@ -2058,5 +2058,61 @@
   "play.online.sign_in.body": {
     "message": "Sign in to invite friends and play them turn by turn. Playing the computer never needs an account.",
     "description": "Game page, Online tab, for a guest"
+  },
+  "online.event.captured": {
+    "message": "{count, plural, one {{name} captured # seed} other {{name} captured # seeds}}",
+    "description": "Online game screen (a game against another player)"
+  },
+  "online.event.extra_turn": {
+    "message": "{name} plays again.",
+    "description": "Online game screen (a game against another player)"
+  },
+  "online.status.their_turn": {
+    "message": "{name}’s turn",
+    "description": "Online game screen (a game against another player)"
+  },
+  "online.menu.body": {
+    "message": "Your moves are saved as you play. Leave any time and come back from Game → Online.",
+    "description": "Online game screen (a game against another player)"
+  },
+  "online.menu.back": {
+    "message": "Back to your games",
+    "description": "Online game screen (a game against another player)"
+  },
+  "online.resign.title": {
+    "message": "Resign this game?",
+    "description": "Online game screen (a game against another player)"
+  },
+  "online.resign.body": {
+    "message": "{name} wins, and the game counts as a loss in your stats. This can’t be undone.",
+    "description": "Online game screen (a game against another player)"
+  },
+  "online.over.tagline.loss": {
+    "message": "{name} took this one. Every game teaches you the board.",
+    "description": "Online game screen (a game against another player)"
+  },
+  "online.over.resigned_you": {
+    "message": "You resigned.",
+    "description": "Online game screen (a game against another player)"
+  },
+  "online.over.resigned_them": {
+    "message": "{name} resigned.",
+    "description": "Online game screen (a game against another player)"
+  },
+  "online.over.timeout_you": {
+    "message": "You ran out of time to move.",
+    "description": "Online game screen (a game against another player)"
+  },
+  "online.over.timeout_them": {
+    "message": "{name} ran out of time to move.",
+    "description": "Online game screen (a game against another player)"
+  },
+  "online.over.score": {
+    "message": "Final score: you {you}, {name} {them}.",
+    "description": "Online game screen (a game against another player)"
+  },
+  "online.over.rematch": {
+    "message": "Rematch",
+    "description": "Online game screen (a game against another player)"
   }
 }

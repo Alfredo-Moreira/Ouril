@@ -57,10 +57,12 @@ Turn-by-turn games are built ([ADR 0031](../../decisions/0031-online-games-over-
 
 - **Start:** invite by @handle, challenge someone from "People you've played", or create an invite link (`/join/<code>`) to share; anyone signed in can accept it once. A guest who opens the link is asked to sign in and comes back to it.
 - **Play:** the inviter plays South, and who moves first is a coin toss. The board is drawn from your side. You have **3 days per move**; missing it loses the game. An invitation nobody accepts expires after 7 days.
+- **Same game screen:** a started game looks and sounds like a game against the computer: full screen, music, animated moves, scoreboard, rules and the result dialog ([web design](../../architecture/web-design.md#the-game-screen)).
 - **Near-live:** while both players have the game open, the opponent's move shows up within about 2 seconds (the app polls; there's no live connection).
 - **Notifications:** in the app only. The games list shows invitations for you and games waiting for your move. Push notifications come later.
-- **After the game:** both players get it in their history, and in Stats under "Against other players", and the opponent appears under "People you've played".
-- **Not yet:** timed live games and matchmaking ([planned](#live-games-planned)), rated games and the rating, draw offers, preset messages, rematch, block and report, and the friends list.
+- **After the game:** **Rematch** invites the same player to a new game. Both players get it in their history, and in Stats under "Against other players", and the opponent appears under "People you've played".
+- **Rated or casual:** invitations are rated by default; a rated game updates both players' ratings and shows the change in the result ([leaderboards](leaderboards.md), [ADR 0034](../../decisions/0034-ratings-and-leaderboards-in-postgres.md)).
+- **Not yet:** timed live games and matchmaking ([planned](#live-games-planned)), draw offers, preset messages, block and report, and the friends list.
 
 ## Open questions
 
