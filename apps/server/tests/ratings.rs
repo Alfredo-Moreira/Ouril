@@ -158,30 +158,41 @@ async fn only_three_rated_games_a_day_count_between_the_same_two_players(db: PgP
     assert_eq!(mine["ratings"][0]["games"], 3);
 }
 
-/// Insert a player's rating in `pool` directly, `days_ago` after their last rated game.
-async fn seed(
-    db: &PgPool,
-    user: Uuid,
-    pool: &str,
+/// A player's `overall` rating to insert directly, `days_ago` after their last rated game.
+struct Seed {
     rating: f64,
     deviation: f64,
     volatility: f64,
     games: i32,
     days_ago: f64,
-) {
+}
+
+impl Default for Seed {
+    /// Eligible for the boards: 12 games, sure of the rating, played yesterday.
+    fn default() -> Self {
+        Seed {
+            rating: 1500.0,
+            deviation: 60.0,
+            volatility: 0.06,
+            games: 12,
+            days_ago: 1.0,
+        }
+    }
+}
+
+async fn seed(db: &PgPool, user: Uuid, s: Seed) {
     sqlx::query(
         "INSERT INTO ratings (user_id, pool, rating, deviation, volatility, games, wins, peak,
                               last_rated_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $6, $3,
-                 now() - make_interval(secs => $7))",
+         VALUES ($1, 'overall', $2, $3, $4, $5, $5, $2,
+                 now() - make_interval(secs => $6))",
     )
     .bind(user)
-    .bind(pool)
-    .bind(rating)
-    .bind(deviation)
-    .bind(volatility)
-    .bind(games)
-    .bind(days_ago * PERIOD_SECS)
+    .bind(s.rating)
+    .bind(s.deviation)
+    .bind(s.volatility)
+    .bind(s.games)
+    .bind(s.days_ago * PERIOD_SECS)
     .execute(db)
     .await
     .unwrap();
@@ -207,7 +218,15 @@ async fn boards_rank_eligible_players_worldwide_and_by_country(db: PgPool) {
         ("third", 1700.0, "cv"),
     ] {
         let s = app.sign_in(name).await;
-        seed(&db, s.user_id, "overall", rating, 60.0, 0.06, 12, 1.0).await;
+        seed(
+            &db,
+            s.user_id,
+            Seed {
+                rating,
+                ..Seed::default()
+            },
+        )
+        .await;
         set_country(&db, s.user_id, country).await;
         ids.push(s.user_id);
     }
@@ -219,10 +238,14 @@ async fn boards_rank_eligible_players_worldwide_and_by_country(db: PgPool) {
         ("deleted", 30, 60.0, 1.0),
     ] {
         let s = app.sign_in(name).await;
-        seed(
-            &db, s.user_id, "overall", 2500.0, deviation, 0.06, games, days,
-        )
-        .await;
+        let not_eligible = Seed {
+            rating: 2500.0,
+            deviation,
+            games,
+            days_ago: days,
+            ..Seed::default()
+        };
+        seed(&db, s.user_id, not_eligible).await;
         set_country(&db, s.user_id, "cv").await;
         if name == "deleted" {
             sqlx::query("UPDATE users SET deleted_at = now() WHERE id = $1")
@@ -232,7 +255,15 @@ async fn boards_rank_eligible_players_worldwide_and_by_country(db: PgPool) {
                 .unwrap();
         }
     }
-    seed(&db, me.user_id, "overall", 1600.0, 60.0, 0.06, 12, 1.0).await;
+    seed(
+        &db,
+        me.user_id,
+        Seed {
+            rating: 1600.0,
+            ..Seed::default()
+        },
+    )
+    .await;
     set_country(&db, me.user_id, "cv").await;
 
     let world = get(&app, &me, "/v1/leaderboard?pool=overall").await;
@@ -289,8 +320,14 @@ async fn deviation_grows_like_ouril_rating(db: PgPool) {
     let me = app.sign_in("me").await;
     let fresh = app.sign_in("fresh").await;
     let stale = app.sign_in("stale").await;
-    seed(&db, fresh.user_id, "overall", 1500.0, 100.0, 0.2, 12, 1.0).await;
-    seed(&db, stale.user_id, "overall", 1500.0, 100.0, 0.2, 12, 3.0).await;
+    let volatile = |days_ago| Seed {
+        deviation: 100.0,
+        volatility: 0.2,
+        days_ago,
+        ..Seed::default()
+    };
+    seed(&db, fresh.user_id, volatile(1.0)).await;
+    seed(&db, stale.user_id, volatile(3.0)).await;
     let board = get(&app, &me, "/v1/leaderboard?pool=overall").await;
     let on: Vec<&str> = board["entries"]
         .as_array()
