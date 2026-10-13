@@ -69,30 +69,30 @@ flowchart TB
     WEB[Web · TS]
   end
 
-  subgraph Server["apps/server (Rust · Axum · Tokio)"]
-    API[HTTP API<br/>auth · accounts · async moves]
-    RT[Realtime gateway<br/>WebSocket · live games · clocks]
-    MM[Matchmaking]
+  subgraph Server["apps/server on Vercel (Rust · Axum)"]
+    API[HTTP API<br/>auth · accounts · moves · clocks · matchmaking]
     CORE2[Rust core<br/>move validation]
-    JOBS[Background jobs<br/>turn deadlines · push · ratings]
   end
 
-  PG[(Postgres<br/>users · games · moves)]
-  RD[(Redis<br/>presence · queues · pub/sub)]
+  subgraph Homelab["Homelab (ADR 0032)"]
+    RELAY[Realtime relay<br/>WebSocket fan-out]
+    JOBS[Scheduled jobs<br/>leaderboard snapshots · clean-ups]
+  end
+
+  PG[(Postgres on Neon<br/>users · games · seeks · ratings)]
   PUSH[APNs · FCM · Web Push]
 
   Clients -- HTTPS --> API
-  Clients -- WSS --> RT
+  Clients -- WSS, falls back to polling --> RELAY
   API --> CORE2
-  RT --> CORE2
-  RT --> MM
   API --> PG
-  RT --> PG
-  MM --> RD
-  RT --> RD
-  JOBS --> PG
-  JOBS --> PUSH
+  API -- publish --> RELAY
+  JOBS -- HTTPS --> API
+  API --> PUSH
 ```
+
+- **The server owns every rule, clock and write.** Live-game clocks are computed from timestamps and settled on access, so nothing has to run between requests ([ADR 0033](../decisions/0033-live-games-http-moves-and-relay.md), Proposed).
+- **The homelab only relays and schedules.** If it's down, live games poll and jobs run later ([ADR 0032](../decisions/0032-small-services-on-the-homelab.md), Proposed).
 
 ## Key properties
 
@@ -105,12 +105,12 @@ flowchart TB
 | Variants | Data-driven config, so no per-variant forks |
 | Development | Local-first and Docker-first: `compose.yaml` runs Postgres, the server, the web dev server and the toolchains; only Xcode, the iOS Simulator and the Android Emulator run on the host; dev sign-in ([ADR 0017](../decisions/0017-local-first-development.md)). Build order core → web → iOS → Android, launch together ([ADR 0018](../decisions/0018-platform-build-order.md)). |
 | Identity | Our own user IDs. Providers (Google, Apple; later X and Meta) are linked identities. |
-| Hosting | Web app and server in one **Vercel** project, the server as a container service in Frankfurt ([ADR 0030](../decisions/0030-server-on-vercel-container-service.md)), Postgres on **Neon**'s free plan ([ADR 0027](../decisions/0027-postgres-on-neon-free-plan.md)), production only; local Docker is the staging environment ([ADR 0028](../decisions/0028-production-only-local-staging.md)). |
+| Hosting | Web app and server in one **Vercel** project, the server as a container service in Frankfurt ([ADR 0030](../decisions/0030-server-on-vercel-container-service.md)), Postgres on **Neon**'s free plan ([ADR 0027](../decisions/0027-postgres-on-neon-free-plan.md)), production only; local Docker is the staging environment ([ADR 0028](../decisions/0028-production-only-local-staging.md)). Small, optional services (the live-game relay, scheduled jobs) on the developer's **homelab** ([ADR 0032](../decisions/0032-small-services-on-the-homelab.md), Proposed). |
 | Data | Postgres online (source of truth), SQLite / IndexedDB on device. Offline-first outbox + cursor sync ([ADR 0010](../decisions/0010-postgres-and-local-sqlite.md), [ADR 0011](../decisions/0011-offline-first-sync.md)). |
 
 Details: [monorepo](monorepo.md) · [engine](engine.md) · [AI](ai.md) · [data and sync](data-and-sync.md) · [backend](backend.md) · [accounts](../product/features/accounts.md)
 
 ## Open questions
 
-- Hosting is decided: Vercel for the web app and the server ([ADR 0030](../decisions/0030-server-on-vercel-container-service.md)), with Postgres on Neon in Frankfurt ([ADR 0027](../decisions/0027-postgres-on-neon-free-plan.md)). Live games' long-lived WebSockets may need another host later.
-  - **Web app: Vercel.** The Vite build is static. CI builds it with the `toolbox` image, which includes Rust for the WASM engine, and uploads it with `vercel deploy --prebuilt`, so Vercel needs no Rust. A rewrite serves `index.html` for every route, and a rewrite forwarding `/v1/*` to the API keeps one origin for the session cookie and Sign in with Apple. WebSocket traffic for live multiplayer can't go through that rewrite, so it connects to the API host directly.
+- Hosting is decided: Vercel for the web app and the server ([ADR 0030](../decisions/0030-server-on-vercel-container-service.md)), with Postgres on Neon in Frankfurt ([ADR 0027](../decisions/0027-postgres-on-neon-free-plan.md)). Live games' WebSockets go to a relay on the homelab instead ([ADR 0032](../decisions/0032-small-services-on-the-homelab.md), Proposed).
+  - **Web app: Vercel.** The Vite build is static. CI builds it with the `toolbox` image, which includes Rust for the WASM engine, and uploads it with `vercel deploy --prebuilt`, so Vercel needs no Rust. A rewrite serves `index.html` for every route, and a rewrite forwarding `/v1/*` to the API keeps one origin for the session cookie and Sign in with Apple. WebSocket traffic for live games goes to the homelab relay's own hostname, not through that rewrite.

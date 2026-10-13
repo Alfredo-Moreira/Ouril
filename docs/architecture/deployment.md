@@ -1,6 +1,6 @@
 # Deployment
 
-> How the web app and the server are built and deployed to one Vercel project, with the database on Neon, and what to set when accounts are switched on. **Status:** Accepted. See [ADR 0025](../decisions/0025-web-first-static-mvp.md), [ADR 0030](../decisions/0030-server-on-vercel-container-service.md) and [ADR 0027](../decisions/0027-postgres-on-neon-free-plan.md).
+> How the web app and the server are built and deployed to one Vercel project, with the database on Neon; how small services are built and deployed to the homelab; and what to set when accounts are switched on. **Status:** Accepted (Vercel and Neon); the homelab section is Proposed. See [ADR 0025](../decisions/0025-web-first-static-mvp.md), [ADR 0030](../decisions/0030-server-on-vercel-container-service.md), [ADR 0027](../decisions/0027-postgres-on-neon-free-plan.md) and [ADR 0032](../decisions/0032-small-services-on-the-homelab.md).
 
 ## Overview
 
@@ -70,6 +70,74 @@ To change the database, update `DATABASE_URL` in the GitHub environment; the nex
 
 It listens on `127.0.0.1` only and asks for its own login, because it can change production data. The Neon password never goes in a file. The server list is loaded on the first start only: after changing `NEON_*`, reset with `docker compose -f docker/pgadmin/compose.neon.yaml down -v` (that also forgets the saved password). For a quick query, Neon's console **SQL Editor** needs no setup at all.
 
+## The homelab
+
+Small, optional services run on the developer's homelab: a UGREEN DH4300 Plus NAS (arm64, 8 GB RAM) behind an outbound-only Cloudflare Tunnel and the Zoraxy reverse proxy, documented in its own `home-lab` repository ([ADR 0032](../decisions/0032-small-services-on-the-homelab.md)). Usage statistics already run there ([ADR 0026](../decisions/0026-usage-statistics-with-matomo.md)). Nothing in this section is built yet; the paths are where it will go.
+
+| Service | What it does | Planned for |
+|---|---|---|
+| **Realtime relay** (`apps/relay`, `ouril-relay`, at `ouril-live.moreiralabs.org`) | Delivers live-game moves and "match found" to players over WebSocket. The server publishes to it; players subscribe with a token the server signs. Stores nothing durable ([ADR 0033](../decisions/0033-live-games-http-moves-and-relay.md)) | Live games |
+| **Scheduled jobs** (`ouril-jobs`) | A crontab that calls authenticated server endpoints (`POST /v1/internal/jobs/<name>`): leaderboard snapshots, clean-ups, anything more often than Vercel's daily cron | Leaderboards |
+
+```mermaid
+flowchart LR
+  P[Players] -->|HTTPS /v1| V[Vercel: server]
+  V --- N[(Neon Postgres)]
+  P -->|WSS| CF[Cloudflare edge]
+  V -->|publish, API key| CF
+  CF -->|outbound tunnel| Z[Zoraxy on the NAS]
+  Z --> R[ouril-relay]
+  J[ouril-jobs on the NAS] -->|HTTPS, bearer token| V
+```
+
+### Rules
+
+- **Never the source of truth.** Every write goes through the Vercel server to Neon. A homelab service keeps no personal data beyond messages in flight.
+- **Fail safe.** Every client path has a fallback: without the relay, live games poll (as turn-by-turn games do). Jobs are idempotent and safe to run late, twice, or not for a while.
+- **Same hardening as `home-lab`:** read-only containers, `cap_drop: ALL`, `no-new-privileges`, no published ports. Zoraxy reaches services on `internal_public_apps`. Anything private to the stack goes on its own `internal` network.
+
+### Security
+
+It's a home network, so every homelab service assumes the internet is hostile.
+
+- **Only what's needed is reachable.** Cloudflare's public hostname `ouril-live.moreiralabs.org` goes through the tunnel to Zoraxy, which routes it to the relay. The relay serves three paths: `GET /ws` (players), `POST /publish` (the server) and `GET /healthz`. Everything else is 404. Jobs have no inbound route at all.
+- **Players need a signed token.** The server issues it (`POST /v1/live/token`): HS256 with its own secret (`RELAY_TOKEN_SECRET`, not `JWT_SECRET`), `aud: ouril-relay`, valid for at most 10 minutes, listing exactly the channels the player may read (their own `user:<id>` and the games they're playing). The client sends it as the first WebSocket message, never in the URL, so it can't end up in proxy logs. A connection that hasn't authenticated within 5 seconds is closed, and a connection is closed when its token expires (the client fetches a new one and reconnects).
+- **Players can't publish.** After the token, the relay accepts only heartbeats; any other message closes the connection.
+- **The server publishes with a key:** `POST /publish` needs `Authorization: Bearer <RELAY_API_KEY>` (at least 32 random bytes, compared in constant time), and its body is limited to a few kilobytes.
+- **Origins and limits:** WebSocket upgrades must come from an allowed origin (`https://ouril.vercel.app`; native apps get their own rule when they exist). There's a cap on connections in total and per client IP (from `CF-Connecting-IP`, trusted only because the relay is reachable through Zoraxy alone), plus a rate limit on upgrades, a small maximum frame size, and heartbeats.
+- **The containers:** a minimal, non-root image with no shell; read-only root filesystem; `cap_drop: ALL`; `no-new-privileges`; memory and process limits. The relay joins only `internal_public_apps`, so it can't reach the rest of the lab. The jobs container gets its own network with outbound internet only.
+- **Nothing sensitive is stored or logged.** The relay keeps messages in memory only, and never logs tokens, keys or message bodies.
+- **Cloudflare:** a rate-limiting rule on `/ws` (the free plan includes one) adds a second line in front of the relay's own limits.
+
+### Build and deploy
+
+The same approach as the `home-lab` repository. The NAS never builds; nothing is copied to it.
+
+- **Files (planned):** `deploy/homelab/build-and-push.sh`, `deploy/homelab/docker-compose.homelab.yml`, `deploy/homelab/.env.example` (copy it to the gitignored `deploy/homelab/.env`) and `deploy/homelab/VERSION`.
+- **Build:** `deploy/homelab/build-and-push.sh` checks `.env`, builds every homelab image for `linux/amd64` and `linux/arm64` with `docker buildx`, with `.env` baked in, and pushes `:vX.Y.Z` (from `VERSION`) and `:latest` to the private registry named by `REGISTRY`. It then rewrites the image tags in `docker-compose.homelab.yml`.
+- **Deploy:** paste `docker-compose.homelab.yml` into the UGOS Docker UI. Rolling back means pasting the previous tag.
+- **Expose:** in Zoraxy, route `ouril-live.moreiralabs.org` to the relay container, with WebSockets on. In Cloudflare, add the tunnel's public hostname for it. Jobs make outbound calls only and need no route.
+- **CI** validates the compose file and builds the images, without pushing. The registry is only reachable on the home network, so images reach the NAS only through the script.
+- **Never push these images to a public registry:** like `home-lab`'s, they carry their `.env`.
+
+### Settings
+
+| Where | Setting | For |
+|---|---|---|
+| `deploy/homelab/.env` | `REGISTRY` | The private registry the script pushes to |
+| `deploy/homelab/.env` | `RELAY_API_KEY`, `RELAY_TOKEN_SECRET` | The relay's publish API key, and the secret that verifies players' subscription tokens |
+| `deploy/homelab/.env` | `JOBS_URL`, `JOBS_TOKEN` | The server's base URL and the bearer token jobs send |
+| `production` GitHub environment | `RELAY_URL`, `RELAY_API_KEY`, `RELAY_TOKEN_SECRET`, `JOBS_TOKEN` | The server's side of the same values (passed by `deploy-web.yml`) |
+| `apps/web/vercel.json` | `connect-src` gains the relay's `wss://` host | So the browser may open the WebSocket |
+
+Each secret pair must match on both sides. Rotating one means a homelab deploy and a Vercel deploy.
+
+### Releasing
+
+- **Two deploys, two schedules.** Vercel deploys on every merge to `main`; the homelab only when someone runs the script and pastes the compose file. So the server must keep working with the relay version already running: add new message types alongside the old ones, deploy the relay first when the server needs something new from it, and remove old ones later (expand, then contract).
+- **Health:** each homelab service exposes a `/healthz`. Add them to the `home-lab` dashboard's `config/homelab.yaml` so outages show up there. Zoraxy's upstream check uses the same path.
+- **Cloudflare** closes WebSockets idle for 100 seconds on non-Enterprise plans, so clients send a heartbeat more often than that and reconnect after any drop.
+
 ## Switching accounts on
 
 Turning on accounts and sync ([ADR 0009](../decisions/0009-oauth-accounts-google-apple.md)) shows sign-in in the web app. The browser calls `/v1` on the site's own address, so the refresh cookie is first-party ([ADR 0030](../decisions/0030-server-on-vercel-container-service.md)). That release:
@@ -83,4 +151,6 @@ Turning on accounts and sync ([ADR 0009](../decisions/0009-oauth-accounts-google
 ## Open questions
 
 - A custom domain (the site works on `ouril.vercel.app`).
-- Scheduled `pg_dump` backups to object storage: where they go, and when the first restore test happens.
+- Scheduled `pg_dump` backups to object storage: where they go, and when the first restore test happens. A homelab job could run them, with the NAS's RAID as one copy and an off-site copy as the other.
+- Whether to add Cloudflare Access (a service token) in front of `/publish`, on top of the API key.
+- The relay uses `ouril-live.moreiralabs.org`, a single-level subdomain covered by Cloudflare's free certificate. Move it under Ouril's own domain if one is bought.

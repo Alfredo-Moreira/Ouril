@@ -10,6 +10,7 @@ Guidance for AI agents (and humans) working in this repo.
 - **Built:** the Rust core (`core/engine`, `core/ai`, `core/sync`, `core/protocol`, `core/wasm`; `cv.standard@1` passes every test vector), the server (`apps/server`: dev sign-in, profile, account deletion, sync push and pull, and turn-by-turn games against other players over HTTP, [ADR 0031](docs/decisions/0031-online-games-over-http.md)), and the guest-first web app (`apps/web`: play vs AI, tutorial, rules, settings, About; a 3D board, ADR 0021; sign-in with sync and Stats are built but off for the MVP, `apps/web/src/features.ts`).
 - **Placeholders:** Google and Apple sign-in answer `501 not_configured` until client IDs exist. The web Google button works once `VITE_GOOGLE_CLIENT_ID` is set (an OpenID Connect redirect, [accounts](docs/product/features/accounts.md#google-on-the-web)); Apple's stays disabled. Use dev sign-in (`POST /v1/auth/dev`) locally. `just i18n` and `core/ffi` (UniFFI) aren't built yet.
 - **Not started:** iOS and Android.
+- **Hosting:** the web app and the server on Vercel, Postgres on Neon. Small, optional services (the live-game relay, scheduled jobs) are planned for the developer's homelab, built and deployed like the `home-lab` repo (`deploy/homelab/`, [ADR 0032](docs/decisions/0032-small-services-on-the-homelab.md), Proposed). They're never the source of truth, and every client path keeps a fallback (for example polling).
 
 Development is **local-first and Docker-first** (ADR 0017): run things through `just` / `docker compose`, not host-installed toolchains, except for iOS/Xcode and the Android Emulator. Build order: core → web → iOS → Android (ADR 0018). See the [roadmap](docs/product/roadmap.md).
 
@@ -23,6 +24,7 @@ Development is **local-first and Docker-first** (ADR 0017): run things through `
 | Architecture | [docs/architecture/](docs/architecture/overview.md) |
 | Rule test format | [docs/architecture/test-vectors.md](docs/architecture/test-vectors.md) |
 | Versioning and compatibility | [docs/architecture/versioning.md](docs/architecture/versioning.md) |
+| Deployment (Vercel, Neon, homelab) | [docs/architecture/deployment.md](docs/architecture/deployment.md) |
 | Decisions | [docs/decisions/](docs/decisions/README.md) (ADRs) |
 | Workflow and conventions | [CONTRIBUTING.md](CONTRIBUTING.md) |
 | PR checklist and issue forms | [.github/](.github/pull_request_template.md) |

@@ -1,47 +1,61 @@
 # Leaderboards
 
-> Product design for rankings: a skill rating and a points board, with global and regional scopes. **Status:** Draft. Phase 7 of the [roadmap](../roadmap.md).
+> Product design for ratings and rankings: an overall rating and one per variant and game mode, with world and country boards. **Status:** Draft. Decided in [ADR 0034](../../decisions/0034-ratings-and-leaderboards-in-postgres.md) (Proposed), which supersedes [ADR 0006](../../decisions/0006-glicko2-plus-points-leaderboards.md). Phase 7 of the [roadmap](../roadmap.md).
 
-## Two kinds of boards
+## Ratings
 
-Decided in [ADR 0006](../../decisions/0006-glicko2-plus-points-leaderboards.md).
+- **Glicko-2.** Each player has a rating, a rating deviation (RD, how unsure the rating is) and a volatility, in each pool. Updated right after every rated game, with fractional rating periods: RD grows with the real time since the player's last rated game, as on Lichess. The maths is in `core/rating` (`ouril-rating`).
+- **Pools:**
 
-### 1. Skill rating (competitive)
-- Uses **Glicko-2**. Each player has a rating, a rating deviation (uncertainty) and a volatility.
-- Only **rated online games** count.
-- Kept separately for each variant and time category (for example *Ouril · Live* and *Ouril · Async*).
-- Players appear on the board only once their rating is reliable. For example, their deviation is below a threshold and they've played at least 10 rated games.
-- Inactive players' deviation grows over time, and they drop off the board until they play again.
+  | Pool | Counts |
+  |---|---|
+  | `overall` | Every rated game, any variant and mode |
+  | `<variant>:<mode>` | Rated games of that variant and mode, for example `cv.standard:async` or `cv.across:live` |
 
-### 2. Points (casual)
-- Rewards activity and wins, so everyone can climb, including players who mostly play vs AI.
-- Example scoring (to tune): win vs AI Easy/Medium/Hard = 1/3/5, online win = 10, online draw = 4, daily-play bonus.
-- **Seasonal** (for example monthly) with an all-time board alongside.
-- Points earned offline vs AI sync when the player is next online. Because the server can't verify offline games, AI points may be capped per day.
+  A rated game updates both players' `overall` rating and the rating of its own pool.
+- **Starting values and constants** (to tune with real games):
 
-## Scopes
+  | Constant | Value | Notes |
+  |---|---|---|
+  | Starting rating | 1500 | Glickman, Lichess |
+  | Starting RD | 350 | Glickman's default |
+  | Starting volatility | 0.06 | Glickman's example |
+  | τ (system constant) | 0.5 | Glickman: "reasonable choices are between 0.3 and 1.2" |
+  | Rating period | 1 day | Fractional: RD grows with elapsed time |
+  | RD range | 45 to 350 | Clamped after every update |
+  | Provisional | RD > 110 | Shown as `1520?` |
 
-Every board can be filtered by:
+- **What's rated:** games against other players marked **rated** (the default when inviting; casual is one tap away). A game counts only if both players made at least one move. Only the first 3 rated games between the same two players in 24 hours count, to stop rating farming. Games ended by an account deletion don't count.
+- **Not rated:** games against the computer (played on the device, so they can't be verified) and casual games.
 
-| Scope | Source |
+## Boards
+
+| Board | Who's on it |
 |---|---|
-| **Global** | Everyone |
-| **Country** | Chosen in the profile; suggested from device locale or IP |
-| **Region / state / island** | Optional, chosen by the player |
-| **City** | Optional, chosen by the player |
-| **Friends** | The player's friends list |
+| **World** | Every eligible player in the pool |
+| **Country** | Eligible players whose profile country matches (ISO 3166-1 alpha-2, `users.country`) |
 
-**Privacy:** location is self-declared and coarse. We never store GPS coordinates. A player can hide their city at any time. Their entry then disappears from city boards but stays on wider scopes.
+- **Eligible:** at least **10 rated games** in the pool, RD at most **110** (after the time-based growth), and a rated game in the last **60 days**. Deleted accounts never appear.
+- **What a board shows:** the top 100 (rank, display name, handle, country, rating, games), plus your own position when you're eligible.
+- **Signed-in players only:** guests make no network requests ([ADR 0014](../../decisions/0014-telemetry-consent.md)), so the Leaderboard page asks them to sign in.
+- **Privacy:** boards show display names, handles, countries and ratings to other signed-in players. The privacy policy says so. Deleting the account removes the player from every board.
 
-Cape Verde is an important case: players may want boards for islands (Santiago, São Vicente, Fogo, …) and for diaspora communities (Boston, Lisbon, Rotterdam, …). The region model has to handle both.
+## How it's computed
 
-## UI
+- The server updates ratings in the same transaction that finishes a rated game, and logs each change (`rating_changes`) for history.
+- Boards are indexed queries on Postgres (`ratings`, by pool and rating). There's no cache layer.
+- **Later:** rank snapshots (for rank movement and seasons) written by a scheduled job on the homelab ([ADR 0032](../../decisions/0032-small-services-on-the-homelab.md), [backend](../../architecture/backend.md#scheduled-jobs)).
 
-- Top 100 for the selected board and scope, plus "your position" with players near you.
-- Profile badges for top placements (for example "#1 in Mindelo · Season 3").
+## Later
+
+- A **points board** (activity and wins, seasonal) for casual players.
+- **Region / island, city, friends** scopes. Cape Verde players may want islands (Santiago, São Vicente, Fogo, …) and diaspora communities (Boston, Lisbon, Rotterdam, …).
+- Profile badges for top placements (for example "#1 in Cape Verde · Overall").
+- Fair play: reports, and refunds to the opponents of a player caught cheating.
 
 ## Open questions
 
-- A location data source for cities and regions (for example GeoNames IDs) so names are consistent across languages.
-- How often can a player change their country or city? Limits stop people from hopping to an easier board.
+- Whether to limit how often a player can change their country, so nobody hops to an easier board.
+- A location data source for cities and regions (for example GeoNames IDs), once those scopes come.
 - Should diaspora communities be a separate scope ("club") instead of a city?
+- Tuning τ, the starting RD and the eligibility thresholds once there are real games.

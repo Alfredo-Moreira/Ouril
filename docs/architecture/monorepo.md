@@ -8,6 +8,7 @@
 ouril/
 ├── core/                   # Rust workspace members shared by every platform
 │   ├── engine/             # ouril-engine: rules + variants/*.toml (base.oware, cv.standard)  ✅ built
+│   ├── rating/             # ouril-rating: Glicko-2 with fractional rating periods (ADR 0034)
 │   ├── ai/                 # ouril-ai: computer opponent                                     ✅ built
 │   ├── protocol/           # ouril-protocol: API types (auth, me, sync); realtime later       ✅ built
 │   ├── sync/               # ouril-sync: GameRecord, mutation payloads, derive_stats           ✅ built
@@ -18,6 +19,7 @@ ouril/
 │   ├── ios/                # SwiftUI app (Xcode); uses the core as an XCFramework via SPM     (not started)
 │   ├── android/            # Kotlin + Jetpack Compose (Gradle); core .so + Kotlin bindings     (not started)
 │   ├── web/                # TypeScript + React (Vite, PWA); uses core/wasm/pkg                ✅ built
+│   ├── relay/              # Rust (Axum): live-game WebSocket relay on the homelab (ADR 0032)  (planned)
 │   │   ├── vercel.json     # the web and api services, SPA routing, CSP and security headers (ADR 0030)
 │   │   └── scripts/gen-i18n.mjs  # interim: shared/i18n → src/generated/i18n (until tools/i18n-gen)
 │   └── server/             # Rust (Axum): auth + accounts + sync; API.md, migrations/,        ✅ built
@@ -32,7 +34,10 @@ ouril/
 ├── docker/                 # toolbox.Dockerfile (Rust, wasm-pack, binaryen/wasm-opt, sqlx, cargo-watch, just, Node + pnpm),
 │                           #   server.dev.Dockerfile, web.dev.Dockerfile, compose.lan.yaml (ADR 0017)
 ├── .devcontainer/          # Dev Container using the toolbox image
-├── compose.yaml            # local stack: db (Postgres 18), server, web, toolbox (profile `tools`); later valkey
+├── deploy/
+│   └── homelab/            # (planned, ADR 0032) build-and-push.sh, docker-compose.homelab.yml, .env.example, VERSION:
+│                           #   the live-game relay and scheduled jobs, built multi-arch and deployed like the home-lab repo
+├── compose.yaml            # local stack: db (Postgres 18), server, web, toolbox (profile `tools`)
 ├── .env.example            # server config template; copy to .env (never committed)
 ├── Cargo.toml              # Rust workspace root (core/* + apps/server; tools/* later)
 ├── rust-toolchain.toml     # Rust toolchain: stable channel, rustfmt, clippy, wasm32 target
@@ -54,7 +59,7 @@ ouril/
 | Local environment | **Docker Compose** (`compose.yaml`): `db`, `server`, `web`, `toolbox`. Only Xcode, the iOS Simulator and the Android Emulator run on the host ([ADR 0017](../decisions/0017-local-first-development.md)) |
 | Tasks | `just`: wraps `docker compose` and runs the same recipes locally and in CI. Inside the toolbox (`OURIL_IN_TOOLBOX=1`) the recipes run commands directly. Commands: [CLAUDE.md](../../CLAUDE.md#commands) and [CONTRIBUTING.md](../../CONTRIBUTING.md#local-setup-docker-first) |
 | CI | GitHub Actions, using the same `toolbox` image as local development: Rust tests and lints on Linux; iOS build on macOS runners; Android and web builds; test vectors on every platform |
-| Releases | fastlane (or Xcode Cloud) for App Store; Gradle Play Publisher for Google Play; static hosting + CDN for web |
+| Releases | fastlane (or Xcode Cloud) for App Store; Gradle Play Publisher for Google Play; Vercel for the web app and the server; `deploy/homelab/build-and-push.sh` plus the UGOS Docker UI for homelab services ([deployment](deployment.md#the-homelab)) |
 
 ## Dependency rules
 

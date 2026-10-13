@@ -26,7 +26,7 @@ flowchart LR
 | Layer | Technology | Holds |
 |---|---|---|
 | **Server: primary** | **PostgreSQL** (Neon in production, [ADR 0027](../decisions/0027-postgres-on-neon-free-plan.md); Docker locally) | Users, sign-in identities, sessions, profiles, settings, game records (vs AI and online), friends, ratings |
-| **Server: cache and realtime** (multiplayer phases) | **Redis** or **Valkey** | Presence, matchmaking queues, pub/sub between instances, rate limits, and leaderboards later. Can be rebuilt from Postgres. |
+| **Server: realtime** (live games) | A relay on the homelab, no Redis ([ADR 0033](../decisions/0033-live-games-http-moves-and-relay.md), Proposed) | Nothing durable: it only carries the server's live-game messages to players. Matchmaking seeks, clocks and ratings stay in Postgres. |
 | **iOS** | **SQLite** via GRDB | Local cache + outbox |
 | **Android** | **SQLite** via Room | Local cache + outbox |
 | **Web** | **IndexedDB** (via Dexie) | Local cache + outbox |

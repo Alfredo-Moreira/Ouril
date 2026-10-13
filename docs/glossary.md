@@ -38,6 +38,9 @@
 | **Points** | A casual score that grows with activity and wins and is shown on the points leaderboard. |
 | **Scope** | A leaderboard's geographic filter: global, country, region or city. |
 | **ADR** | Architecture Decision Record, see [decisions](decisions/README.md). |
+| **Homelab** | The developer's own server at home (a NAS behind a Cloudflare Tunnel). It runs small, optional services, never the source of truth ([ADR 0032](decisions/0032-small-services-on-the-homelab.md)). |
+| **Relay** | The homelab service that carries the server's live-game messages to players over WebSocket. It validates and stores nothing ([ADR 0033](decisions/0033-live-games-http-moves-and-relay.md)). |
+| **Seek** | A player waiting to be paired for a live game, with a time control and a rating range. |
 
 ## Kriolu and Portuguese terms
 
