@@ -1,6 +1,6 @@
 # 0006. Glicko-2 rating plus points leaderboards
 
-- **Status:** Accepted
+- **Status:** Superseded by [0034](0034-ratings-and-leaderboards-in-postgres.md)
 - **Date:** 2026-10-03
 
 ## Context

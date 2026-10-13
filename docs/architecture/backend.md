@@ -4,9 +4,10 @@
 
 ## Stack
 
-- **Rust:** **Axum** for HTTP and WebSockets, **Tokio** runtime, **sqlx** for Postgres.
+- **Rust:** **Axum** for HTTP, **Tokio** runtime, **sqlx** for Postgres.
 - **Postgres** for durable data (from the MVP).
-- **Redis** for presence, matchmaking queues and pub/sub between instances (from multiplayer onwards).
+- **No Redis on the current hosting.** Matchmaking seeks live in Postgres, and live-game messages go out through a realtime relay on the homelab ([ADR 0033](../decisions/0033-live-games-http-moves-and-relay.md), Proposed; [below](#realtime)).
+- **Homelab services** (the relay, scheduled jobs) call or are called by this server, and are never the source of truth ([ADR 0032](../decisions/0032-small-services-on-the-homelab.md), Proposed; [deployment](deployment.md#the-homelab)).
 - Uses `ouril-engine` directly to validate moves, and `ouril-protocol` for request and message types shared with every client.
 - **Push notifications:** APNs (iOS), FCM (Android), Web Push (browsers).
 - **Auth:** verifies Google and Apple ID tokens and issues our own sessions. See [accounts](../product/features/accounts.md).
@@ -20,8 +21,8 @@
 | 3 · Reach and replay | No new server work (pass-and-play and sharing are on-device) |
 | 4 · Play with friends (async) | ✅ Turn-by-turn games over HTTP with invitations by handle, link or past opponent ([ADR 0031](../decisions/0031-online-games-over-http.md)). Still to come: friends list, push notifications |
 | 5 · iOS and Android | Native push (APNs, FCM) |
-| 6 · Live games | Live games (WebSocket + server clocks), matchmaking, rated games |
-| 7 · Leaderboards | Glicko-2 ratings, points boards, scopes (global, country, region, city) |
+| 6 · Live games | Live games over HTTP with clocks computed from timestamps, publishing each move to the homelab relay; matchmaking seeks in Postgres; rated games ([ADR 0033](../decisions/0033-live-games-http-moves-and-relay.md), Proposed) |
+| 7 · Leaderboards | Glicko-2 ratings (overall and per variant and mode) updated when a rated game ends; world and country boards from Postgres ([ADR 0034](../decisions/0034-ratings-and-leaderboards-in-postgres.md), Proposed); later, snapshots by a homelab job through `POST /v1/internal/jobs/<name>` |
 | Ongoing | More sign-in providers (X, Meta), tournaments |
 
 ## Data model
@@ -179,7 +180,7 @@ The full contract is in [`apps/server/API.md`](../../apps/server/API.md): reques
 | `POST` | `/v1/sync/push` | Upload queued local changes (game records, profile, settings, handle). Repeats are ignored by mutation ID. |
 | `GET` | `/v1/sync/pull?cursor=N&limit=M` | Download the user's changes since cursor `N` |
 
-Games against other players use `/v1/games…` and `/v1/opponents` (built, [API](../../apps/server/API.md#games-against-other-players)). A realtime WebSocket (`/v1/live`) would only come with a host that keeps connections open.
+Games against other players use `/v1/games…` and `/v1/opponents` (built, [API](../../apps/server/API.md#games-against-other-players)). Live games will add seek endpoints, relay tokens and clocks ([below](#realtime)); the WebSocket itself is the homelab relay's, not this server's.
 
 ## As built (MVP)
 
@@ -190,7 +191,7 @@ Games against other players use `/v1/games…` and `/v1/opponents` (built, [API]
 - **Sync validation:** `game_finished` records are replayed with `ouril-engine` at the exact `variant@version`. A record whose moves are illegal, or whose outcome, stores or end reason don't match, is rejected as `illegal_game`. Forfeits (format 2, reason `resigned`) must replay to a game still in progress, with the other side winning ([ADR 0022](../decisions/0022-forfeit-and-record-format-2.md)). Each mutation runs in its own transaction, and a repeated mutation ID returns the stored outcome.
 - **Middleware:** `X-Ouril-Client` is parsed on every request, and clients below `min_supported` get `426` on every `/v1` route except `/v1/meta`. CORS allows exact origins with credentials. Other middleware: security headers (plus HSTS in release builds), a 1 MiB body limit, a 15 s timeout per request, JSON errors for every failure (including panics and malformed input), and request logs that never record headers or bodies.
 - **Proxy secret (optional):** with `ORIGIN_SECRET` set, `/v1` only answers requests carrying `x-ouril-origin-secret` with that value (403 `forbidden` otherwise, constant-time check). It was for an external proxy ([ADR 0029](../decisions/0029-api-through-vercel-proxy.md)); on Vercel the server is only reachable through Vercel, so it's unset ([ADR 0030](../decisions/0030-server-on-vercel-container-service.md)).
-- **Rate limiting:** in-memory fixed windows per server machine, keyed by client network (IPv4 address or IPv6 /64), from the header named by `CLIENT_IP_HEADER` (`x-real-ip` on Vercel, which sets it on every request), else the peer address. Without that setting no header is trusted. Sign-in is limited to 60/min; everything else, including refresh and logout, to 600/min. Both are configurable. The map is capped at 50,000 windows and pruned at most every 10 s; when it's full, new clients pass untracked instead of being locked out. `429` comes with `Retry-After`. Counters move to Valkey when multiplayer brings it.
+- **Rate limiting:** in-memory fixed windows per server machine, keyed by client network (IPv4 address or IPv6 /64), from the header named by `CLIENT_IP_HEADER` (`x-real-ip` on Vercel, which sets it on every request), else the peer address. Without that setting no header is trusted. Sign-in is limited to 60/min; everything else, including refresh and logout, to 600/min. Both are configurable. The map is capped at 50,000 windows and pruned at most every 10 s; when it's full, new clients pass untracked instead of being locked out. `429` comes with `Retry-After`. There's no shared store on the current hosting, so counters stay per instance.
 - **Startup:** the server pings the database in the background (`SELECT 1`, 3 attempts 2 s apart, 5 s each) and logs `database reachable`, or a warning per failed attempt and an error if all fail. It keeps serving either way, so a brief outage doesn't make Fly restart machines in a loop.
 - **Release safety:** a release build with `dev-auth` fails to compile, and the production image never enables it. Release builds refuse to start with the `.env.example` JWT secret or a non-loopback `http://` origin, and `ouril-server migrate` refuses a read-only database (a read replica's URL, [ADR 0027](../decisions/0027-postgres-on-neon-free-plan.md)).
 
@@ -209,22 +210,27 @@ Rules:
 - **Keep migrations transactional and short:** each runs in a transaction, and a long lock blocks live requests.
 - **Risky change on real data?** Create a branch of the production database in Neon's console (a free copy), then run against its direct connection string: `docker compose run --rm -e DATABASE_URL='<branch url>' toolbox sqlx migrate run --source apps/server/migrations`. Delete the branch afterwards.
 
-## Realtime protocol (sketch)
+## Realtime
 
-Not built. On the current hosting, games travel over HTTP with polling ([ADR 0031](../decisions/0031-online-games-over-http.md)); this sketch is for timed live games if a host with long-lived connections is added later.
+Not built; [ADR 0033](../decisions/0033-live-games-http-moves-and-relay.md) (Proposed). Players send everything to this server over HTTP; the homelab relay only carries the server's messages back out ([deployment](deployment.md#the-homelab)).
 
-Client → server: `join(game_id)`, `move(game_id, ply, pit)`, `resign`, `offer_draw`, `accept_draw`.
-Server → client: `state(game_id, moves, clocks)`, `moved(ply, pit, events, clocks)`, `game_over(result)`, `opponent_connection(status)`.
+- **Client → server (HTTP):** `POST /v1/games/{id}/moves {ply, pit}`, resign, draw offers, abort, seeks (`/v1/live/seek`), and a relay token (`POST /v1/live/token`).
+- **Server → relay (HTTP, API key):** after each committed change, publish to `game:<id>` (`moved {ply, pit, clocks, server_now}`, `game_over {result}`, draw offers) or `user:<id>` (`matched {game_id}`, invitations).
+- **Relay → client (WebSocket):** the same messages, to subscribers whose token allows that channel. Tokens are short-lived, signed by this server, and limited to the player's own game and user channels.
+- **Fallback:** without the relay, clients poll `GET /v1/games/{id}` (every second while a live game is on screen), as turn-by-turn games do.
+- Each move carries its **ply number**, so the server rejects stale or duplicate moves (idempotent). Clients apply their own move **optimistically** with the same engine.
+- **Clocks:** each live game stores both players' remaining time, the increment and `turn_started_at`. A move deducts the elapsed server time and adds the increment; a side out of time loses, settled whenever the game is next read or written (as async deadlines are, [ADR 0031](../decisions/0031-online-games-over-http.md)). Responses include `server_now`.
+- **Matchmaking:** a `seeks` table. A new seek looks for a compatible waiting one in the same transaction (`FOR UPDATE SKIP LOCKED`) within a rating window that widens with waiting time; seeks without a recent heartbeat are ignored.
+- **Async** games use `POST /v1/games/{id}/moves` over HTTP (built). Push notifications are still to come.
 
-- Each move carries its **ply number**, so the server rejects stale or duplicate moves (idempotent).
-- The server owns the clocks and timestamps every move.
-- Clients apply their own move **optimistically** with the same engine. A rejection only happens if the client was tampered with.
-- **Async** games use `POST /v1/games/{id}/moves` over HTTP (built). Deadlines are settled when a game is read or written; push notifications are still to come.
+### Scheduled jobs
+
+Housekeeping that must run more often than Vercel's daily cron runs from a crontab on the homelab, as `POST /v1/internal/jobs/<name>` with `Authorization: Bearer <JOBS_TOKEN>` ([ADR 0032](../decisions/0032-small-services-on-the-homelab.md)). Each job is idempotent and safe to run late or twice; nothing depends on it running on time, because games settle on access anyway. Candidates: leaderboard snapshots, pruning expired seeks, sessions and sync mutations ([human review](../review/human-review.md)), and database backups.
 
 ## Operations
 
 - **Hosting:** a container service in the web app's Vercel project (`apps/server/Dockerfile.vercel`, region `fra1`), serving `/v1` on the same origin; it scales to zero when idle. Migrations run in the deploy workflow, settings come from the `production` GitHub environment, and there's no hosted staging ([ADR 0030](../decisions/0030-server-on-vercel-container-service.md), [ADR 0028](../decisions/0028-production-only-local-staging.md)). Postgres is on Neon's free plan in AWS Frankfurt, one project ([ADR 0027](../decisions/0027-postgres-on-neon-free-plan.md)). Deploys and setup: [deployment](deployment.md#the-server-on-vercel).
-- Containerized, stateless app instances behind a load balancer. Live games are pinned to an instance, with Redis pub/sub for cross-instance events.
+- Stateless app instances (Vercel Functions). Live games aren't pinned to an instance: state is in Postgres and delivery goes through the homelab relay ([ADR 0033](../decisions/0033-live-games-http-moves-and-relay.md), Proposed).
 - Observability: structured logs (`tracing`), metrics, error tracking (for example Sentry).
 - Secrets (Apple private key, push credentials) live in the host's secret manager, never in the repo.
 

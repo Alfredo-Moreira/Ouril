@@ -62,16 +62,17 @@ Online play against real people, turn by turn. Requires sign-in.
 Native apps (SwiftUI, then Jetpack Compose; [ADR 0008](../decisions/0008-native-apps-per-platform.md)) with the same Rust core through UniFFI. They launch with everything above: play vs AI, accounts and sync, and games with friends, with native push notifications. Until then the installable web app covers phones.
 
 ## Phase 6: Live games
-- Real-time matches over WebSocket, with server-owned clocks (for example 5 or 10 minutes).
+- Real-time matches with server-owned clocks (for example 5 or 10 minutes): moves over HTTP, delivered through a realtime relay on the developer's homelab, with polling as the fallback ([ADR 0032](../decisions/0032-small-services-on-the-homelab.md), [ADR 0033](../decisions/0033-live-games-http-moves-and-relay.md), both Proposed).
 - **Matchmaking** by skill, plus direct challenges.
 - Reconnection handling, resign, draw offers, and rematch.
 - Rated and casual modes.
 
 ## Phase 7: Leaderboards
-- **Skill rating** (Glicko-2) from rated online games.
+- **Skill rating** (Glicko-2) from rated online games: an overall rating plus one per variant and mode, on world and country boards, stored in Postgres ([ADR 0034](../decisions/0034-ratings-and-leaderboards-in-postgres.md)). Built before live games, on turn-by-turn games.
 - **Points board** from activity and wins. Wins against the computer are played on the device and can't be verified, so they count for little or nothing.
 - **Scopes:** global, country, region/state, and city.
 - Seasons with periodic resets of the points board.
+- Rank snapshots and other scheduled jobs run on the homelab ([ADR 0032](../decisions/0032-small-services-on-the-homelab.md)).
 - See [leaderboards.md](features/leaderboards.md).
 
 ## Ongoing (not tied to a phase)

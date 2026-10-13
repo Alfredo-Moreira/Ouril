@@ -27,7 +27,7 @@ Both modes support **rated** games (which affect the [skill rating](leaderboards
 - The server validates every move with the shared [rules engine](../../architecture/engine.md). Clients can't cheat on rules.
 - Both players see the opponent's move animated.
 - Actions: resign, offer a draw, and (async only) send a short preset message or emoji. Free-text chat may come later, with moderation.
-- **Disconnect (sync):** a grace period (for example 60 seconds) to reconnect. After that, the player's clock keeps running and they may lose on time.
+- **Disconnect (sync):** the player's clock keeps running while they're away, so they can come back and carry on, or lose on time. A player who never makes their first move has the game aborted, with no result.
 - **Timeout (async):** a missed turn deadline counts as a loss. Reminders are sent before the deadline.
 
 ## After a game
@@ -41,6 +41,16 @@ Both modes support **rated** games (which affect the [skill rating](leaderboards
 - Engine-assistance detection (comparing moves to strong AI play) is a later concern.
 - Block and report players.
 
+## Live games (planned)
+
+Proposed in [ADR 0033](../../decisions/0033-live-games-http-moves-and-relay.md), on the hosting from [ADR 0032](../../decisions/0032-small-services-on-the-homelab.md):
+
+- **Same game screen** as turn-by-turn and computer games, plus a clock for each player in the scoreboard, with a low-time warning.
+- **Time controls** (to playtest): 3 + 2, 5 + 3 (default) and 10 + 5, in minutes per player plus seconds added per move. PlayOK's usual oware setting is 5 minutes each.
+- **Moves arrive in well under a second** through a realtime relay on the developer's homelab. If it can't be reached, the app polls the game every second instead, so a game is never stuck.
+- **Starting:** **Play now** (pick a time control; you're paired with someone near your rating, and the range widens the longer you wait), open challenges in a lobby, or a live challenge to a handle or past opponent. With few players online, the lobby and direct challenges matter more than automatic pairing; the app shows how many are looking and offers a game against the computer while you wait.
+- **During the game:** resign, offer a draw, and abort before your first move. The server owns the clocks and every rule.
+
 ## As built (async, ADR 0031)
 
 Turn-by-turn games are built ([ADR 0031](../../decisions/0031-online-games-over-http.md)), on the web under **Game** → **Online** (`/game?tab=online`; the Game page's other tab is the computer). Signed-in players see the lobby; guests are asked to sign in:
@@ -50,9 +60,11 @@ Turn-by-turn games are built ([ADR 0031](../../decisions/0031-online-games-over-
 - **Near-live:** while both players have the game open, the opponent's move shows up within about 2 seconds (the app polls; there's no live connection).
 - **Notifications:** in the app only. The games list shows invitations for you and games waiting for your move. Push notifications come later.
 - **After the game:** both players get it in their history, and in Stats under "Against other players", and the opponent appears under "People you've played".
-- **Not yet:** timed live games and matchmaking, rated games and the rating, draw offers, preset messages, rematch, block and report, and the friends list.
+- **Not yet:** timed live games and matchmaking ([planned](#live-games-planned)), rated games and the rating, draw offers, preset messages, rematch, block and report, and the friends list.
 
 ## Open questions
 
 - Whether players can choose the turn deadline (3 days for now).
+- Final live time controls, once typical game length is measured with AI self-play.
+- Rated or casual by default for friend invitations?
 - Takebacks in casual games?

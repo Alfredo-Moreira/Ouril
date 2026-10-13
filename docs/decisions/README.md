@@ -17,7 +17,7 @@
 | [0003](0003-expo-react-native-for-all-platforms.md) | Expo / React Native for iOS, Android and web | Rejected, superseded by 0008 |
 | [0004](0004-variant-configurable-rules-engine.md) | Pure, variant-configurable rules engine | Accepted |
 | [0005](0005-server-authoritative-multiplayer.md) | Server-authoritative multiplayer on a Rust backend | Accepted |
-| [0006](0006-glicko2-plus-points-leaderboards.md) | Glicko-2 rating plus points leaderboards | Accepted |
+| [0006](0006-glicko2-plus-points-leaderboards.md) | Glicko-2 rating plus points leaderboards | Superseded by [0034](0034-ratings-and-leaderboards-in-postgres.md) |
 | [0007](0007-rust-core-with-generated-bindings.md) | Shared Rust core with generated bindings | Accepted |
 | [0008](0008-native-apps-per-platform.md) | Native apps: SwiftUI, Jetpack Compose, TypeScript web | Accepted |
 | [0009](0009-oauth-accounts-google-apple.md) | Optional OAuth accounts: Google + Apple in MVP; X and Meta later | Accepted |
@@ -43,6 +43,9 @@
 | [0029](0029-api-through-vercel-proxy.md) | The web app reaches the API through a /v1 proxy on Vercel | Superseded by [0030](0030-server-on-vercel-container-service.md) |
 | [0030](0030-server-on-vercel-container-service.md) | Run the server on Vercel, as a container service next to the web app | Accepted |
 | [0031](0031-online-games-over-http.md) | Games against other players over HTTP, turn by turn, with format-3 records | Accepted |
+| [0032](0032-small-services-on-the-homelab.md) | Small, optional services run on the developer's homelab | Proposed |
+| [0033](0033-live-games-http-moves-and-relay.md) | Live games: moves over HTTP, clocks from timestamps, a realtime relay | Proposed |
+| [0034](0034-ratings-and-leaderboards-in-postgres.md) | Ratings and leaderboards in Postgres: overall, per variant and mode, world and country | Proposed |
 
 ## Open questions
 
