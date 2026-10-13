@@ -351,12 +351,8 @@
     "message": "Stats and history",
     "description": "Stats screen title"
   },
-  "stats.guest_note": {
-    "message": "Your stats are stored on this device. Sign in to back them up.",
-    "description": "Shown on the stats screen to guests"
-  },
   "stats.empty": {
-    "message": "No finished games yet. Play a game to see your stats.",
+    "message": "No games against the computer yet. Play one to see your stats.",
     "description": "Stats screen with no games"
   },
   "stats.played": {
@@ -1790,5 +1786,17 @@
   "account.sign_in.privacy": {
     "message": "When you sign in, we keep your profile, games and settings on our server as explained in our",
     "description": "Sign-in screen, before the privacy policy link"
+  },
+  "stats.vs_computer": {
+    "message": "Against the computer",
+    "description": "Stats page: section for games against the computer"
+  },
+  "stats.vs_players": {
+    "message": "Against other players",
+    "description": "Stats page: section for games against other people"
+  },
+  "stats.vs_players.empty": {
+    "message": "Games against other players will show here once you can play them.",
+    "description": "Stats page: empty section for games against other people (not available yet)"
   }
 }

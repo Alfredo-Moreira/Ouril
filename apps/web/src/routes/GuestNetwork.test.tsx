@@ -155,13 +155,13 @@ describe('guest privacy: zero network requests (ADR 0014)', () => {
     await waitFor(async () => expect(await listGames()).toHaveLength(1));
     expect(await getCurrentGame()).toBeUndefined();
 
-    // Stats show the finished game.
-    fireEvent.click(within(end).getByRole('link', { name: 'Stats' }));
-    expect(await screen.findByText('Played', { selector: 'dt' })).toBeInTheDocument();
-    expect(within(screen.getByRole('list')).getAllByRole('listitem')).toHaveLength(1);
+    // The finished game stays on the device (it moves to an account on sign-in), but Stats
+    // are for signed-in players: a guest gets no Stats link.
+    expect(within(end).queryByRole('link', { name: 'Stats' })).toBeNull();
+    fireEvent.click(within(end).getByRole('link', { name: 'Home' }));
 
     // Settings: change everything a guest can change.
-    fireEvent.click(screen.getAllByRole('link', { name: 'Settings' })[0]!);
+    fireEvent.click((await screen.findAllByRole('link', { name: 'Settings' }))[0]!);
     fireEvent.click(await screen.findByRole('checkbox', { name: 'Sound effects' }));
     fireEvent.click(screen.getByRole('checkbox', { name: 'Show the hint button' }));
     fireEvent.click(screen.getByRole('checkbox', { name: 'Crash reports' }));

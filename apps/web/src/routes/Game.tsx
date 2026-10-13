@@ -37,7 +37,7 @@ import {
 import { RulesView } from '../components/RulesView';
 import { useGameController } from '../game/useGameController';
 import { useImmersiveScreen } from '../state/immersive';
-import { useApp } from '../state/useApp';
+import { useApp, useStatsVisible } from '../state/useApp';
 import {
   clearCurrentGame,
   getCurrentGame,
@@ -45,7 +45,6 @@ import {
   type CurrentGame,
 } from '../storage/repo';
 import { NewGameForm, type NewGameRequest } from '../components/NewGameForm';
-import { FEATURES } from '../features';
 
 export interface GameRouteProps {
   /** 1 = normal speed, 0 = no animation delays (tests). Defaults from prefers-reduced-motion. */
@@ -138,6 +137,7 @@ function GameView({ initial, speed: baseSpeed }: { initial: CurrentGame; speed: 
   const speed = baseSpeed * useBoardPace();
   const navigate = useNavigate();
   const { settings } = useApp();
+  const statsVisible = useStatsVisible();
   const c = useGameController(initial, speed);
   const { game, frame } = c;
 
@@ -406,7 +406,7 @@ function GameView({ initial, speed: baseSpeed }: { initial: CurrentGame; speed: 
               >
                 {t(c.finished.outcome === 'loss' ? 'game.over.rematch' : 'game.over.play_again')}
               </button>
-              {FEATURES.stats && (
+              {statsVisible && (
                 <Link className="button" to="/stats">
                   {t('menu.stats')}
                 </Link>

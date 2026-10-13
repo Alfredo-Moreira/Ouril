@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { BrowserRouter, Link, NavLink, Route, Routes, useLocation } from 'react-router';
+import { BrowserRouter, Link, Navigate, NavLink, Route, Routes, useLocation } from 'react-router';
 import { useTranslation } from 'react-i18next';
 
 import type { ApiClient } from './api/client';
@@ -42,7 +42,7 @@ import { Stats } from './routes/Stats';
 import { Tutorial } from './routes/Tutorial';
 import { AppProvider } from './state/AppProvider';
 import { useImmersive } from './state/immersive';
-import { useApp } from './state/useApp';
+import { useApp, useStatsVisible } from './state/useApp';
 
 export interface AppProps {
   /** Test seams: inject the core/AI/API client. Production uses the defaults. */
@@ -86,6 +86,9 @@ function WithCore({ createApi, animationSpeed }: Pick<AppProps, 'createApi' | 'a
 function Layout({ animationSpeed }: { animationSpeed?: number }) {
   const { t } = useTranslation();
   const { auth, user, update, consent } = useApp();
+  const statsVisible = useStatsVisible();
+  // A guest who opens /stats or a replay link is asked to sign in (or sent home).
+  const statsGate = <Navigate to={FEATURES.accounts ? '/sign-in' : '/'} replace />;
   const { pathname } = useLocation();
   // A screen view per route, only with usage-statistics consent (ADR 0014). Re-runs when the
   // choice is made, so the screen the player is on counts too.
@@ -132,7 +135,7 @@ function Layout({ animationSpeed }: { animationSpeed?: number }) {
                 <RulesIcon />
                 <span>{t('menu.rules')}</span>
               </NavLink>
-              {FEATURES.stats && (
+              {statsVisible && (
                 <NavLink to="/stats">
                   <StatsIcon />
                   <span>{t('menu.stats')}</span>
@@ -192,8 +195,12 @@ function Layout({ animationSpeed }: { animationSpeed?: number }) {
             <Route path="/" element={<Home />} />
             <Route path="/play" element={<GameRoute animationSpeed={animationSpeed} />} />
             <Route path="/tutorial" element={<Tutorial animationSpeed={animationSpeed} />} />
-            {FEATURES.stats && <Route path="/stats" element={<Stats />} />}
-            {FEATURES.stats && <Route path="/replay/:id" element={<ReplayRoute />} />}
+            {FEATURES.stats && (
+              <Route path="/stats" element={statsVisible ? <Stats /> : statsGate} />
+            )}
+            {FEATURES.stats && (
+              <Route path="/replay/:id" element={statsVisible ? <ReplayRoute /> : statsGate} />
+            )}
             <Route path="/rules" element={<Rules />} />
             <Route path="/settings" element={<Settings />} />
             {FEATURES.accounts && <Route path="/sign-in" element={<SignIn />} />}

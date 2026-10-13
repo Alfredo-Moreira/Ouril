@@ -1,6 +1,8 @@
 /** App-wide state context (provided by AppProvider). */
 import { createContext, useContext } from 'react';
 
+import { FEATURES } from '../features';
+
 import type { Me } from '../api/types';
 import type { Settings, TelemetryConsent } from '../storage/repo';
 import type { SyncStatus } from '../sync/syncEngine';
@@ -52,4 +54,13 @@ export function useApp(): AppContextValue {
   const value = useContext(AppContext);
   if (!value) throw new Error('useApp() outside <AppProvider>');
   return value;
+}
+
+/**
+ * Stats, history and replays are for signed-in players only. Guests still keep their finished
+ * games on the device (they move to the account when the guest signs in), but don't see them.
+ */
+export function useStatsVisible(): boolean {
+  const { auth } = useApp();
+  return FEATURES.stats && auth !== 'guest';
 }
