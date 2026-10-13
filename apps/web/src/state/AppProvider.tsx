@@ -28,7 +28,7 @@ import {
   type TelemetryConsent,
 } from '../storage/repo';
 import { SyncEngine, type SyncStatus } from '../sync/syncEngine';
-import { configureTelemetry } from '../telemetry';
+import { configureTelemetry, trackEvent } from '../telemetry';
 import { uuidv7 } from '../util/uuid';
 import { normalizeDisplayName, normalizeHandle } from '../util/profile';
 import { clientHeader, updateStatus, type UpdateStatus } from '../util/version';
@@ -197,9 +197,11 @@ export function AppProvider({ children, createApi, coreVersion = '0.0.0' }: AppP
       syncStatus,
       async signInDev(name) {
         await finishSignIn(await api().devSignIn(name ? { user: name } : {}));
+        trackEvent('sign_in', { provider: 'dev' });
       },
       async signInGoogle(idToken, nonce) {
         await finishSignIn(await api().googleSignIn({ id_token: idToken, nonce }));
+        trackEvent('sign_in', { provider: 'google' });
       },
       api,
       async signOut() {
@@ -211,6 +213,7 @@ export function AppProvider({ children, createApi, coreVersion = '0.0.0' }: AppP
           // Offline or already expired: signing out locally is enough.
         }
         await clearStoredAccount();
+        trackEvent('sign_out');
         setUser(null);
         setAuth('guest');
         setSyncStatus(null);
@@ -219,6 +222,7 @@ export function AppProvider({ children, createApi, coreVersion = '0.0.0' }: AppP
       },
       async deleteAccount() {
         await api().deleteMe();
+        trackEvent('account_deleted');
         syncRef.current?.stop();
         syncRef.current = null;
         // The account and its server data are gone: drop its local copy and start a fresh guest.

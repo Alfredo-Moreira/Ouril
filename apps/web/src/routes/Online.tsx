@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router';
 
 import { ApiError } from '../api/client';
 import type { OnlineGame, OpponentSummary } from '../api/types';
+import { trackInvite, trackInviteAnswer } from '../online/analytics';
 import { inviteLink } from '../online/links';
 import { resultFor } from '../online/perspective';
 import { usePolling } from '../online/usePolling';
@@ -45,11 +46,13 @@ export function Online() {
   }, [api, refresh]);
   usePolling(refresh, LIST_POLL_MS);
 
-  const run = async (action: () => Promise<OnlineGame>, open = false) => {
+  /** Run an action; on success track it (`onDone`) and open the game or refresh the list. */
+  const run = async (action: () => Promise<OnlineGame>, onDone?: () => void, open = false) => {
     setBusy(true);
     setError(null);
     try {
       const game = await action();
+      onDone?.();
       if (open) navigate(`/online/${game.id}`);
       else refresh();
     } catch (e) {
@@ -72,14 +75,24 @@ export function Online() {
 
       <InviteForm
         busy={busy}
-        onInvite={(handle) => run(() => api().createGame({ opponent_handle: handle }))}
+        onInvite={(handle) =>
+          run(
+            () => api().createGame({ opponent_handle: handle }),
+            () => trackInvite('handle'),
+          )
+        }
       />
       <div className="row">
         <button
           type="button"
           className="button"
           disabled={busy}
-          onClick={() => void run(() => api().createGame({}))}
+          onClick={() =>
+            void run(
+              () => api().createGame({}),
+              () => trackInvite('link'),
+            )
+          }
         >
           {t('online.invite_link.create')}
         </button>
@@ -103,7 +116,13 @@ export function Online() {
                   type="button"
                   className="button"
                   disabled={busy}
-                  onClick={() => void run(() => api().gameAction(g.id, 'accept'), true)}
+                  onClick={() =>
+                    void run(
+                      () => api().gameAction(g.id, 'accept'),
+                      () => trackInviteAnswer('accept'),
+                      true,
+                    )
+                  }
                 >
                   {t('online.accept')}
                 </button>
@@ -111,7 +130,12 @@ export function Online() {
                   type="button"
                   className="button button--ghost"
                   disabled={busy}
-                  onClick={() => void run(() => api().gameAction(g.id, 'decline'))}
+                  onClick={() =>
+                    void run(
+                      () => api().gameAction(g.id, 'decline'),
+                      () => trackInviteAnswer('decline'),
+                    )
+                  }
                 >
                   {t('online.decline')}
                 </button>
@@ -140,7 +164,12 @@ export function Online() {
                   type="button"
                   className="button button--ghost"
                   disabled={busy}
-                  onClick={() => void run(() => api().gameAction(g.id, 'cancel'))}
+                  onClick={() =>
+                    void run(
+                      () => api().gameAction(g.id, 'cancel'),
+                      () => trackInviteAnswer('cancel'),
+                    )
+                  }
                 >
                   {t('online.cancel')}
                 </button>
@@ -178,7 +207,10 @@ export function Online() {
                   className="button"
                   disabled={busy}
                   onClick={() =>
-                    void run(() => api().createGame({ opponent_id: o.player.user_id }))
+                    void run(
+                      () => api().createGame({ opponent_id: o.player.user_id }),
+                      () => trackInvite('opponent'),
+                    )
                   }
                 >
                   {t('online.challenge')}

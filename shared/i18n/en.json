@@ -1632,7 +1632,7 @@
     "description": "privacy policy page"
   },
   "privacy.usage.1": {
-    "message": "Only if you agree when asked, or turn them on in Settings, the app sends which screens are opened and game events, such as the level and result of a finished game, to our own analytics server (Matomo, run by the developer).",
+    "message": "Only if you agree when asked, or turn them on in Settings, the app sends which screens are opened and what happens in the game, to our own analytics server (Matomo, run by the developer): for example the level and result of a finished game, signing in or out, or starting, accepting or finishing a game against another player. They never include your account, your handle, other players, or the games and invitations themselves.",
     "description": "privacy policy page"
   },
   "privacy.usage.2": {

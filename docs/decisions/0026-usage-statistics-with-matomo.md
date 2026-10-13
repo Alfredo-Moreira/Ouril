@@ -9,7 +9,7 @@
 ## Decision
 - Use the developer's **self-hosted Matomo** (`https://analytics.moreiralabs.org/`, site ID 1) for web usage statistics. The build reads `VITE_MATOMO_URL` and `VITE_MATOMO_SITE_ID`; with either empty, usage statistics are a no-op and the option isn't offered.
 - The web app sends hits with its own small client for Matomo's HTTP tracking API (`matomo.php`), **not `matomo.js`**: no external script, no cookies, no referrer, no screen size. Only the CSP's `connect-src` gains the Matomo host.
-- Only after usage-statistics consent: a screen view per route (IDs stripped) and events such as `game_finished` (level, outcome, plies). The visitor ID comes from the random install ID, so "Reset anonymous ID" starts a new visitor.
+- Only after usage-statistics consent: a screen view per route (IDs stripped) and events such as `game_finished` (level, outcome, plies). The full list of events is in [web design](../architecture/web-design.md). The visitor ID comes from the random install ID, so "Reset anonymous ID" starts a new visitor.
 - Hits queue in `localStorage` (capped at 200), are sent in bulk when online, and are dropped after 23 hours (Matomo can't backdate further without a token). Withdrawing consent discards the queue.
 - The Matomo instance anonymizes IP addresses and turns off location from IP, to keep ADR 0014's "no IP addresses stored, no location".
 
