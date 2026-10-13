@@ -2122,7 +2122,8 @@ main.main--immersive {
 /* The Game page (choose the computer or online) and online play (ADR 0031). */
 .game-hub,
 .online,
-.online-game {
+.online-game,
+.leaderboard {
   max-width: 52rem;
   margin: 0 auto;
 }
@@ -2526,4 +2527,97 @@ a.pay:active {
     animation: none;
     opacity: 0.9;
   }
+}
+
+/* --- Ratings and leaderboards (ADR 0034) ------------------------------------------------------ */
+
+.rating-changes {
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.rating-changes li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.25rem 1rem;
+}
+
+.rating-up {
+  color: var(--win);
+}
+
+.rating-down {
+  color: var(--danger);
+}
+
+.leaderboard__mine {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.leaderboard__mine li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0 1rem;
+}
+
+.leaderboard__mine .note {
+  grid-column: 1 / -1;
+}
+
+.leaderboard__controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  margin: 1.25rem 0 1rem;
+}
+
+.leaderboard__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.leaderboard__table th,
+.leaderboard__table td {
+  padding: 0.6rem 0.5rem;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+}
+
+.leaderboard__table th:first-child,
+.leaderboard__table td:first-child,
+.leaderboard__table th:nth-child(n + 3),
+.leaderboard__table td:nth-child(n + 3) {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.leaderboard__table th {
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.leaderboard__country {
+  display: block;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.leaderboard__you td {
+  background: var(--brand-soft);
+}
+
+.leaderboard__gap td {
+  border-top: 2px dashed var(--line-strong);
 }

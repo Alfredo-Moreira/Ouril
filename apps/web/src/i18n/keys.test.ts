@@ -74,6 +74,8 @@ describe('i18n keys', () => {
       'home.features': ['offline', 'levels', 'guest'].flatMap((k) => [`${k}.title`, `${k}.body`]),
       'play.mode': ['computer', 'online'],
       'online.result': ['win', 'loss', 'draw'],
+      'leaderboard.mode': ['async', 'live'],
+      'leaderboard.scope': ['world', 'country'],
       'online.status': ['invited', 'declined', 'cancelled', 'expired'],
       'online.reason': ['resigned', 'timeout', 'threshold', 'no_feed', 'endless_cycle', 'no_moves'],
       'online.error': ['not_found', 'bad_request', 'conflict'],
@@ -132,6 +134,8 @@ describe('i18n keys', () => {
       'online.reason.',
       'online.error.',
       'online.join.error.',
+      'leaderboard.mode.',
+      'leaderboard.scope.',
     ];
     const unknown: string[] = [];
     for (const f of files) {

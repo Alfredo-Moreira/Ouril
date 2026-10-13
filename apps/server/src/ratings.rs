@@ -323,7 +323,11 @@ pub async fn leaderboard(
     .bind(LEADERBOARD_MIN_GAMES as i32)
     .bind(OffsetDateTime::now_utc())
     .bind(LEADERBOARD_ACTIVE_DAYS as i32)
-    .bind(country.as_deref().filter(|_| scope == LeaderboardScope::Country))
+    .bind(
+        country
+            .as_deref()
+            .filter(|_| scope == LeaderboardScope::Country),
+    )
     .bind(cfg.provisional_deviation)
     .bind(i64::from(LEADERBOARD_SIZE))
     .bind(me)

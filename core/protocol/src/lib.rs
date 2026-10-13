@@ -438,7 +438,7 @@ pub struct OnlineGame {
     pub rated: bool,
     /// Finished and counted: how your ratings changed (the overall pool and the game's own).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    #[cfg_attr(feature = "ts", ts(optional))]
+    #[cfg_attr(feature = "ts", ts(as = "Option<Vec<RatingChange>>", optional))]
     pub rating_changes: Vec<RatingChange>,
     pub created_at: String,
     pub updated_at: String,
@@ -974,6 +974,51 @@ mod tests {
         assert_eq!(
             serde_json::to_value(MutationStatus::Deferred).unwrap(),
             serde_json::json!("deferred")
+        );
+    }
+
+    #[test]
+    fn rated_games_and_leaderboards() {
+        // Rated is optional on the wire: older clients send nothing (the server's default).
+        let req: CreateGameRequest = serde_json::from_value(json!({})).unwrap();
+        assert_eq!(req.rated, None);
+        round_trip(
+            &CreateGameRequest {
+                rated: Some(false),
+                ..Default::default()
+            },
+            json!({ "rated": false }),
+        );
+        round_trip(&LeaderboardScope::Country, json!("country"));
+        round_trip(
+            &Leaderboard {
+                pool: RATING_POOL_OVERALL.into(),
+                scope: LeaderboardScope::World,
+                country: None,
+                entries: vec![LeaderboardEntry {
+                    rank: 1,
+                    player: PlayerSummary {
+                        user_id: "u".into(),
+                        display_name: "Ana".into(),
+                        handle: None,
+                    },
+                    country: Some("cv".into()),
+                    rating: 1612,
+                    games: 14,
+                }],
+                you: None,
+            },
+            json!({
+                "pool": "overall",
+                "scope": "world",
+                "entries": [{
+                    "rank": 1,
+                    "player": { "user_id": "u", "display_name": "Ana" },
+                    "country": "cv",
+                    "rating": 1612,
+                    "games": 14
+                }]
+            }),
         );
     }
 }

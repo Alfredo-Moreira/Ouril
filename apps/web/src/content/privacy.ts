@@ -26,7 +26,7 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
   { id: 'short', paragraphs: 3 },
   { id: 'who', paragraphs: 2 },
   { id: 'guest', paragraphs: 2 },
-  { id: 'account', paragraphs: 5 },
+  { id: 'account', paragraphs: 6 },
   { id: 'usage', paragraphs: 3 },
   { id: 'use', paragraphs: 2 },
   { id: 'processors', paragraphs: 5 },

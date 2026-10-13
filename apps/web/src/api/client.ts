@@ -20,6 +20,9 @@ import type {
   ApiErrorBody,
   CreateGameRequest,
   GameList,
+  Leaderboard,
+  LeaderboardScope,
+  MyRatings,
   OnlineGame,
   OpponentList,
   DevSignInRequest,
@@ -199,6 +202,19 @@ export class ApiClient {
 
   opponents(): Promise<OpponentList> {
     return this.request<OpponentList>('GET', '/v1/opponents');
+  }
+
+  // --- ratings and leaderboards (ADR 0034) ------------------------------------------------
+
+  myRatings(): Promise<MyRatings> {
+    return this.request<MyRatings>('GET', '/v1/ratings/me');
+  }
+
+  /** A board for `pool`; a country board defaults to the player's own country. */
+  leaderboard(pool: string, scope: LeaderboardScope, country?: string): Promise<Leaderboard> {
+    const q = new URLSearchParams({ pool, scope });
+    if (country) q.set('country', country);
+    return this.request<Leaderboard>('GET', `/v1/leaderboard?${q.toString()}`);
   }
 
   async deleteMe(): Promise<void> {

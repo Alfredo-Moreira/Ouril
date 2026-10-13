@@ -33,6 +33,7 @@ import { PLAYABLE_VARIANTS, type PlayableVariant } from '../game/session';
 import { playEndSound, playFrameSound } from '../game/sound';
 import { trackInviteAnswer, trackOnlineFinished } from '../online/analytics';
 import { displayPosition, flipPit, resultFor } from '../online/perspective';
+import { poolLabel } from '../online/pools';
 import { usePolling } from '../online/usePolling';
 import { useImmersiveScreen } from '../state/immersive';
 import { useApp, useStatsVisible } from '../state/useApp';
@@ -312,7 +313,10 @@ function OnlineGameView({
     const opponent = game.opponent;
     if (!opponent) return;
     void act(async () => {
-      const next = await api().createGame({ opponent_id: opponent.user_id });
+      const next = await api().createGame({
+        opponent_id: opponent.user_id,
+        rated: game.rated !== false,
+      });
       navigate(`/online/${next.id}`);
       return next;
     });
@@ -560,6 +564,7 @@ function OnlineGameView({
               <p className="note">
                 {endReasonText(t, game.result.reason, outcome === 'loss', opponentName)}
               </p>
+              <RatingChanges game={game} />
               <ErrorLine error={error} />
               <div className="dialog__actions">
                 {game.opponent && (
@@ -586,6 +591,37 @@ function OnlineGameView({
         </>
       )}
     </section>
+  );
+}
+
+/** How the game moved your ratings, or why it didn't. */
+function RatingChanges({ game }: { game: Game }) {
+  const { t } = useTranslation();
+  const changes = game.rating_changes ?? [];
+  if (changes.length === 0) {
+    return (
+      <p className="note">
+        {t(game.rated === false ? 'online.over.casual' : 'online.over.unrated')}
+      </p>
+    );
+  }
+  return (
+    <ul className="rating-changes">
+      {changes.map((c) => {
+        const diff = c.after - c.before;
+        return (
+          <li key={c.pool}>
+            <span>{poolLabel(t, c.pool)}</span>
+            <span>
+              {t('online.over.rating', { before: c.before, after: c.after })}{' '}
+              <strong className={diff >= 0 ? 'rating-up' : 'rating-down'}>
+                {t('online.over.rating_diff', { diff: diff >= 0 ? `+${diff}` : `${diff}` })}
+              </strong>
+            </span>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 

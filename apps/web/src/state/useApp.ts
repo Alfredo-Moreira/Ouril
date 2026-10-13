@@ -44,7 +44,11 @@ export interface AppContextValue {
    * Queue a profile change (signed in only). Values are normalized here; returns false and
    * changes nothing if one is invalid. The handle stays pending until the server confirms it.
    */
-  updateProfile(change: { display_name?: string; handle?: string }): Promise<boolean>;
+  updateProfile(change: {
+    display_name?: string;
+    handle?: string;
+    country?: string;
+  }): Promise<boolean>;
   /** A requested handle the server hasn't confirmed yet. */
   pendingHandle: string | null;
   profileNotice: ProfileNotice | null;

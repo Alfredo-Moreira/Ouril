@@ -172,6 +172,10 @@ export interface OnlineGame {
   /** The invite link's code (inviter only, while nobody has accepted). */
   invite_code?: string;
   invited_by_you: boolean;
+  /** Created as rated (ADR 0034); absent from older servers. */
+  rated?: boolean;
+  /** Finished and counted: your rating changes, overall pool first. */
+  rating_changes?: RatingChange[];
   created_at: string;
   updated_at: string;
 }
@@ -180,6 +184,8 @@ export interface CreateGameRequest {
   opponent_handle?: string;
   opponent_id?: string;
   variant_id?: string;
+  /** Counts for ratings; the server defaults to true. */
+  rated?: boolean;
 }
 
 export interface GameList {
@@ -194,4 +200,53 @@ export interface OpponentSummary {
 
 export interface OpponentList {
   opponents: OpponentSummary[];
+}
+
+// --- ratings and leaderboards (ADR 0034) -----------------------------------------------------
+
+/** `overall`, or `<variant_id>:<mode>`. */
+export const RATING_POOL_OVERALL = 'overall';
+/** Rated games a player needs in a pool before they appear on its boards. */
+export const LEADERBOARD_MIN_GAMES = 10;
+/** ...and how recently they must have played one. */
+export const LEADERBOARD_ACTIVE_DAYS = 60;
+
+export interface RatingChange {
+  pool: string;
+  before: number;
+  after: number;
+}
+
+export interface PoolRating {
+  pool: string;
+  rating: number;
+  deviation: number;
+  provisional: boolean;
+  games: number;
+  wins: number;
+  draws: number;
+  losses: number;
+  peak: number;
+}
+
+export interface MyRatings {
+  ratings: PoolRating[];
+}
+
+export type LeaderboardScope = 'world' | 'country';
+
+export interface LeaderboardEntry {
+  rank: number;
+  player: PlayerSummary;
+  country?: string;
+  rating: number;
+  games: number;
+}
+
+export interface Leaderboard {
+  pool: string;
+  scope: LeaderboardScope;
+  country?: string;
+  entries: LeaderboardEntry[];
+  you?: LeaderboardEntry;
 }

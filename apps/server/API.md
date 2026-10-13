@@ -75,6 +75,8 @@ Every non-2xx response has the body `ApiError`:
 | `POST` | `/v1/games/{id}/accept`, `/decline`, `/cancel`, `/resign` | Bearer | `{}` | `200 OnlineGame` · `409 conflict` |
 | `POST` | `/v1/games/{id}/moves` | Bearer | `MoveRequest` | `200 OnlineGame` · `400` illegal move · `409 conflict` |
 | `GET` | `/v1/opponents` | Bearer | — | `200 OpponentList` |
+| `GET` | `/v1/ratings/me` | Bearer | — | `200 MyRatings` |
+| `GET` | `/v1/leaderboard?pool=P&scope=world\|country[&country=C]` | Bearer | query | `200 Leaderboard` · `400` unknown pool, bad country, or a country board with no country |
 
 ### `GET /v1/meta`
 
@@ -213,6 +215,17 @@ Turn-by-turn games through the server ([ADR 0031](../../docs/decisions/0031-onli
 - **Deadlines:** 3 days per move (`turn_deadline`). The server settles a game whenever it's read or written: past the deadline, the player to move loses (`result.reason = "timeout"`).
 - **Finishing:** by the rules, `resign`, or a timeout. Each player then gets a format-3 game record through sync pull (`mode: "vs_player"`, `opponent`, `human_player` = their side), and the game counts in `/v1/opponents`. `game_finished` pushes with `mode: "vs_player"`, an `opponent` or `reason: "timeout"` are rejected (`invalid_payload`): only the server writes them.
 - **Polling:** there are no live connections. The web app asks for an open game every 2 s while waiting for the opponent (15 s otherwise), and for the list every 10 s.
+
+### Ratings and leaderboards
+
+Glicko-2 ratings for games against other players ([ADR 0034](../../docs/decisions/0034-ratings-and-leaderboards-in-postgres.md), [leaderboards](../../docs/product/features/leaderboards.md)). Types in `core/protocol` (`RatingChange`, `PoolRating`, `MyRatings`, `Leaderboard`, …).
+
+- **Rated or casual:** `CreateGameRequest.rated` (default `true`). `OnlineGame.rated` says which; older games are casual.
+- **Pools:** `overall`, and `<variant_id>:<mode>` (`cv.standard:async`; `live` once live games exist). A rated game updates both players' `overall` rating and its own pool's, in the transaction that finishes it.
+- **Counts only if** both players made a move, and only the first 3 rated games between the same two players in any 24 hours (`RATED_GAMES_PER_PAIR_PER_DAY`). Games ended by an account deletion don't count.
+- **`OnlineGame.rating_changes`:** for a finished game that counted, your `{pool, before, after}` changes (rounded), overall first. Absent otherwise.
+- **`GET /v1/ratings/me`:** every pool you've played rated games in, overall first. `deviation` is grown for the time since your last rated game; `provisional` when it's above 110.
+- **`GET /v1/leaderboard`:** the top 100 eligible players in `pool`, ranked by rating, plus `you` when you're eligible. `scope=country` uses `country` (ISO 3166-1 alpha-2, any case) or your profile's. **Eligible:** at least `LEADERBOARD_MIN_GAMES` (10) rated games in the pool, one in the last `LEADERBOARD_ACTIVE_DAYS` (60), a deviation (grown for time) of at most 110, and not deleted.
 
 ## Configuration
 

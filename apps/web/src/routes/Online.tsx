@@ -27,6 +27,8 @@ export function OnlineLobby() {
   const [opponents, setOpponents] = useState<OpponentSummary[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // New invitations are rated unless the player turns it off (ADR 0034).
+  const [rated, setRated] = useState(true);
 
   const refresh = useCallback(() => {
     void api()
@@ -73,11 +75,19 @@ export function OnlineLobby() {
     <div className="online">
       <p className="note">{t('online.intro')}</p>
 
+      <div className="card">
+        <label className="toggle">
+          <input type="checkbox" checked={rated} onChange={(e) => setRated(e.target.checked)} />
+          <span>{t('online.rated')}</span>
+        </label>
+        <p className="note">{t(rated ? 'online.rated.on' : 'online.rated.off')}</p>
+      </div>
+
       <InviteForm
         busy={busy}
         onInvite={(handle) =>
           run(
-            () => api().createGame({ opponent_handle: handle }),
+            () => api().createGame({ opponent_handle: handle, rated }),
             () => trackInvite('handle'),
           )
         }
@@ -89,7 +99,7 @@ export function OnlineLobby() {
           disabled={busy}
           onClick={() =>
             void run(
-              () => api().createGame({}),
+              () => api().createGame({ rated }),
               () => trackInvite('link'),
             )
           }
@@ -208,7 +218,7 @@ export function OnlineLobby() {
                   disabled={busy}
                   onClick={() =>
                     void run(
-                      () => api().createGame({ opponent_id: o.player.user_id }),
+                      () => api().createGame({ opponent_id: o.player.user_id, rated }),
                       () => trackInvite('opponent'),
                     )
                   }
@@ -325,6 +335,7 @@ function GameSummary({ game }: { game: OnlineGame }) {
       <strong>{name}</strong>
       {game.opponent?.handle && <span className="note"> @{game.opponent.handle}</span>}
       {detail && <span className="note"> · {detail}</span>}
+      {game.rated === false && <span className="note"> · {t('online.casual')}</span>}
     </span>
   );
 }

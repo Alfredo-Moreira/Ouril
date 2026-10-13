@@ -19,6 +19,7 @@ import {
   PlayIcon,
   RulesIcon,
   SettingsIcon,
+  StarIcon,
   StatsIcon,
   UserIcon,
 } from './components/Icons';
@@ -39,6 +40,7 @@ import { Settings } from './routes/Settings';
 import { GoogleCallback } from './routes/GoogleCallback';
 import { JoinGame } from './routes/JoinGame';
 import { GameHub } from './routes/GameHub';
+import { Leaderboard } from './routes/Leaderboard';
 import { OnlineGame } from './routes/OnlineGame';
 import { SignIn } from './routes/SignIn';
 import { Stats } from './routes/Stats';
@@ -146,6 +148,12 @@ function Layout({ animationSpeed }: { animationSpeed?: number }) {
                 <RulesIcon />
                 <span>{t('menu.rules')}</span>
               </NavLink>
+              {onlineVisible && (
+                <NavLink to="/leaderboard">
+                  <StarIcon />
+                  <span>{t('menu.leaderboard')}</span>
+                </NavLink>
+              )}
               {statsVisible && (
                 <NavLink to="/stats">
                   <StatsIcon />
@@ -228,6 +236,9 @@ function Layout({ animationSpeed }: { animationSpeed?: number }) {
               />
             )}
             {FEATURES.accounts && <Route path="/join/:code" element={<JoinGame />} />}
+            {FEATURES.accounts && (
+              <Route path="/leaderboard" element={onlineVisible ? <Leaderboard /> : signInGate} />
+            )}
             <Route path="/about" element={<About />} />
             <Route path="/privacy" element={<Privacy />} />
             {FEATURES.accounts && <Route path="/delete-account" element={<DeleteAccount />} />}

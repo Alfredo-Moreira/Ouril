@@ -238,11 +238,7 @@ pub fn rate_game(
 
 /// What `player` would gain or lose against `opponent` for each result, rounded to whole
 /// points: `[win, draw, loss]`. For showing the stakes before a rated game.
-pub fn stakes(
-    cfg: &Config,
-    player: (&Rating, f64),
-    opponent: (&Rating, f64),
-) -> [i32; 3] {
+pub fn stakes(cfg: &Config, player: (&Rating, f64), opponent: (&Rating, f64)) -> [i32; 3] {
     [Score::Win, Score::Draw, Score::Loss].map(|s| {
         let (after, _) = rate_game(cfg, player, opponent, s);
         (after.rating - player.0.rating).round() as i32

@@ -99,7 +99,10 @@ async fn a_rated_game_moves_the_overall_and_the_variant_ratings(db: PgPool) {
     let rui = with_handle(&app, "rui", "rui").await;
     let game = ana_wins(&app, &ana, &rui, json!({ "variant_id": "cv.across" })).await;
     assert_eq!(game["rated"], true, "rated by default");
-    assert_eq!(pools(&game["rating_changes"]), ["overall", "cv.across:async"]);
+    assert_eq!(
+        pools(&game["rating_changes"]),
+        ["overall", "cv.across:async"]
+    );
     for c in game["rating_changes"].as_array().unwrap() {
         assert_eq!(c["before"], 1500);
         assert!(c["after"].as_i64().unwrap() > 1500, "the winner goes up");
@@ -216,7 +219,10 @@ async fn boards_rank_eligible_players_worldwide_and_by_country(db: PgPool) {
         ("deleted", 30, 60.0, 1.0),
     ] {
         let s = app.sign_in(name).await;
-        seed(&db, s.user_id, "overall", 2500.0, deviation, 0.06, games, days).await;
+        seed(
+            &db, s.user_id, "overall", 2500.0, deviation, 0.06, games, days,
+        )
+        .await;
         set_country(&db, s.user_id, "cv").await;
         if name == "deleted" {
             sqlx::query("UPDATE users SET deleted_at = now() WHERE id = $1")
@@ -325,7 +331,12 @@ async fn deleting_the_account_removes_its_ratings(db: PgPool) {
         .await
         .assert_status(StatusCode::NO_CONTENT);
     assert_eq!(
-        count(&db, "SELECT count(*) FROM ratings WHERE user_id = $1", ana.user_id).await,
+        count(
+            &db,
+            "SELECT count(*) FROM ratings WHERE user_id = $1",
+            ana.user_id
+        )
+        .await,
         0
     );
     assert_eq!(
@@ -339,7 +350,12 @@ async fn deleting_the_account_removes_its_ratings(db: PgPool) {
     );
     // Rui keeps his own.
     assert_eq!(
-        count(&db, "SELECT count(*) FROM ratings WHERE user_id = $1", rui.user_id).await,
+        count(
+            &db,
+            "SELECT count(*) FROM ratings WHERE user_id = $1",
+            rui.user_id
+        )
+        .await,
         2
     );
 }
