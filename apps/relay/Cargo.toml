@@ -1,0 +1,31 @@
+[package]
+name = "ouril-relay"
+description = "Ouril live-game relay (ADR 0032, 0033): fans the server's events out to players over WebSocket. Runs on the homelab."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[lib]
+name = "ouril_relay"
+path = "src/lib.rs"
+
+[[bin]]
+name = "ouril-relay"
+path = "src/main.rs"
+
+[dependencies]
+ouril-protocol = { path = "../../core/protocol" }
+axum = { version = "0.8", features = ["ws"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "signal", "sync", "time"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "json"] }
+# HS256 only. aws-lc-rs, the same backend as the server.
+jsonwebtoken = { version = "11", default-features = false, features = ["aws_lc_rs"] }
+
+[dev-dependencies]
+tokio-tungstenite = "0.28"
+futures-util = { version = "0.3", default-features = false, features = ["sink", "std"] }
