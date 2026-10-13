@@ -49,10 +49,35 @@ export function visitorId(installId: string): string {
     .padStart(16, '0');
 }
 
-/** The route without anything that identifies a game or player (`/replay/<id>` → `/replay/:id`). */
+/** Routes with a parameter: the parameter is replaced by its name. */
+const ROUTE_PARAMS: readonly [RegExp, string][] = [
+  [/^\/replay\/[^/]+/, '/replay/:id'],
+  [/^\/online\/[^/]+/, '/online/:id'],
+  // An invite code would let anyone join the game: it must never leave the device.
+  [/^\/join\/[^/]+/, '/join/:code'],
+];
+
+/**
+ * A path segment that looks like an ID or a secret: a UUID, or 16+ base64url characters with
+ * at least one digit (so long route names made of words aren't mistaken for one).
+ */
+const ID_LIKE =
+  /^(?:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|(?=[^/]*\d)[A-Za-z0-9_-]{16,})$/i;
+
+/**
+ * The route without anything that identifies a game, a player or an invitation, and without
+ * the query string or fragment (`/online/<id>` → `/online/:id`, `/join/<code>` → `/join/:code`).
+ * Any other segment that looks like an ID is replaced too, so a new route can't leak one.
+ */
 export function sanitizePath(path: string): string {
   const clean = path.split(/[?#]/)[0] || '/';
-  return clean.replace(/^\/replay\/[^/]+/, '/replay/:id');
+  for (const [pattern, name] of ROUTE_PARAMS) {
+    if (pattern.test(clean)) return clean.replace(pattern, name);
+  }
+  return clean
+    .split('/')
+    .map((segment) => (ID_LIKE.test(segment) ? ':id' : segment))
+    .join('/');
 }
 
 let active: { config: MatomoConfig; visitor: string } | null = null;
