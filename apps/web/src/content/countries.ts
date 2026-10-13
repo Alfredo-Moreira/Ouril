@@ -17,19 +17,36 @@ const CODES =
 /** Every code, lowercase as the server stores them. */
 export const COUNTRY_CODES: readonly string[] = CODES.split(' ').map((c) => c.toLowerCase());
 
+// One name formatter and one collator per language, not one per call.
+const namers = new Map<string, Intl.DisplayNames | null>();
+const collators = new Map<string, Intl.Collator>();
+
+function namer(locale: string): Intl.DisplayNames | null {
+  if (!namers.has(locale)) {
+    try {
+      namers.set(locale, new Intl.DisplayNames([locale], { type: 'region' }));
+    } catch {
+      namers.set(locale, null);
+    }
+  }
+  return namers.get(locale)!;
+}
+
 /** A country's name in `locale`, or the code itself where the browser has no name. */
 export function countryName(code: string, locale: string): string {
-  try {
-    return new Intl.DisplayNames([locale], { type: 'region' }).of(code.toUpperCase()) ?? code;
-  } catch {
-    return code.toUpperCase();
-  }
+  return namer(locale)?.of(code.toUpperCase()) ?? code.toUpperCase();
 }
 
 /** Every country, sorted by its name in `locale`. */
 export function countriesByName(locale: string): { code: string; name: string }[] {
+  let collator = collators.get(locale);
+  if (!collator) {
+    collator = new Intl.Collator(locale);
+    collators.set(locale, collator);
+  }
+  const compare = collator.compare;
   return COUNTRY_CODES.map((code) => ({ code, name: countryName(code, locale) })).sort((a, b) =>
-    a.name.localeCompare(b.name, locale),
+    compare(a.name, b.name),
   );
 }
 

@@ -359,3 +359,126 @@ async fn deleting_the_account_removes_its_ratings(db: PgPool) {
         2
     );
 }
+
+/// Two games between the same players finishing at once: the second waits for the first to
+/// commit, then sees its count. With two rated games already that day, only one more counts.
+#[sqlx::test]
+async fn the_daily_pair_limit_holds_when_games_end_at_once(db: PgPool) {
+    use ouril_engine::GameResult;
+    use ouril_server::ratings::{rate_finished_game, FinishedGame};
+    use time::OffsetDateTime;
+
+    let app = TestApp::new(db.clone());
+    let ana = with_handle(&app, "ana", "ana").await;
+    let rui = with_handle(&app, "rui", "rui").await;
+    for _ in 0..2 {
+        ana_wins(&app, &ana, &rui, json!({})).await;
+    }
+    // Two more finished games, casual for now, to rate by hand side by side.
+    let mut games = Vec::new();
+    for _ in 0..2 {
+        let g = ana_wins(&app, &ana, &rui, json!({ "rated": false })).await;
+        let id: Uuid = g["id"].as_str().unwrap().parse().unwrap();
+        sqlx::query("UPDATE online_games SET rated = true WHERE id = $1")
+            .bind(id)
+            .execute(&db)
+            .await
+            .unwrap();
+        let south = if g["you"] == "south" {
+            ana.user_id
+        } else {
+            rui.user_id
+        };
+        let north = if south == ana.user_id {
+            rui.user_id
+        } else {
+            ana.user_id
+        };
+        games.push(FinishedGame {
+            id,
+            variant_id: "cv.standard".into(),
+            mode: "async".into(),
+            south,
+            north,
+            outcome: GameResult::Draw,
+            plies: 2,
+            ended: OffsetDateTime::now_utc(),
+        });
+    }
+    let second = games.pop().unwrap();
+    let first = games.pop().unwrap();
+
+    let mut tx1 = db.begin().await.unwrap();
+    rate_finished_game(&mut tx1, &first).await.unwrap();
+    // The second game starts while the first is still uncommitted...
+    let pool = db.clone();
+    let other = tokio::spawn(async move {
+        let mut tx2 = pool.begin().await.unwrap();
+        rate_finished_game(&mut tx2, &second).await.unwrap();
+        tx2.commit().await.unwrap();
+    });
+    tokio::time::sleep(std::time::Duration::from_millis(300)).await;
+    assert!(!other.is_finished(), "the second game waits for the first");
+    tx1.commit().await.unwrap();
+    other.await.unwrap();
+
+    let applied: i64 = sqlx::query_scalar("SELECT count(*) FROM online_games WHERE rating_applied")
+        .fetch_one(&db)
+        .await
+        .unwrap();
+    assert_eq!(
+        applied, 3,
+        "two earlier games, then only the first of the pair"
+    );
+}
+
+/// A timeout settled days late ends in the past; it must not move "last rated" back.
+#[sqlx::test]
+async fn a_late_timeout_never_moves_the_last_rated_time_back(db: PgPool) {
+    let app = TestApp::new(db.clone());
+    let ana = with_handle(&app, "ana", "ana").await;
+    let rui = with_handle(&app, "rui", "rui").await;
+    let old = start(&app, &ana, &rui, json!({})).await;
+    play(&app, &ana, &rui, &old, 2).await;
+    // A newer rated game finishes first.
+    ana_wins(&app, &ana, &rui, json!({})).await;
+    // The old game's deadline passed two days ago; reading it settles the timeout now.
+    let id = old["id"].as_str().unwrap();
+    sqlx::query(
+        "UPDATE online_games SET turn_deadline = now() - interval '2 days' WHERE id = $1::uuid",
+    )
+    .bind(id)
+    .execute(&db)
+    .await
+    .unwrap();
+    let settled = get(&app, &ana, &format!("/v1/games/{id}")).await;
+    assert_eq!(settled["result"]["reason"], "timeout");
+    assert_eq!(
+        pools(&settled["rating_changes"]).len(),
+        2,
+        "it still counts"
+    );
+    let recent: bool = sqlx::query_scalar(
+        "SELECT last_rated_at > now() - interval '1 hour' FROM ratings
+          WHERE user_id = $1 AND pool = 'overall'",
+    )
+    .bind(ana.user_id)
+    .fetch_one(&db)
+    .await
+    .unwrap();
+    assert!(recent);
+}
+
+#[sqlx::test]
+async fn bad_query_strings_get_the_json_error_body(db: PgPool) {
+    let app = TestApp::new(db);
+    let me = app.sign_in("me").await;
+    for path in [
+        "/v1/leaderboard",
+        "/v1/leaderboard?pool=overall&scope=World",
+    ] {
+        app.call(Req::get(path).bearer(&me.access))
+            .await
+            .assert_error(StatusCode::BAD_REQUEST, "bad_request");
+    }
+}

@@ -21,6 +21,6 @@ WORKDIR /workspace
 EXPOSE 8080
 # Watch only the crates the server depends on, so web/docs edits don't trigger rebuilds.
 CMD ["cargo", "watch", "--why", \
-     "-w", "apps/server", "-w", "core/engine", "-w", "core/protocol", "-w", "core/sync", \
+     "-w", "apps/server", "-w", "core/engine", "-w", "core/protocol", "-w", "core/rating", "-w", "core/sync", \
      "-w", "Cargo.toml", \
      "-x", "run -p ouril-server --features dev-auth"]

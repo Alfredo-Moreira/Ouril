@@ -98,12 +98,14 @@ describe('Leaderboard', () => {
     ]);
     expect(rows[2]).toHaveAttribute('aria-current', 'true');
     expect(within(rows[1]!).getByText('Portugal')).toBeInTheDocument();
-    expect(api.leaderboard).toHaveBeenCalledWith('overall', 'world');
+    expect(api.leaderboard).toHaveBeenCalledWith('overall', 'world', undefined);
 
     fireEvent.change(screen.getByLabelText('Ranking'), {
       target: { value: 'cv.across:async' },
     });
-    await waitFor(() => expect(api.leaderboard).toHaveBeenCalledWith('cv.across:async', 'world'));
+    await waitFor(() =>
+      expect(api.leaderboard).toHaveBeenCalledWith('cv.across:async', 'world', undefined),
+    );
   });
 
   it('asks for a country before showing a country board', async () => {
@@ -121,7 +123,7 @@ describe('Leaderboard', () => {
     const api = boardsApi({ scope: 'country', country: 'cv' });
     renderApp({ route: '/leaderboard', createApi: () => api });
     fireEvent.click(await screen.findByRole('button', { name: 'Cape Verde' }));
-    await waitFor(() => expect(api.leaderboard).toHaveBeenCalledWith('overall', 'country'));
+    await waitFor(() => expect(api.leaderboard).toHaveBeenCalledWith('overall', 'country', 'cv'));
   });
 
   it('explains how to get on an empty board', async () => {

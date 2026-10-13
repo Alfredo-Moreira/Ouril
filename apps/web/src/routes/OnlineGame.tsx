@@ -32,6 +32,7 @@ import { buildFrames, defaultSpeed, frameDelay, type Frame } from '../game/anima
 import { PLAYABLE_VARIANTS, type PlayableVariant } from '../game/session';
 import { playEndSound, playFrameSound } from '../game/sound';
 import { trackInviteAnswer, trackOnlineFinished } from '../online/analytics';
+import { newer } from '../online/freshness';
 import { displayPosition, flipPit, resultFor } from '../online/perspective';
 import { poolLabel } from '../online/pools';
 import { usePolling } from '../online/usePolling';
@@ -77,7 +78,7 @@ function OnlineGameScreen({ id, animationSpeed }: OnlineGameProps & { id: string
     void api()
       .getGame(id)
       .then((g) => {
-        setGame(g);
+        setGame((prev) => newer(prev, g));
         setError(null);
       })
       .catch((e: unknown) => {
@@ -111,7 +112,8 @@ function OnlineGameScreen({ id, animationSpeed }: OnlineGameProps & { id: string
     setBusy(true);
     setError(null);
     try {
-      setGame(await action());
+      const next = await action();
+      setGame((prev) => newer(prev, next));
       onDone?.();
       return true;
     } catch (e) {
@@ -280,9 +282,11 @@ function OnlineGameView({
   const playing = !finished && game.status === 'active';
   const myTurn = playing && state.to_move === game.you;
   let status: string;
-  if (finished || game.status === 'finished') status = t('game.status.over');
-  else if (anim.animating) status = t('game.status.sowing');
-  else if (game.your_turn) status = t('game.status.your_turn');
+  // From the board as shown: your move counts as played as soon as it's sown, and a game
+  // that has ended is still "sowing" until its last move has been shown.
+  if (finished) status = t('game.status.over');
+  else if (anim.animating || game.status === 'finished') status = t('game.status.sowing');
+  else if (myTurn && anim.caughtUp && pending === null) status = t('game.status.your_turn');
   else status = t('online.status.their_turn', { name: opponentName });
 
   const root = useRef<HTMLElement>(null);
@@ -348,7 +352,7 @@ function OnlineGameView({
         <div className="scoreboard" aria-label={t('game.score.label')}>
           <div className={`score score--ai${playing && !myTurn ? ' score--turn' : ''}`}>
             <span className="score__avatar" aria-hidden="true">
-              {opponentName.slice(0, 1)}
+              {Array.from(opponentName)[0]}
             </span>
             <span className="score__name">{opponentName}</span>
             <ScoreValue value={shown.stores[1]} />
@@ -358,7 +362,7 @@ function OnlineGameView({
           </p>
           <div className={`score score--you${myTurn ? ' score--turn' : ''}`}>
             <span className="score__avatar" aria-hidden="true">
-              {t('online.you').slice(0, 1)}
+              {Array.from(t('online.you'))[0]}
             </span>
             <span className="score__name">{t('online.you')}</span>
             <ScoreValue value={shown.stores[0]} />

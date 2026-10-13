@@ -1923,14 +1923,6 @@
     "message": "You vs {name}",
     "description": "Play online (games against other players): game page title; name = the opponent"
   },
-  "online.game.your_turn": {
-    "message": "Your turn.",
-    "description": "Play online (games against other players)"
-  },
-  "online.game.their_turn": {
-    "message": "Waiting for {name} to move…",
-    "description": "Play online (games against other players)"
-  },
   "online.game.waiting_accept": {
     "message": "Waiting for {name} to accept.",
     "description": "Play online (games against other players)"
@@ -1947,48 +1939,8 @@
     "message": "This game isn't available.",
     "description": "Play online (games against other players)"
   },
-  "online.result.win": {
-    "message": "You won {reason}.",
-    "description": "Play online (games against other players): result line; reason = how the game ended, e.g. 'on time'"
-  },
-  "online.result.loss": {
-    "message": "You lost {reason}.",
-    "description": "Play online (games against other players)"
-  },
-  "online.result.draw": {
-    "message": "Draw {reason}.",
-    "description": "Play online (games against other players)"
-  },
-  "online.reason.resigned": {
-    "message": "by resignation",
-    "description": "Play online (games against other players): how a game ended, completes 'You won …'"
-  },
-  "online.reason.timeout": {
-    "message": "on time",
-    "description": "Play online (games against other players): how a game ended, completes 'You won …'"
-  },
-  "online.reason.threshold": {
-    "message": "on points",
-    "description": "Play online (games against other players)"
-  },
-  "online.reason.no_feed": {
-    "message": "(no seeds to give)",
-    "description": "Play online (games against other players)"
-  },
-  "online.reason.endless_cycle": {
-    "message": "(endless cycle)",
-    "description": "Play online (games against other players)"
-  },
-  "online.reason.no_moves": {
-    "message": "(no moves left)",
-    "description": "Play online (games against other players)"
-  },
   "online.resign": {
     "message": "Resign",
-    "description": "Play online (games against other players)"
-  },
-  "online.resign.confirm": {
-    "message": "Resign this game? It counts as a loss.",
     "description": "Play online (games against other players)"
   },
   "online.resign.yes": {

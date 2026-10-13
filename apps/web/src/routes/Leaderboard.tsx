@@ -30,11 +30,13 @@ export function Leaderboard() {
   const [mine, setMine] = useState<MyRatings | null>(null);
   // The last answer, tagged with the board it's for: another pool or scope is still loading.
   const [loaded, setLoaded] = useState<{ key: string; board?: Board; error?: string } | null>(null);
-  const key = `${pool}|${scope}`;
-  const board = loaded?.key === key ? (loaded.board ?? null) : null;
-  const error = loaded?.key === key ? (loaded.error ?? null) : null;
   const country = user?.country ?? null;
   const needsCountry = scope === 'country' && !country;
+  // The country goes with the request: the server's copy may not have synced yet.
+  const boardCountry = scope === 'country' ? (country ?? undefined) : undefined;
+  const key = `${pool}|${scope}|${boardCountry ?? ''}`;
+  const board = loaded?.key === key ? (loaded.board ?? null) : null;
+  const error = loaded?.key === key ? (loaded.error ?? null) : null;
 
   const choose = (next: { pool?: string; scope?: LeaderboardScope }) => {
     const p = next.pool ?? pool;
@@ -63,20 +65,20 @@ export function Leaderboard() {
     if (needsCountry) return;
     let cancelled = false;
     void api()
-      .leaderboard(pool, scope)
-      .then((b) => !cancelled && setLoaded({ key: `${pool}|${scope}`, board: b }))
+      .leaderboard(pool, scope, boardCountry)
+      .then((b) => !cancelled && setLoaded({ key, board: b }))
       .catch(
         (e: unknown) =>
           !cancelled &&
           setLoaded({
-            key: `${pool}|${scope}`,
+            key,
             error: e instanceof ApiError ? e.code : 'network',
           }),
       );
     return () => {
       cancelled = true;
     };
-  }, [api, pool, scope, needsCountry]);
+  }, [api, pool, scope, boardCountry, key, needsCountry]);
 
   const youInTop = !!board?.you && board.entries.some((e) => e.rank === board.you!.rank);
 

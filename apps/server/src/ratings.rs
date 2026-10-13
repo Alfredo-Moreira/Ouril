@@ -8,6 +8,8 @@
 //! - Leaderboards are queries on `ratings`: players with enough recent rated games whose
 //!   deviation, grown for the time since their last rated game, is low enough to rank.
 
+use std::collections::HashMap;
+
 use ouril_engine::{variant, GameResult};
 use ouril_protocol::{
     Leaderboard, LeaderboardEntry, LeaderboardScope, MyRatings, PlayerSummary, PoolRating,
@@ -108,6 +110,14 @@ pub async fn rate_finished_game(conn: &mut PgConnection, game: &FinishedGame) ->
     if game.plies < 2 {
         return Ok(());
     }
+    // One game per pair at a time from here on, so two games between the same players
+    // finishing at once can't both read the old count below and both be rated. Under READ
+    // COMMITTED the count, a new statement, then sees whatever the other game committed.
+    let (low, high) = sorted(game.south, game.north);
+    sqlx::query("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))")
+        .bind(format!("ouril-rating-pair:{low}:{high}"))
+        .execute(&mut *conn)
+        .await?;
     let recent_between: i64 = sqlx::query_scalar(
         "SELECT count(*) FROM online_games
           WHERE rating_applied AND ended_at > $3 - interval '24 hours'
@@ -148,8 +158,16 @@ pub async fn rate_finished_game(conn: &mut PgConnection, game: &FinishedGame) ->
     Ok(())
 }
 
-/// Both players' rows in `pool`, created at the starting rating if missing, locked in a fixed
-/// order (by user ID) so two games finishing at once can't deadlock.
+fn sorted(a: Uuid, b: Uuid) -> (Uuid, Uuid) {
+    if a <= b {
+        (a, b)
+    } else {
+        (b, a)
+    }
+}
+
+/// Both players' rows in `pool`, created at the starting rating if missing, inserted and
+/// locked in a fixed order (by user ID) so games finishing at once can't deadlock.
 async fn lock_pair(
     conn: &mut PgConnection,
     cfg: &Config,
@@ -162,7 +180,10 @@ async fn lock_pair(
          SELECT u, $2, $3, $4, $5, $3 FROM unnest($1::uuid[]) AS u
          ON CONFLICT (user_id, pool) DO NOTHING",
     )
-    .bind(vec![a, b])
+    .bind({
+        let (low, high) = sorted(a, b);
+        vec![low, high]
+    })
     .bind(pool)
     .bind(cfg.initial.rating)
     .bind(cfg.initial.deviation)
@@ -203,7 +224,9 @@ async fn save(
         "UPDATE ratings
             SET rating = $3, deviation = $4, volatility = $5, games = games + 1,
                 wins = wins + $6, draws = draws + $7, losses = losses + $8,
-                peak = greatest(peak, $3), last_rated_at = $9
+                peak = greatest(peak, $3),
+                -- A timeout settled late ends in the past: never move this back.
+                last_rated_at = greatest(last_rated_at, $9)
           WHERE user_id = $1 AND pool = $2",
     )
     .bind(before.user_id)
@@ -241,24 +264,40 @@ pub async fn changes_for(
     game: Uuid,
     user: Uuid,
 ) -> AppResult<Vec<RatingChange>> {
-    let rows: Vec<(String, f64, f64)> = sqlx::query_as(
-        "SELECT pool, rating_before, rating_after FROM rating_changes
-          WHERE game_id = $1 AND user_id = $2
-          ORDER BY pool <> $3, pool",
+    Ok(changes_for_games(conn, &[game], user)
+        .await?
+        .remove(&game)
+        .unwrap_or_default())
+}
+
+/// `user`'s rating changes in each of `games`, overall pool first, in one query.
+pub async fn changes_for_games(
+    conn: &mut PgConnection,
+    games: &[Uuid],
+    user: Uuid,
+) -> AppResult<HashMap<Uuid, Vec<RatingChange>>> {
+    let mut out: HashMap<Uuid, Vec<RatingChange>> = HashMap::new();
+    if games.is_empty() {
+        return Ok(out);
+    }
+    let rows: Vec<(Uuid, String, f64, f64)> = sqlx::query_as(
+        "SELECT game_id, pool, rating_before, rating_after FROM rating_changes
+          WHERE game_id = ANY($1) AND user_id = $2
+          ORDER BY game_id, pool <> $3, pool",
     )
-    .bind(game)
+    .bind(games)
     .bind(user)
     .bind(RATING_POOL_OVERALL)
     .fetch_all(&mut *conn)
     .await?;
-    Ok(rows
-        .into_iter()
-        .map(|(pool, before, after)| RatingChange {
+    for (game, pool, before, after) in rows {
+        out.entry(game).or_default().push(RatingChange {
             pool,
             before: before.round() as i32,
             after: after.round() as i32,
-        })
-        .collect())
+        });
+    }
+    Ok(out)
 }
 
 /// `GET /v1/ratings/me`: the overall pool first, then the rest by name.
@@ -313,9 +352,9 @@ pub async fn leaderboard(
                AND r.games >= $2
                AND r.last_rated_at > $3 - make_interval(days => $4)
                AND ($5::text IS NULL OR u.country = $5)
-               AND sqrt(power(r.deviation / 173.7178, 2)
-                        + extract(epoch FROM ($3 - r.last_rated_at)) / 86400.0
-                          * power(r.volatility, 2)) * 173.7178 <= $6
+               AND sqrt(power(r.deviation / $9, 2)
+                        + extract(epoch FROM ($3 - r.last_rated_at)) / $10
+                          * power(r.volatility, 2)) * $9 <= $6
          )
          SELECT * FROM eligible WHERE rank <= $7 OR user_id = $8 ORDER BY rank",
     )
@@ -331,6 +370,8 @@ pub async fn leaderboard(
     .bind(cfg.provisional_deviation)
     .bind(i64::from(LEADERBOARD_SIZE))
     .bind(me)
+    .bind(glicko::SCALE)
+    .bind(glicko::PERIOD_SECS)
     .fetch_all(db)
     .await?;
     let entry = |r: &BoardRow| LeaderboardEntry {

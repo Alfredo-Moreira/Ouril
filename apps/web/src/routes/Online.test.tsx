@@ -162,7 +162,8 @@ describe('Play online', () => {
 
   it("waits during the opponent's turn and resigns from the menu after confirming", async () => {
     await signInLocally();
-    const api = onlineApi([game({ your_turn: false })], {
+    // North moves first, so it's Ana's turn on the board too.
+    const api = onlineApi([game({ your_turn: false, first_player: 'north' })], {
       gameAction: vi.fn(async () =>
         game({
           status: 'finished',

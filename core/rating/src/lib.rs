@@ -11,8 +11,9 @@
 //! Values are on the familiar scale (rating 1500, deviation 350); the Glicko-2 scale
 //! (μ, φ) is internal.
 
-/// Converts between the rating scale and Glicko-2's μ/φ scale (Glickman, step 2).
-const SCALE: f64 = 173.7178;
+/// Converts between the rating scale and Glicko-2's μ/φ scale (Glickman, step 2). Public so
+/// a database query can grow deviations with the same numbers ([`deviation_after`]).
+pub const SCALE: f64 = 173.7178;
 /// Convergence tolerance for the volatility iteration (Glickman, step 5).
 const EPSILON: f64 = 0.000_001;
 /// One rating period, in seconds (ADR 0034: one day).
@@ -116,15 +117,6 @@ fn expected(mu: f64, mu_j: f64, phi_j: f64) -> f64 {
     1.0 / (1.0 + (-g(phi_j) * (mu - mu_j)).exp())
 }
 
-/// The player's expected score (0 to 1) against `opponent`.
-pub fn expected_score(player: &Rating, opponent: &Rating) -> f64 {
-    expected(
-        (player.rating - 1500.0) / SCALE,
-        (opponent.rating - 1500.0) / SCALE,
-        opponent.deviation / SCALE,
-    )
-}
-
 /// The new volatility σ' (Glickman, step 5: the Illinois algorithm).
 fn new_volatility(tau: f64, phi: f64, sigma: f64, v: f64, delta: f64) -> f64 {
     let a = (sigma * sigma).ln();
@@ -201,7 +193,11 @@ pub fn update(
     // Step 5: the new volatility.
     let sigma_new = new_volatility(cfg.tau, phi, sigma, v, delta);
     // Step 6: the pre-period deviation, for the elapsed fraction of a period (1 = Glickman).
-    let phi_star = (phi * phi + elapsed_periods.max(0.0) * sigma_new * sigma_new).sqrt();
+    // Capped like `deviation_after`, so a long-absent player never moves more than a new one,
+    // and both sides of a game see the same uncertainty.
+    let phi_star = (phi * phi + elapsed_periods.max(0.0) * sigma_new * sigma_new)
+        .sqrt()
+        .min(cfg.max_deviation / SCALE);
     // Step 7: the new deviation and rating.
     let phi_new = 1.0 / (1.0 / (phi_star * phi_star) + 1.0 / v).sqrt();
     let mu_new = mu + phi_new * phi_new * sum;
@@ -234,13 +230,4 @@ pub fn rate_game(
         update(cfg, a.0, a.1, &[(b_now, score_a)]),
         update(cfg, b.0, b.1, &[(a_now, score_a.flip())]),
     )
-}
-
-/// What `player` would gain or lose against `opponent` for each result, rounded to whole
-/// points: `[win, draw, loss]`. For showing the stakes before a rated game.
-pub fn stakes(cfg: &Config, player: (&Rating, f64), opponent: (&Rating, f64)) -> [i32; 3] {
-    [Score::Win, Score::Draw, Score::Loss].map(|s| {
-        let (after, _) = rate_game(cfg, player, opponent, s);
-        (after.rating - player.0.rating).round() as i32
-    })
 }

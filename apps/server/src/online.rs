@@ -18,8 +18,8 @@ use ouril_engine::{
 };
 use ouril_protocol::{
     CreateGameRequest, GameList, MoveRequest, OnlineGame, OnlineGameResult, OnlineGameStatus,
-    OpponentList, OpponentSummary, PlayerSummary, Seat, INVITE_TTL_DAYS, MAX_OPEN_INVITES,
-    TURN_DEADLINE_DAYS,
+    OpponentList, OpponentSummary, PlayerSummary, RatingChange, Seat, INVITE_TTL_DAYS,
+    MAX_OPEN_INVITES, TURN_DEADLINE_DAYS,
 };
 use ouril_sync::{
     GameMode, GameRecord, GameRecordResult, RecordEndReason, RecordOpponent, VariantRef,
@@ -202,6 +202,16 @@ async fn summary(conn: &mut PgConnection, user_id: Uuid) -> AppResult<PlayerSumm
 
 /// The game as `me` sees it.
 async fn view(conn: &mut PgConnection, row: &Row, me: Uuid) -> AppResult<OnlineGame> {
+    view_with(conn, row, me, None).await
+}
+
+/// [`view`], with `me`'s rating changes already fetched (`None`: fetch them if needed).
+async fn view_with(
+    conn: &mut PgConnection,
+    row: &Row,
+    me: Uuid,
+    rating_changes: Option<Vec<RatingChange>>,
+) -> AppResult<OnlineGame> {
     let you = row.seat_of(me).ok_or_else(AppError::not_found)?;
     let opponent = match row.user_at(other(you)) {
         Some(id) => Some(summary(conn, id).await?),
@@ -220,10 +230,10 @@ async fn view(conn: &mut PgConnection, row: &Row, me: Uuid) -> AppResult<OnlineG
         _ => None,
     };
     let invited_by_you = row.south_user == me;
-    let rating_changes = if row.rating_applied {
-        ratings::changes_for(conn, row.id, me).await?
-    } else {
-        Vec::new()
+    let rating_changes = match rating_changes {
+        Some(c) => c,
+        None if row.rating_applied => ratings::changes_for(conn, row.id, me).await?,
+        None => Vec::new(),
     };
     Ok(OnlineGame {
         id: row.id.to_string(),
@@ -476,9 +486,10 @@ pub async fn create(db: &PgPool, me: Uuid, req: CreateGameRequest) -> AppResult<
 
 /// `GET /v1/games`: open and active games, plus the last `RECENT_DAYS` of the rest.
 pub async fn list(db: &PgPool, me: Uuid) -> AppResult<GameList> {
-    let mut tx = db.begin().await?;
     let now = OffsetDateTime::now_utc();
-    // Settle what time has decided first, in a fixed order (no deadlocks between players).
+    // Settle what time has decided first. Each game in its own transaction: settling a rated
+    // game locks the player's ratings, and holding those while locking the next game could
+    // deadlock with a request on that game (which locks the game, then the ratings).
     let due: Vec<Uuid> = sqlx::query_scalar(
         "SELECT id FROM online_games
           WHERE (south_user = $1 OR north_user = $1 OR invited_user = $1)
@@ -489,13 +500,16 @@ pub async fn list(db: &PgPool, me: Uuid) -> AppResult<GameList> {
     .bind(me)
     .bind(now)
     .bind(INVITE_TTL_DAYS as i32)
-    .fetch_all(&mut *tx)
+    .fetch_all(db)
     .await?;
     for id in due {
+        let mut tx = db.begin().await?;
         if let Some(mut row) = lock(&mut tx, id).await? {
             settle(&mut tx, &mut row, now).await?;
         }
+        tx.commit().await?;
     }
+    let mut tx = db.begin().await?;
     let rows: Vec<Row> = sqlx::query_as(concat!(
         "SELECT ",
         columns!(),
@@ -511,9 +525,17 @@ pub async fn list(db: &PgPool, me: Uuid) -> AppResult<GameList> {
     .bind(LIST_LIMIT)
     .fetch_all(&mut *tx)
     .await?;
+    // Every listed game's rating changes in one query, not one per game.
+    let rated: Vec<Uuid> = rows
+        .iter()
+        .filter(|r| r.rating_applied)
+        .map(|r| r.id)
+        .collect();
+    let mut changes = ratings::changes_for_games(&mut tx, &rated, me).await?;
     let mut games = Vec::with_capacity(rows.len());
     for row in &rows {
-        games.push(view(&mut tx, row, me).await?);
+        let mine = changes.remove(&row.id).unwrap_or_default();
+        games.push(view_with(&mut tx, row, me, Some(mine)).await?);
     }
     tx.commit().await?;
     Ok(GameList { games })

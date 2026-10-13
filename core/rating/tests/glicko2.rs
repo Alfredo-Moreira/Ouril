@@ -1,8 +1,7 @@
 //! Glicko-2 against Glickman's worked example, plus properties every update must keep.
 
 use ouril_rating::{
-    deviation_after, expected_score, periods, rate_game, stakes, update, Config, Rating, Score,
-    PERIOD_SECS,
+    deviation_after, periods, rate_game, update, Config, Rating, Score, PERIOD_SECS,
 };
 use proptest::prelude::*;
 
@@ -92,15 +91,18 @@ fn provisional_above_the_threshold() {
 }
 
 #[test]
-fn stakes_are_ordered_and_favour_the_underdog() {
+fn a_long_absence_never_moves_a_rating_more_than_a_new_players_first_game() {
     let cfg = Config::default();
-    let weak = r(1400.0, 80.0, 0.06);
-    let strong = r(1700.0, 80.0, 0.06);
-    let [win, draw, loss] = stakes(&cfg, (&weak, 0.0), (&strong, 0.0));
-    assert!(win > draw && draw > loss);
-    assert!(draw > 0, "a draw against a stronger player gains points");
-    assert!(win > -loss, "the underdog wins more than they risk");
-    assert!(expected_score(&weak, &strong) < 0.5);
+    let opponent = r(1500.0, 60.0, 0.06);
+    // A volatile player back after a year: their grown deviation is capped at 350.
+    let returning = r(1500.0, 290.0, 0.1);
+    let (back, _) = rate_game(&cfg, (&returning, 365.0), (&opponent, 0.0), Score::Win);
+    let new = cfg.initial;
+    let (first, _) = rate_game(&cfg, (&new, 0.0), (&opponent, 0.0), Score::Win);
+    assert!(
+        back.rating - 1500.0 <= first.rating - 1500.0 + 1e-6,
+        "{back:?} vs {first:?}"
+    );
 }
 
 proptest! {

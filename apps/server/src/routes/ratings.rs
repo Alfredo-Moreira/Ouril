@@ -1,16 +1,12 @@
 //! `/v1/ratings/me` and `/v1/leaderboard`: ratings and leaderboards (ADR 0034, auth required).
 
-use axum::{
-    extract::{Query, State},
-    routing::get,
-    Json, Router,
-};
+use axum::{extract::State, routing::get, Json, Router};
 use ouril_protocol::{Leaderboard, LeaderboardScope, MyRatings};
 use serde::Deserialize;
 
 use crate::{
     auth::AuthUser,
-    error::{AppError, AppResult},
+    error::{ApiQuery, AppError, AppResult},
     ratings,
     state::AppState,
     validate,
@@ -38,7 +34,7 @@ struct BoardQuery {
 async fn leaderboard(
     State(state): State<AppState>,
     auth: AuthUser,
-    Query(q): Query<BoardQuery>,
+    ApiQuery(q): ApiQuery<BoardQuery>,
 ) -> AppResult<Json<Leaderboard>> {
     if !ratings::is_valid_pool(&q.pool) {
         return Err(AppError::bad_request("unknown pool"));
