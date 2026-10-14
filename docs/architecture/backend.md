@@ -212,16 +212,16 @@ Rules:
 
 ## Realtime
 
-Not built; [ADR 0033](../decisions/0033-live-games-http-moves-and-relay.md) (Proposed). Players send everything to this server over HTTP; the homelab relay only carries the server's messages back out ([deployment](deployment.md#the-homelab)).
+Built, per [ADR 0033](../decisions/0033-live-games-http-moves-and-relay.md) (Proposed). Players send everything to this server over HTTP; the homelab relay (`apps/relay`, [relay API](../../apps/relay/API.md), [deployment](deployment.md#the-homelab)) only tells them when to look again. Contract: [server API, live games](../../apps/server/API.md#live-games).
 
-- **Client → server (HTTP):** `POST /v1/games/{id}/moves {ply, pit}`, resign, draw offers, abort, seeks (`/v1/live/seek`), and a relay token (`POST /v1/live/token`).
-- **Server → relay (HTTP, API key):** after each committed change, publish to `game:<id>` (`moved {ply, pit, clocks, server_now}`, `game_over {result}`, draw offers) or `user:<id>` (`matched {game_id}`, invitations).
-- **Relay → client (WebSocket):** the same messages, to subscribers whose token allows that channel. Tokens are short-lived, signed by this server, and limited to the player's own game and user channels.
-- **Fallback:** without the relay, clients poll `GET /v1/games/{id}` (every second while a live game is on screen), as turn-by-turn games do.
+- **Client → server (HTTP):** `POST /v1/games/{id}/moves {ply, pit}`, resign, abort (`/v1/games/{id}/abort`), seeks (`/v1/live/seek`), and a relay token (`POST /v1/live/token`).
+- **Server → relay (HTTP, API key):** after each committed change, in the background (`src/relay.rs`; a failure is only logged): `game_changed {game_id, moves}` to `game:<id>`, `games_changed` to the opponent's `user:<id>`, `matched {game_id}` to a waiting seeker. **IDs and counts only**: the relay never sees a game or a name.
+- **Relay → client (WebSocket):** those events, to subscribers whose token lists the channel. Tokens are HS256 with `RELAY_TOKEN_SECRET`, valid 10 minutes, limited to the player's own `user:` channel and a game they play. On an event, clients fetch the game from this server.
+- **Fallback:** without the relay (not configured, or the homelab is down), clients poll `GET /v1/games/{id}`: every second while a live game is on screen, every 2 s while waiting for an async move. With the relay, every 10 s as a safety net.
 - Each move carries its **ply number**, so the server rejects stale or duplicate moves (idempotent). Clients apply their own move **optimistically** with the same engine.
-- **Clocks:** each live game stores both players' remaining time, the increment and `turn_started_at`. A move deducts the elapsed server time and adds the increment; a side out of time loses, settled whenever the game is next read or written (as async deadlines are, [ADR 0031](../decisions/0031-online-games-over-http.md)). Responses include `server_now`.
-- **Matchmaking:** a `seeks` table. A new seek looks for a compatible waiting one in the same transaction (`FOR UPDATE SKIP LOCKED`) within a rating window that widens with waiting time; seeks without a recent heartbeat are ignored.
-- **Async** games use `POST /v1/games/{id}/moves` over HTTP (built). Push notifications are still to come.
+- **Clocks:** `online_games` stores each side's time left at the start of the turn (`clock_south_ms`, `clock_north_ms`), the clock (`initial_ms`, `increment_ms`) and `turn_started_at`; `turn_deadline` is when time decides the game (a flag fall, or the first-move window). Clocks run once both players have moved. A move deducts the elapsed server time and adds the increment; a flag fall or a missing first move is settled whenever the game is next read or written (as async deadlines are, [ADR 0031](../decisions/0031-online-games-over-http.md)), so nothing runs between requests. Responses include `server_now`.
+- **Matchmaking** (`src/live.rs`): a `seeks` table, one row per player. A seek looks for the oldest compatible one in the same transaction (`FOR UPDATE SKIP LOCKED`), within a rating window that widens with the other player's waiting time; seeks without a heartbeat in 30 s are ignored. A match creates and starts the game, and both seeks point at it until the players pick it up.
+- **Async** games use the same endpoints (built). Push notifications are still to come.
 
 ### Scheduled jobs
 

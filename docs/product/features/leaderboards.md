@@ -10,7 +10,7 @@
   | Pool | Counts |
   |---|---|
   | `overall` | Every rated game, any variant and mode |
-  | `<variant>:<mode>` | Rated games of that variant and mode, for example `cv.standard:async` or `cv.across:live` |
+  | `<variant>:<mode>` | Rated games of that variant and mode: turn by turn (`cv.standard:async`) or live (`cv.across:live`, [multiplayer](multiplayer.md#live-games)) |
 
   A rated game updates both players' `overall` rating and the rating of its own pool.
 - **Starting values and constants** (to tune with real games):

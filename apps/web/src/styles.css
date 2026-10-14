@@ -2621,3 +2621,35 @@ a.pay:active {
 .leaderboard__gap td {
   border-top: 2px dashed var(--line-strong);
 }
+
+/* --- Live games (ADR 0033) -------------------------------------------------------------------- */
+
+/* A clock sits on its own row under the name and score. */
+.score__clock {
+  grid-column: 1 / -1;
+  justify-self: end;
+  padding: 0.1rem 0.55rem;
+  border-radius: var(--radius-s);
+  background: var(--surface-2);
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+  font-size: 1rem;
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+
+.score__clock--running {
+  background: var(--ink);
+  color: var(--surface);
+}
+
+.score__clock--low.score__clock--running {
+  background: var(--danger);
+  color: #fff;
+}
+
+.play-now .row {
+  flex-wrap: wrap;
+}

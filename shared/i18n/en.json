@@ -2202,5 +2202,57 @@
   "privacy.account.6": {
     "message": "Rated games against other players give you a rating, which we keep with your results. If you have played enough rated games recently, other signed-in players can see your display name, handle, country and rating on the leaderboards.",
     "description": "Privacy policy, account section"
+  },
+  "online.status.aborted": {
+    "message": "Game called off: a player didn't make their first move in time.",
+    "description": "Play online: live games (ADR 0033)"
+  },
+  "online.abort": {
+    "message": "Call off the game",
+    "description": "Play online: live games (ADR 0033): game menu, before both players have moved"
+  },
+  "online.first_move": {
+    "message": "Make your first move within {seconds} seconds, or the game is called off.",
+    "description": "Play online: live games (ADR 0033)"
+  },
+  "online.clock": {
+    "message": "Time left: {time}",
+    "description": "Play online: live games (ADR 0033): a player's clock, for screen readers"
+  },
+  "online.time_control": {
+    "message": "{minutes} + {increment}",
+    "description": "Play online: live games (ADR 0033): a clock, minutes each plus seconds per move, e.g. 5 + 3"
+  },
+  "online.pace": {
+    "message": "Game pace",
+    "description": "Play online: live games (ADR 0033): lobby, for new invitations"
+  },
+  "online.pace.async": {
+    "message": "Turn by turn (3 days a move)",
+    "description": "Play online: live games (ADR 0033)"
+  },
+  "online.pace.live": {
+    "message": "Live {clock}",
+    "description": "Play online: live games (ADR 0033): e.g. Live 5 + 3"
+  },
+  "online.play_now": {
+    "message": "Play now",
+    "description": "Play online: live games (ADR 0033)"
+  },
+  "online.play_now.intro": {
+    "message": "Pick a clock and play someone near your level, live.",
+    "description": "Play online: live games (ADR 0033)"
+  },
+  "online.play_now.looking": {
+    "message": "Looking for an opponent for {clock}…",
+    "description": "Play online: live games (ADR 0033)"
+  },
+  "online.play_now.players": {
+    "message": "{count, plural, one {# player looking} other {# players looking}}",
+    "description": "Play online: live games (ADR 0033)"
+  },
+  "privacy.processors.6": {
+    "message": "Live games use a relay that we run ourselves (at ouril-live.moreiralabs.org, behind Cloudflare, a United States company) to tell your device the moment your opponent moves. It only passes on notices that a game changed, never the game itself or your name. Cloudflare and the relay see your IP address while you're connected; the relay keeps nothing about who connected.",
+    "description": "Privacy policy, processors section"
   }
 }

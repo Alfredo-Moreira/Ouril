@@ -82,6 +82,9 @@ docker compose up db server web
 | `just test-core` | Rust core tests, including every test vector and the property tests |
 | `just test-server` | Server unit and integration tests against the compose Postgres (with `dev-auth`) |
 | `just test-web` | Rebuild the WASM package, then run the Vitest suite |
+| `just test-relay` | The live-game relay's tests (tokens, channels, publishing, limits, over real WebSockets) |
+| `just relay` | Run the relay on <http://localhost:8090> (set the `RELAY_*` values from `.env.example` in `.env` first) |
+| `just build-relay-image` | Build the relay's homelab image for this machine |
 | `just lint` / `just fmt` | rustfmt, clippy (warnings are errors), ESLint, Prettier and tsc / format Rust and web code |
 | `just bindings` | Build `core/wasm/pkg` (WASM only for now; UniFFI comes with iOS/Android) |
 | `just protocol-ts` | Export the API and core TypeScript types to `apps/web/src/generated/protocol/` |

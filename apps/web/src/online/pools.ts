@@ -1,14 +1,14 @@
 /**
- * Rating pools (ADR 0034): `overall`, or `<variant_id>:<mode>`. Only turn-by-turn games
- * exist so far, so the boards offer the overall pool and each variant's `async` pool.
+ * Rating pools (ADR 0034): `overall`, or `<variant_id>:<mode>`: turn by turn (`async`) or
+ * live (ADR 0033).
  */
 import { RATING_POOL_OVERALL } from '../api/types';
 import { PLAYABLE_VARIANTS } from '../game/session';
 
 export type RatingMode = 'async' | 'live';
 
-/** The modes players can be rated in today (`live` comes with live games). */
-export const RATED_MODES: readonly RatingMode[] = ['async'];
+/** The modes players can be rated in. */
+export const RATED_MODES: readonly RatingMode[] = ['async', 'live'];
 
 /** Every pool a board can show: overall first, then each variant and mode. */
 export const BOARD_POOLS: readonly string[] = [

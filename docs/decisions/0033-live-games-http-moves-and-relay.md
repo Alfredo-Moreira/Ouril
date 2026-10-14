@@ -16,7 +16,7 @@
 - **Matchmaking is a Postgres table** of open seeks, paired in a transaction (`FOR UPDATE SKIP LOCKED`) within a rating window that widens with waiting time. The relay tells waiting players when they're matched.
 - No Redis for live games. Server-side WebSockets and per-game tasks (ADR 0005) aren't used on this hosting.
 
-See [multiplayer](../product/features/multiplayer.md#live-games-planned) and [backend](../architecture/backend.md#realtime).
+See [multiplayer](../product/features/multiplayer.md#live-games) and [backend](../architecture/backend.md#realtime).
 
 ## Alternatives considered
 

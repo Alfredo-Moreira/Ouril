@@ -73,6 +73,10 @@ Every non-2xx response has the body `ApiError`:
 | `POST` | `/v1/games/join` | Bearer | `JoinGameRequest` | `200 OnlineGame` · `404` unknown or used link · `400` your own link |
 | `GET` | `/v1/games/{id}` | Bearer | — | `200 OnlineGame` · `404` not yours |
 | `POST` | `/v1/games/{id}/accept`, `/decline`, `/cancel`, `/resign` | Bearer | `{}` | `200 OnlineGame` · `409 conflict` |
+| `POST` | `/v1/games/{id}/abort` | Bearer | `{}` | `200 OnlineGame` (a live game before both players moved) · `409 conflict` |
+| `POST` | `/v1/live/seek` | Bearer | `SeekRequest` | `200 SeekStatus` · `400` unknown clock or variant |
+| `GET` / `DELETE` | `/v1/live/seek` | Bearer | — | `200 SeekStatus` |
+| `POST` | `/v1/live/token` | Bearer | `LiveTokenRequest` | `200 LiveToken` · `404` a game you're not in · `501 not_configured` without a relay |
 | `POST` | `/v1/games/{id}/moves` | Bearer | `MoveRequest` | `200 OnlineGame` · `400` illegal move · `409 conflict` |
 | `GET` | `/v1/opponents` | Bearer | — | `200 OpponentList` |
 | `GET` | `/v1/ratings/me` | Bearer | — | `200 MyRatings` |
@@ -210,11 +214,24 @@ Response, one entry per mutation in request order:
 Turn-by-turn games through the server ([ADR 0031](../../docs/decisions/0031-online-games-over-http.md)). Types in `core/protocol` (`OnlineGame`, `CreateGameRequest`, `MoveRequest`, …).
 
 - **Start:** `POST /v1/games` with `opponent_handle` (`"@ana"` or `"ana"`) or `opponent_id` (a past opponent) invites that player; with neither, it makes an invite link: the response's `invite_code` (shown to the inviter only) goes in `/join/<code>`, and `POST /v1/games/join` accepts it once. At most 20 open invitations per player. The inviter plays South; `first_player` is a coin toss.
-- **Lifecycle (`status`):** `invited` → `active` (accepted) → `finished`; or `declined` (by the invited player), `cancelled` (by the inviter, or when either deletes their account) and `expired` (nobody accepted within 7 days).
+- **Lifecycle (`status`):** `invited` → `active` (accepted) → `finished`; or `declined` (by the invited player), `cancelled` (by the inviter, or when either deletes their account), `expired` (nobody accepted within 7 days) and, for live games, `aborted`.
 - **Moves:** `{ "ply": N, "pit": P }`, where `N` is the number of moves already played. The server checks that you're to move and that the engine accepts the pit. Sending the same move again for a `ply` already played returns the game unchanged (safe retries); a different one is `409 conflict`. `moves` in `OnlineGame` replays with the engine (`first_player`, `variant_id@variant_version`).
 - **Deadlines:** 3 days per move (`turn_deadline`). The server settles a game whenever it's read or written: past the deadline, the player to move loses (`result.reason = "timeout"`).
 - **Finishing:** by the rules, `resign`, or a timeout. Each player then gets a format-3 game record through sync pull (`mode: "vs_player"`, `opponent`, `human_player` = their side), and the game counts in `/v1/opponents`. `game_finished` pushes with `mode: "vs_player"`, an `opponent` or `reason: "timeout"` are rejected (`invalid_payload`): only the server writes them.
 - **Polling:** there are no live connections. The web app asks for an open game every 2 s while waiting for the opponent (15 s otherwise), and for the list every 10 s.
+
+### Live games
+
+Games with a clock ([ADR 0033](../../docs/decisions/0033-live-games-http-moves-and-relay.md)), on the same `/v1/games…` endpoints as turn-by-turn games. Types in `core/protocol` (`TimeControl`, `Clocks`, `SeekRequest`, `SeekStatus`, `LiveToken`).
+
+- **Starting:** `CreateGameRequest.time_control` (one of `LIVE_TIME_CONTROLS`: 3 + 2, 5 + 3, 10 + 5, as `initial_secs` and `increment_secs`) makes an invitation live; or matchmaking pairs two seeks (below). Any other clock is `400`.
+- **`OnlineGame`:** `mode` (`async` or `live`), `time_control`, `clocks` and `server_now` (always, so clients can correct for their own clock).
+  - `clocks.south_ms` / `north_ms` are each side's time left **when the current turn started** (`clocks.turn_started_at`); the side to move is down by the time since. `clocks.running` is false until both players have moved: the first two moves cost no time.
+  - A move takes the elapsed server time off the mover's clock and adds the increment.
+- **Settled on access, no timers:** like async deadlines, any read or write of the game settles it. A side whose time is up loses (`reason: "timeout"`, their clock shows 0). A game where a player doesn't make their first move within `LIVE_FIRST_MOVE_SECS` (30) becomes `aborted`: no result, no history, no rating. Before both have moved, `POST /v1/games/{id}/abort` calls the game off.
+- **Ratings:** rated live games count in `overall` and `<variant>:live`.
+- **Matchmaking:** `POST /v1/live/seek {time_control, variant_id?, rated?}` records your seek and pairs it, in one transaction, with the oldest compatible one: same variant, clock and rated choice, a heartbeat in the last `SEEK_STALE_SECS` (30), and a rating (in the variant's live pool) within ± 150, widening by 50 every 5 s the other player has waited, open to anyone after 30 s. The answer is `waiting` or `matched` with `game_id`; the player who waited sits South. Repeat the request every few seconds while waiting (it's the heartbeat and keeps your waiting time). `GET` reports your seek; `DELETE` stops looking. `players_seeking` counts fresh, unpaired seeks.
+- **Relay:** after every change, the server publishes to the live-game relay on the homelab: `game_changed` to the game's channel, `games_changed` to the opponent's, `matched` to the player who was waiting. Events carry IDs and counts only. `POST /v1/live/token {game_id?}` returns a short-lived token for your own channel and, if you play it, that game's, plus the relay's WebSocket URL. Contract: [relay API](../relay/API.md). Without `RELAY_URL`, `RELAY_API_KEY` and `RELAY_TOKEN_SECRET` the server publishes nothing and the token endpoint is `501`; clients then poll.
 
 ### Ratings and leaderboards
 
@@ -229,7 +246,7 @@ Glicko-2 ratings for games against other players ([ADR 0034](../../docs/decision
 
 ## Configuration
 
-See [`.env.example`](../../.env.example). Required: `DATABASE_URL`, `JWT_SECRET` (≥ 32 bytes). Empty OAuth variables mean "not configured"; a partial `APPLE_*` set also counts as not configured. Optional extras with defaults: `DB_MAX_CONNECTIONS` (10) and `LOG_FORMAT` (`json` for JSON log lines; anything else is human-readable).
+See [`.env.example`](../../.env.example). Required: `DATABASE_URL`, `JWT_SECRET` (≥ 32 bytes). Empty OAuth variables mean "not configured"; a partial `APPLE_*` set also counts as not configured. Optional extras with defaults: `DB_MAX_CONNECTIONS` (10) and `LOG_FORMAT` (`json` for JSON log lines; anything else is human-readable). The live-game relay needs `RELAY_URL` (https in release builds), `RELAY_API_KEY` and `RELAY_TOKEN_SECRET` (each at least 32 bytes; the token secret must differ from `JWT_SECRET`); a partial set is "not configured". `RELAY_WS_URL` overrides the WebSocket URL given to clients (local development).
 
 Release builds refuse to start when `JWT_SECRET` is the `.env.example` value or contains `dev-only` / `change-me`, or when `ALLOWED_ORIGINS` lists an `http://` origin other than loopback (`localhost`, `127.0.0.1`, `[::1]`). `CLIENT_IP_HEADER` (`x-real-ip` on Vercel) names the header the rate limiter trusts for the client address; `FLY_APP_NAME` makes it trust `Fly-Client-IP`. Otherwise only the TCP peer address counts.
 

@@ -12,7 +12,7 @@ export const PRIVACY = {
   /** Where privacy questions and deletion requests go. */
   email: 'devops.moreira@gmail.com',
   /** Date of the last change, ISO `YYYY-MM-DD`. */
-  updated: '2026-10-13',
+  updated: '2026-10-14',
   /** Longest time deleted data can survive in database backups. */
   backupDays: 30,
 } as const;
@@ -29,7 +29,7 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
   { id: 'account', paragraphs: 6 },
   { id: 'usage', paragraphs: 3 },
   { id: 'use', paragraphs: 2 },
-  { id: 'processors', paragraphs: 5 },
+  { id: 'processors', paragraphs: 6 },
   { id: 'retention', paragraphs: 3 },
   { id: 'rights', paragraphs: 2 },
   { id: 'children', paragraphs: 1 },

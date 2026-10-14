@@ -3,15 +3,34 @@ import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router';
 
 import { ApiError } from '../api/client';
-import type { OnlineGame, OpponentSummary } from '../api/types';
+import {
+  LIVE_TIME_CONTROLS,
+  type OnlineGame,
+  type OpponentSummary,
+  type RelayEvent,
+  type SeekStatus,
+  type TimeControl,
+} from '../api/types';
 import { trackInvite, trackInviteAnswer } from '../online/analytics';
 import { inviteLink } from '../online/links';
 import { resultFor } from '../online/perspective';
 import { usePolling } from '../online/usePolling';
+import { useRelay } from '../online/useRelay';
 import { useApp } from '../state/useApp';
 
 /** How often the games list refreshes while it's open. */
 const LIST_POLL_MS = 10_000;
+/** While looking for a live opponent: the heartbeat that keeps the seek alive (and pairs). */
+const SEEK_HEARTBEAT_MS = 3_000;
+
+const tcKey = (tc: TimeControl) => `${tc.initial_secs}+${tc.increment_secs}`;
+
+/** `5 + 3`, translated. */
+function useClockLabel() {
+  const { t } = useTranslation();
+  return (tc: TimeControl) =>
+    t('online.time_control', { minutes: tc.initial_secs / 60, increment: tc.increment_secs });
+}
 
 /**
  * The Online tab of the Game page (`/game?tab=online`, signed-in players, ADR 0031): invite
@@ -29,6 +48,10 @@ export function OnlineLobby() {
   const [busy, setBusy] = useState(false);
   // New invitations are rated unless the player turns it off (ADR 0034).
   const [rated, setRated] = useState(true);
+  // Turn by turn (`async`), or a live clock's key (ADR 0033).
+  const [pace, setPace] = useState('async');
+  const timeControl = LIVE_TIME_CONTROLS.find((tc) => tcKey(tc) === pace);
+  const clockLabel = useClockLabel();
 
   const refresh = useCallback(() => {
     void api()
@@ -48,6 +71,16 @@ export function OnlineLobby() {
       .catch(() => undefined);
   }, [api, refresh]);
   usePolling(refresh, LIST_POLL_MS);
+  // Invitations and answers show up at once through the relay, when it's there.
+  useRelay(
+    null,
+    useCallback(
+      (e: RelayEvent) => {
+        if (e.type === 'games_changed') refresh();
+      },
+      [refresh],
+    ),
+  );
 
   /** Run an action; on success track it (`onDone`) and open the game or refresh the list. */
   const run = async (action: () => Promise<OnlineGame>, onDone?: () => void, open = false) => {
@@ -81,13 +114,26 @@ export function OnlineLobby() {
           <span>{t('online.rated')}</span>
         </label>
         <p className="note">{t(rated ? 'online.rated.on' : 'online.rated.off')}</p>
+        <label className="field">
+          <span>{t('online.pace')}</span>
+          <select value={pace} onChange={(e) => setPace(e.target.value)}>
+            <option value="async">{t('online.pace.async')}</option>
+            {LIVE_TIME_CONTROLS.map((tc) => (
+              <option key={tcKey(tc)} value={tcKey(tc)}>
+                {t('online.pace.live', { clock: clockLabel(tc) })}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
+
+      <PlayNow rated={rated} />
 
       <InviteForm
         busy={busy}
         onInvite={(handle) =>
           run(
-            () => api().createGame({ opponent_handle: handle, rated }),
+            () => api().createGame({ opponent_handle: handle, rated, time_control: timeControl }),
             () => trackInvite('handle'),
           )
         }
@@ -99,7 +145,7 @@ export function OnlineLobby() {
           disabled={busy}
           onClick={() =>
             void run(
-              () => api().createGame({ rated }),
+              () => api().createGame({ rated, time_control: timeControl }),
               () => trackInvite('link'),
             )
           }
@@ -218,7 +264,12 @@ export function OnlineLobby() {
                   disabled={busy}
                   onClick={() =>
                     void run(
-                      () => api().createGame({ opponent_id: o.player.user_id, rated }),
+                      () =>
+                        api().createGame({
+                          opponent_id: o.player.user_id,
+                          rated,
+                          time_control: timeControl,
+                        }),
                       () => trackInvite('opponent'),
                     )
                   }
@@ -231,6 +282,115 @@ export function OnlineLobby() {
         </section>
       )}
     </div>
+  );
+}
+
+/**
+ * Play now (ADR 0033): pick a clock and be paired with someone looking for the same game,
+ * near your rating. Repeats the seek as a heartbeat while waiting; the relay (or the next
+ * heartbeat) says when a partner is found, and the game opens.
+ */
+function PlayNow({ rated }: { rated: boolean }) {
+  const { t } = useTranslation();
+  const { api } = useApp();
+  const navigate = useNavigate();
+  const clockLabel = useClockLabel();
+  const [seeking, setSeeking] = useState<TimeControl | null>(null);
+  const [players, setPlayers] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+
+  const matched = useCallback(
+    (gameId: string) => {
+      setSeeking(null);
+      // Picked up: forget the seek, then open the game.
+      void api()
+        .cancelSeek()
+        .catch(() => undefined);
+      navigate(`/online/${gameId}`);
+    },
+    [api, navigate],
+  );
+  const handle = useCallback(
+    (st: SeekStatus) => {
+      setPlayers(st.players_seeking);
+      if (st.state === 'matched' && st.game_id) matched(st.game_id);
+    },
+    [matched],
+  );
+  const send = useCallback(() => {
+    if (!seeking) return;
+    void api()
+      .seek({ time_control: seeking, rated })
+      .then(handle)
+      .catch((e: unknown) => {
+        setSeeking(null);
+        setError(e instanceof ApiError ? e.code : 'network');
+      });
+  }, [api, seeking, rated, handle]);
+
+  useEffect(send, [send]);
+  usePolling(send, seeking ? SEEK_HEARTBEAT_MS : null);
+  useRelay(
+    null,
+    useCallback(
+      (e: RelayEvent) => {
+        if (e.type === 'matched') matched(e.game_id);
+      },
+      [matched],
+    ),
+    seeking !== null,
+  );
+  // Leaving the page while looking: stop looking.
+  useEffect(() => {
+    if (!seeking) return;
+    return () => {
+      void api()
+        .cancelSeek()
+        .catch(() => undefined);
+    };
+  }, [api, seeking]);
+
+  return (
+    <section className="card play-now" aria-labelledby="play-now-title">
+      <h2 id="play-now-title" className="card__title">
+        {t('online.play_now')}
+      </h2>
+      {seeking ? (
+        <>
+          <p role="status">
+            {t('online.play_now.looking', { clock: clockLabel(seeking) })}{' '}
+            <span className="note">{t('online.play_now.players', { count: players })}</span>
+          </p>
+          <button type="button" className="button" onClick={() => setSeeking(null)}>
+            {t('common.cancel')}
+          </button>
+        </>
+      ) : (
+        <>
+          <p className="note">{t('online.play_now.intro')}</p>
+          <div className="row">
+            {LIVE_TIME_CONTROLS.map((tc) => (
+              <button
+                key={tcKey(tc)}
+                type="button"
+                className="button"
+                onClick={() => {
+                  setError(null);
+                  setSeeking(tc);
+                }}
+              >
+                {clockLabel(tc)}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+      {error && (
+        <p className="error" role="alert">
+          {t(`error.${error}`, { defaultValue: t('error.internal') })}
+        </p>
+      )}
+    </section>
   );
 }
 
@@ -336,6 +496,17 @@ function GameSummary({ game }: { game: OnlineGame }) {
       {game.opponent?.handle && <span className="note"> @{game.opponent.handle}</span>}
       {detail && <span className="note"> · {detail}</span>}
       {game.rated === false && <span className="note"> · {t('online.casual')}</span>}
+      {game.mode === 'live' && game.time_control && (
+        <span className="note">
+          {' · '}
+          {t('online.pace.live', {
+            clock: t('online.time_control', {
+              minutes: game.time_control.initial_secs / 60,
+              increment: game.time_control.increment_secs,
+            }),
+          })}
+        </span>
+      )}
     </span>
   );
 }

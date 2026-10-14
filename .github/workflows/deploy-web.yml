@@ -11,6 +11,9 @@
 # VERCEL_ORG_ID and VERCEL_PROJECT_ID, and in the `production` environment the secrets
 # DATABASE_URL (Neon's direct connection string, ADR 0027), JWT_SECRET (`openssl rand -base64 48`)
 # and GOOGLE_CLIENT_ID. Until VERCEL_TOKEN exists, this workflow skips the deploy.
+# The live-game relay on the homelab (ADR 0032, 0033) is optional: the variable RELAY_URL
+# (https://ouril-live.moreiralabs.org) and the secrets RELAY_API_KEY and RELAY_TOKEN_SECRET (the
+# same values as deploy/homelab/.env). Without all three, live games work by polling.
 name: Deploy
 
 on:
@@ -50,6 +53,9 @@ jobs:
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
       GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID || vars.GOOGLE_CLIENT_ID }}
       ALLOWED_ORIGINS: ${{ vars.ALLOWED_ORIGINS || 'https://ouril.vercel.app' }}
+      RELAY_URL: ${{ vars.RELAY_URL }}
+      RELAY_API_KEY: ${{ secrets.RELAY_API_KEY }}
+      RELAY_TOKEN_SECRET: ${{ secrets.RELAY_TOKEN_SECRET }}
     steps:
       - name: Check the setup
         id: setup
@@ -148,6 +154,9 @@ jobs:
             --env JWT_SECRET="$JWT_SECRET" \
             --env GOOGLE_CLIENT_ID="$GOOGLE_CLIENT_ID" \
             --env ALLOWED_ORIGINS="$ALLOWED_ORIGINS" \
+            --env RELAY_URL="$RELAY_URL" \
+            --env RELAY_API_KEY="$RELAY_API_KEY" \
+            --env RELAY_TOKEN_SECRET="$RELAY_TOKEN_SECRET" \
             --env CLIENT_IP_HEADER=x-real-ip \
             --env PORT=8080 \
             --env LOG_FORMAT=json \
