@@ -790,6 +790,11 @@ pub struct LeaderboardEntry {
     pub country: Option<String>,
     pub rating: i32,
     pub games: u32,
+    /// Places gained since `Leaderboard::movement_since` (negative: places lost). Absent:
+    /// new to the board since then, or no earlier snapshot.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub change: Option<i32>,
 }
 
 /// `GET /v1/leaderboard?pool=…&scope=world|country[&country=cv]`.
@@ -808,6 +813,15 @@ pub struct Leaderboard {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[cfg_attr(feature = "ts", ts(optional))]
     pub you: Option<LeaderboardEntry>,
+    /// The day (`YYYY-MM-DD`, UTC) movement is measured from: the latest snapshot before
+    /// today. Absent: no snapshot yet (the scheduled job hasn't run).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub movement_since: Option<String>,
+    /// Your best rank ever on this board (from daily snapshots).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub your_best_rank: Option<u32>,
 }
 
 // ---------------------------------------------------------------------------------------
@@ -1219,8 +1233,11 @@ mod tests {
                     country: Some("cv".into()),
                     rating: 1612,
                     games: 14,
+                    change: None,
                 }],
                 you: None,
+                movement_since: None,
+                your_best_rank: None,
             },
             json!({
                 "pool": "overall",

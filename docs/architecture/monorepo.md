@@ -19,7 +19,8 @@ ouril/
 │   ├── ios/                # SwiftUI app (Xcode); uses the core as an XCFramework via SPM     (not started)
 │   ├── android/            # Kotlin + Jetpack Compose (Gradle); core .so + Kotlin bindings     (not started)
 │   ├── web/                # TypeScript + React (Vite, PWA); uses core/wasm/pkg                ✅ built
-│   ├── relay/              # Rust (Axum): live-game WebSocket relay on the homelab (ADR 0032); API.md, Dockerfile ✅ built
+│   ├── relay/              # Rust (Axum): live-game WebSocket relay on the homelab (ADR 0032); API.md ✅ built
+│   ├── jobs/               # Rust: scheduled jobs on the homelab, calls /v1/internal/jobs/* hourly (ADR 0032) ✅ built
 │   │   ├── vercel.json     # the web and api services, SPA routing, CSP and security headers (ADR 0030)
 │   │   └── scripts/gen-i18n.mjs  # interim: shared/i18n → src/generated/i18n (until tools/i18n-gen)
 │   └── server/             # Rust (Axum): auth + accounts + sync; API.md, migrations/,        ✅ built
@@ -36,7 +37,7 @@ ouril/
 ├── .devcontainer/          # Dev Container using the toolbox image
 ├── deploy/
 │   └── homelab/            # (ADR 0032) build-and-push.sh, docker-compose.homelab.yml, .env.example, VERSION:
-│                           #   the live-game relay and scheduled jobs, built multi-arch and deployed like the home-lab repo
+│                           #   Dockerfile for both; the relay and the jobs, built multi-arch and deployed like the home-lab repo
 ├── compose.yaml            # local stack: db (Postgres 18), server, web, toolbox (profile `tools`)
 ├── .env.example            # server config template; copy to .env (never committed)
 ├── Cargo.toml              # Rust workspace root (core/* + apps/server; tools/* later)

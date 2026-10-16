@@ -43,6 +43,9 @@ pub struct Config {
     /// The live-game relay on the homelab (ADR 0032, 0033). `None` = not configured: live
     /// games still work by polling, and `POST /v1/live/token` answers 501.
     pub relay: Option<RelayConfig>,
+    /// Bearer token for `POST /v1/internal/jobs/*` (`JOBS_TOKEN`), shared with `ouril-jobs` on
+    /// the homelab (ADR 0032). `None` = the jobs route doesn't exist (404).
+    pub jobs_token: Option<String>,
 }
 
 /// The realtime relay: where it is and the two secrets shared with it.
@@ -174,6 +177,10 @@ impl fmt::Debug for Config {
                 &self.rate_limit_default_per_minute,
             )
             .field("relay", &self.relay)
+            .field(
+                "jobs_token",
+                &self.jobs_token.as_ref().map(|_| "<redacted>"),
+            )
             .finish()
     }
 }
@@ -451,6 +458,15 @@ impl Config {
                 )?,
             )?,
             relay,
+            jobs_token: match opt("JOBS_TOKEN") {
+                Some(t) if t.len() < MIN_ORIGIN_SECRET_BYTES => {
+                    return Err(ConfigError(format!(
+                        "JOBS_TOKEN must be at least {MIN_ORIGIN_SECRET_BYTES} bytes \
+                         (e.g. `openssl rand -hex 32`)"
+                    )));
+                }
+                t => t,
+            },
         })
     }
 

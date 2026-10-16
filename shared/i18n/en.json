@@ -2262,5 +2262,21 @@
   "game.music.playlist": {
     "message": "The music in this game is a YouTube playlist. Open it in a new tab.",
     "description": "Game screen: music controls"
+  },
+  "leaderboard.move.new": {
+    "message": "new",
+    "description": "Leaderboard page: rank movement since the last daily snapshot"
+  },
+  "leaderboard.move.up": {
+    "message": "{count, plural, one {Up # place} other {Up # places}}",
+    "description": "Leaderboard page: rank movement since the last daily snapshot"
+  },
+  "leaderboard.move.down": {
+    "message": "{count, plural, one {Down # place} other {Down # places}}",
+    "description": "Leaderboard page: rank movement since the last daily snapshot"
+  },
+  "leaderboard.best_rank": {
+    "message": "Your best rank on this board: #{rank}",
+    "description": "Leaderboard page: rank movement since the last daily snapshot"
   }
 }

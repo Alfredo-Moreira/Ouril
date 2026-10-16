@@ -177,11 +177,17 @@ export function Leaderboard() {
                 key={e.player.user_id}
                 entry={e}
                 you={e.player.user_id === board.you?.player.user_id}
+                movement={!!board.movement_since}
               />
             ))}
-            {board.you && !youInTop && <Row entry={board.you} you separated />}
+            {board.you && !youInTop && (
+              <Row entry={board.you} you separated movement={!!board.movement_since} />
+            )}
           </tbody>
         </table>
+      )}
+      {board?.your_best_rank !== undefined && (
+        <p className="note">{t('leaderboard.best_rank', { rank: board.your_best_rank })}</p>
       )}
       {board && !board.you && board.entries.length > 0 && (
         <p className="note">
@@ -199,10 +205,13 @@ function Row({
   entry,
   you = false,
   separated = false,
+  movement = false,
 }: {
   entry: LeaderboardEntry;
   you?: boolean;
   separated?: boolean;
+  /** Whether the board has an earlier snapshot to compare with. */
+  movement?: boolean;
 }) {
   const { t, i18n } = useTranslation();
   const classes = [you && 'leaderboard__you', separated && 'leaderboard__gap']
@@ -210,7 +219,10 @@ function Row({
     .join(' ');
   return (
     <tr className={classes || undefined} aria-current={you ? 'true' : undefined}>
-      <td>{entry.rank}</td>
+      <td>
+        {entry.rank}
+        {movement && <Movement change={entry.change} />}
+      </td>
       <td>
         <strong>{entry.player.display_name}</strong>
         {entry.player.handle && <span className="note"> @{entry.player.handle}</span>}
@@ -225,5 +237,28 @@ function Row({
       <td>{entry.rating}</td>
       <td>{entry.games}</td>
     </tr>
+  );
+}
+
+/** Places gained or lost since the last snapshot, or "new". */
+function Movement({ change }: { change?: number }) {
+  const { t } = useTranslation();
+  if (change === undefined) {
+    return (
+      <span className="leaderboard__move leaderboard__move--new">{t('leaderboard.move.new')}</span>
+    );
+  }
+  if (change === 0) return null;
+  const up = change > 0;
+  return (
+    <span
+      className={`leaderboard__move leaderboard__move--${up ? 'up' : 'down'}`}
+      aria-label={t(up ? 'leaderboard.move.up' : 'leaderboard.move.down', {
+        count: Math.abs(change),
+      })}
+    >
+      <span aria-hidden="true">{up ? '▲' : '▼'}</span>
+      <span aria-hidden="true">{Math.abs(change)}</span>
+    </span>
   );
 }

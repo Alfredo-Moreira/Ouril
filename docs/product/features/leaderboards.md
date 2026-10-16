@@ -44,7 +44,7 @@
 
 - The server updates ratings in the same transaction that finishes a rated game, and logs each change (`rating_changes`) for history.
 - Boards are indexed queries on Postgres (`ratings`, by pool and rating). There's no cache layer.
-- **Later:** rank snapshots (for rank movement and seasons) written by a scheduled job on the homelab ([ADR 0032](../../decisions/0032-small-services-on-the-homelab.md), [backend](../../architecture/backend.md#scheduled-jobs)).
+- **Rank movement and best ranks:** a scheduled job on the homelab snapshots every board each hour, keeping one snapshot per day (UTC) ([ADR 0032](../../decisions/0032-small-services-on-the-homelab.md), [backend](../../architecture/backend.md#scheduled-jobs)). A board shows ▲/▼ places since the latest earlier day, and **new** for players who weren't on it then; your best rank on each board is kept even after old snapshots are pruned. Until the job has run once, boards show no movement.
 
 ## Later
 

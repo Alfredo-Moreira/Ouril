@@ -2,6 +2,7 @@
 
 mod auth;
 mod games;
+mod jobs;
 mod live;
 mod me;
 mod meta;
@@ -46,6 +47,7 @@ pub fn router(state: AppState) -> Router {
         .merge(me::router())
         .merge(games::router())
         .merge(live::router())
+        .merge(jobs::router())
         .merge(ratings::router())
         .merge(sync::router())
         .fallback(not_found)

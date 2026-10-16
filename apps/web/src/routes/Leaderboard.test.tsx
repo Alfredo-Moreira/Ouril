@@ -126,6 +126,35 @@ describe('Leaderboard', () => {
     await waitFor(() => expect(api.leaderboard).toHaveBeenCalledWith('overall', 'country', 'cv'));
   });
 
+  it('shows how ranks moved since the last snapshot, and your best rank', async () => {
+    await signInLocally();
+    renderApp({
+      route: '/leaderboard',
+      createApi: () =>
+        boardsApi({
+          movement_since: '2026-10-15',
+          your_best_rank: 41,
+          entries: [
+            { ...entry(1, 'Rui', 1900), change: 2 },
+            { ...entry(2, 'Lia', 1800, 'pt'), change: -1 },
+            entry(3, 'Tom', 1700),
+          ],
+        }),
+    });
+    expect(await screen.findByLabelText('Up 2 places')).toBeInTheDocument();
+    expect(screen.getByLabelText('Down 1 place')).toBeInTheDocument();
+    // Tom, and you (pinned below the top), weren't on the board in the last snapshot.
+    expect(screen.getAllByText('new')).toHaveLength(2);
+    expect(screen.getByText('Your best rank on this board: #41')).toBeInTheDocument();
+  });
+
+  it('shows no movement before the first snapshot', async () => {
+    await signInLocally();
+    renderApp({ route: '/leaderboard', createApi: () => boardsApi() });
+    await screen.findByRole('table');
+    expect(screen.queryByText('new')).toBeNull();
+  });
+
   it('explains how to get on an empty board', async () => {
     await signInLocally();
     renderApp({

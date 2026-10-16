@@ -225,7 +225,14 @@ Built, per [ADR 0033](../decisions/0033-live-games-http-moves-and-relay.md) (Pro
 
 ### Scheduled jobs
 
-Housekeeping that must run more often than Vercel's daily cron runs from a crontab on the homelab, as `POST /v1/internal/jobs/<name>` with `Authorization: Bearer <JOBS_TOKEN>` ([ADR 0032](../decisions/0032-small-services-on-the-homelab.md)). Each job is idempotent and safe to run late or twice; nothing depends on it running on time, because games settle on access anyway. Candidates: leaderboard snapshots, pruning expired seeks, sessions and sync mutations ([human review](../review/human-review.md)), and database backups.
+Built. Housekeeping that must run more often than Vercel's daily cron is called every hour by `ouril-jobs` on the homelab (`apps/jobs`), as `POST /v1/internal/jobs/<name>` with `Authorization: Bearer <JOBS_TOKEN>` (constant-time check; without `JOBS_TOKEN` the route is a 404; [ADR 0032](../decisions/0032-small-services-on-the-homelab.md)). The server does the work (`src/jobs.rs`); the container only keeps time. Each job is idempotent and safe to run late or twice; nothing depends on it running on time, because games settle on access anyway. Each run is recorded in `job_runs` (when, rows, error).
+
+| Job | What it does |
+|---|---|
+| `leaderboard-snapshot` | Replaces today's (UTC) snapshot of every board (`leaderboard_snapshots`: each pool, worldwide and per country, using the same eligibility as the boards) and improves best ranks (`rank_bests`). Boards compare live ranks with the latest earlier day |
+| `prune` | Deletes snapshots older than 120 days (best ranks stay) and seeks abandoned for an hour |
+
+Still candidates: pruning sessions and sync mutations ([human review](../review/human-review.md)), and database backups.
 
 ## Operations
 

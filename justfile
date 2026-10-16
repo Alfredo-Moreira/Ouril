@@ -25,8 +25,8 @@ env:
 dev: env bindings
     {{dc}} up db server web
 
-# All tests: core, server, relay, web
-test: test-core test-server test-relay test-web
+# All tests: core, server, homelab services, web
+test: test-core test-server test-homelab test-web
 
 # Rust core tests (engine, ai, rating, sync, protocol, wasm) incl. test vectors
 test-core:
@@ -39,18 +39,23 @@ test-server:
     # Release-like build too: proves /v1/auth/dev is absent without the feature.
     {{tb}} cargo test -p ouril-server
 
-# Live-game relay tests (apps/relay: tokens, channels, publishing, limits)
-test-relay:
-    {{tb}} cargo test -p ouril-relay
+# Homelab service tests (apps/relay: tokens, channels, publishing, limits; apps/jobs: settings)
+test-homelab:
+    {{tb}} cargo test -p ouril-relay -p ouril-jobs
 
 # Run the live-game relay locally on :8090 (set the RELAY_* values in .env first; see .env.example)
 relay:
     {{dc}} --profile live up relay
 
-# Build the relay's homelab image for this machine (deploy/homelab/build-and-push.sh builds and
-# pushes both architectures for the NAS)
-build-relay-image:
-    docker build -f apps/relay/Dockerfile --build-context homelab=deploy/homelab -t ouril-relay:local .
+# Run the scheduled jobs locally against the dev server (set JOBS_TOKEN in .env first)
+jobs:
+    {{dc}} --profile jobs up jobs
+
+# Build the homelab images for this machine (deploy/homelab/build-and-push.sh builds and pushes
+# both architectures for the NAS)
+build-homelab-images:
+    docker build -f deploy/homelab/Dockerfile --build-context homelab=deploy/homelab --build-arg PACKAGE=ouril-relay -t ouril-relay:local .
+    docker build -f deploy/homelab/Dockerfile --build-context homelab=deploy/homelab --build-arg PACKAGE=ouril-jobs -t ouril-jobs:local .
 
 # Web tests (Vitest) against a fresh WASM build
 test-web: bindings
