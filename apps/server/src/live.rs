@@ -10,7 +10,10 @@
 //!   until the players pick it up.
 
 use ouril_engine::variant;
-use ouril_protocol::{SeekRequest, SeekState, SeekStatus, SEEK_STALE_SECS};
+use ouril_protocol::{
+    LiveLobby, OpenSeek, PlayerSummary, SeekRequest, SeekState, SeekStatus, TimeControl,
+    SEEK_STALE_SECS,
+};
 use sqlx::{PgConnection, PgPool};
 use uuid::Uuid;
 
@@ -147,6 +150,127 @@ pub async fn seek(
     Ok((
         matched_status(game, seeking),
         Some(Matched { game, waiting }),
+    ))
+}
+
+/// Most open seeks the lobby lists.
+const LOBBY_LIMIT: i64 = 50;
+
+/// A row of the lobby query.
+type LobbyRow = (
+    Uuid,
+    String,
+    Option<String>,
+    f64,
+    String,
+    i64,
+    i64,
+    bool,
+    f64,
+);
+
+/// `GET /v1/live/lobby`: other players' fresh, unpaired seeks, longest waiting first.
+pub async fn lobby(db: &PgPool, me: Uuid) -> AppResult<LiveLobby> {
+    let rows: Vec<LobbyRow> = sqlx::query_as(
+        "SELECT s.user_id, u.display_name, u.handle, s.rating, s.variant_id, s.initial_ms,
+                s.increment_ms, s.rated, extract(epoch FROM now() - s.created_at)::float8
+           FROM seeks s JOIN users u ON u.id = s.user_id
+          WHERE s.user_id <> $1 AND s.game_id IS NULL AND u.deleted_at IS NULL
+            AND s.heartbeat_at > now() - make_interval(secs => $2)
+          ORDER BY s.created_at
+          LIMIT $3",
+    )
+    .bind(me)
+    .bind(SEEK_STALE_SECS as f64)
+    .bind(LOBBY_LIMIT)
+    .fetch_all(db)
+    .await?;
+    Ok(LiveLobby {
+        seeks: rows
+            .into_iter()
+            .map(
+                |(id, display_name, handle, rating, variant_id, initial, inc, rated, waited)| {
+                    OpenSeek {
+                        player: PlayerSummary {
+                            user_id: id.to_string(),
+                            display_name,
+                            handle,
+                        },
+                        rating: rating.round() as i32,
+                        variant_id,
+                        time_control: TimeControl {
+                            initial_secs: (initial / 1000) as u32,
+                            increment_secs: (inc / 1000) as u32,
+                        },
+                        rated,
+                        waiting_secs: waited.max(0.0) as u32,
+                    }
+                },
+            )
+            .collect(),
+    })
+}
+
+/// `POST /v1/live/join`: play a waiting player now, whatever the ratings. Your own seek, if
+/// any, is dropped. `409` when their seek is gone or already paired.
+pub async fn join(db: &PgPool, me: Uuid, target: Uuid) -> AppResult<(SeekStatus, Matched)> {
+    if target == me {
+        return Err(AppError::bad_request("that's your own seek"));
+    }
+    let mut tx = db.begin().await?;
+    let seek: Option<(String, i64, i64, bool)> = sqlx::query_as(
+        "SELECT variant_id, initial_ms, increment_ms, rated FROM seeks
+          WHERE user_id = $1 AND game_id IS NULL
+            AND heartbeat_at > now() - make_interval(secs => $2)
+          FOR UPDATE",
+    )
+    .bind(target)
+    .bind(SEEK_STALE_SECS as f64)
+    .fetch_optional(&mut *tx)
+    .await?;
+    let Some((variant_id, initial_ms, increment_ms, rated)) = seek else {
+        return Err(AppError::conflict("that player is no longer waiting"));
+    };
+    let v = variant(&variant_id).ok_or_else(AppError::internal)?;
+    let tc = live_time_control(TimeControl {
+        initial_secs: (initial_ms / 1000) as u32,
+        increment_secs: (increment_ms / 1000) as u32,
+    })?;
+    sqlx::query("DELETE FROM seeks WHERE user_id = $1")
+        .bind(me)
+        .execute(&mut *tx)
+        .await?;
+    let game = online::insert_game(
+        &mut tx,
+        NewGame {
+            variant: v,
+            south: target,
+            invited: Some(me),
+            invite_code: None,
+            rated,
+            time_control: Some(tc),
+        },
+    )
+    .await?;
+    online::start(&mut tx, game, me).await?;
+    // The waiting player picks the game up from their seek, as with automatic pairing.
+    sqlx::query("UPDATE seeks SET game_id = $1 WHERE user_id = $2")
+        .bind(game)
+        .bind(target)
+        .execute(&mut *tx)
+        .await?;
+    let seeking = seeking(&mut tx).await?;
+    tx.commit().await?;
+    Ok((
+        SeekStatus {
+            state: SeekState::Matched,
+            game_id: Some(game.to_string()),
+            players_seeking: seeking,
+        },
+        Matched {
+            game,
+            waiting: target,
+        },
     ))
 }
 

@@ -1,8 +1,13 @@
 //! `/v1/live/…`: matchmaking for live games and relay tokens (ADR 0033, auth required).
 
-use axum::{extract::State, routing::post, Json, Router};
+use axum::{
+    extract::State,
+    routing::{get, post},
+    Json, Router,
+};
 use ouril_protocol::{
-    game_channel, user_channel, LiveToken, LiveTokenRequest, SeekRequest, SeekStatus,
+    game_channel, user_channel, JoinSeekRequest, LiveLobby, LiveToken, LiveTokenRequest,
+    SeekRequest, SeekStatus,
 };
 use uuid::Uuid;
 
@@ -17,6 +22,8 @@ pub fn router() -> Router<AppState> {
     Router::new()
         .route("/live/seek", post(seek).get(status).delete(cancel))
         .route("/live/token", post(token))
+        .route("/live/lobby", get(lobby))
+        .route("/live/join", post(join))
 }
 
 async fn seek(
@@ -28,6 +35,21 @@ async fn seek(
     if let Some(m) = matched {
         relay::matched(state.relay.as_ref(), m.waiting, m.game);
     }
+    Ok(Json(status))
+}
+
+async fn lobby(State(state): State<AppState>, auth: AuthUser) -> AppResult<Json<LiveLobby>> {
+    Ok(Json(live::lobby(&state.db, auth.user_id).await?))
+}
+
+async fn join(
+    State(state): State<AppState>,
+    auth: AuthUser,
+    ApiJson(req): ApiJson<JoinSeekRequest>,
+) -> AppResult<Json<SeekStatus>> {
+    let target = Uuid::parse_str(&req.user_id).map_err(|_| AppError::not_found())?;
+    let (status, m) = live::join(&state.db, auth.user_id, target).await?;
+    relay::matched(state.relay.as_ref(), m.waiting, m.game);
     Ok(Json(status))
 }
 

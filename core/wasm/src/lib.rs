@@ -23,7 +23,7 @@ export type Level = "easy" | "medium" | "hard";
 export type GameResult = "south_wins" | "north_wins" | "draw";
 export type EndReason = "threshold" | "no_feed" | "endless_cycle" | "no_moves";
 /** Why a recorded game ended: an engine end reason, or a forfeit (record format 2). */
-export type RecordEndReason = EndReason | "resigned" | "timeout";
+export type RecordEndReason = EndReason | "resigned" | "timeout" | "agreement";
 export type MoveErrorCode =
   | "not_own_pit" | "empty_pit" | "single_seed_rule"
   | "must_feed" | "grand_slam_forbidden" | "game_over";

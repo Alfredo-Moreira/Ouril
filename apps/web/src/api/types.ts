@@ -189,6 +189,8 @@ export interface OnlineGame {
   time_control?: TimeControl;
   /** Live games: each side's time left when the current turn started. */
   clocks?: Clocks;
+  /** Who has an open draw offer (it closes on the next move). */
+  draw_offer?: Seat;
   /** The server's time when it answered (RFC 3339), to count down accurately. */
   server_now?: string;
   created_at: string;
@@ -363,4 +365,20 @@ export interface PlayerProfile {
   history: RatingHistory[];
   badges: Badge[];
   head_to_head?: HeadToHead;
+}
+
+export type DrawAction = 'offer' | 'accept' | 'decline';
+
+/** Someone looking for a live game, as listed in the lobby. */
+export interface OpenSeek {
+  player: PlayerSummary;
+  rating: number;
+  variant_id: string;
+  time_control: TimeControl;
+  rated: boolean;
+  waiting_secs: number;
+}
+
+export interface LiveLobby {
+  seeks: OpenSeek[];
 }

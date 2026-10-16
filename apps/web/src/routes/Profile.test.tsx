@@ -47,6 +47,7 @@ function profileApi(extra: Record<string, unknown> = {}) {
     createGame: vi.fn(async () => ({ id: 'g1' })),
     listGames: vi.fn(async () => ({ games: [] })),
     opponents: vi.fn(async () => ({ opponents: [] })),
+    liveLobby: vi.fn(async () => ({ seeks: [] })),
     ...extra,
   }) as unknown as ApiClient & Record<string, ReturnType<typeof vi.fn>>;
 }

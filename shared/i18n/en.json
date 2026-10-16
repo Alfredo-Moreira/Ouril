@@ -2326,5 +2326,61 @@
   "profile.chart.date": {
     "message": "Date",
     "description": "Player profile page"
+  },
+  "online.draw.offer": {
+    "message": "Offer a draw",
+    "description": "Play online: draw offers, open challenges and waiting"
+  },
+  "online.draw.offered_to_you": {
+    "message": "{name} offers a draw.",
+    "description": "Play online: draw offers, open challenges and waiting"
+  },
+  "online.draw.offered_by_you": {
+    "message": "You offered a draw. It stands until the next move.",
+    "description": "Play online: draw offers, open challenges and waiting"
+  },
+  "online.draw.accept": {
+    "message": "Accept the draw",
+    "description": "Play online: draw offers, open challenges and waiting"
+  },
+  "online.draw.decline": {
+    "message": "Keep playing",
+    "description": "Play online: draw offers, open challenges and waiting"
+  },
+  "online.over.agreement": {
+    "message": "Draw agreed.",
+    "description": "Play online: draw offers, open challenges and waiting"
+  },
+  "game.over.reason.agreement": {
+    "message": "Both players agreed to a draw.",
+    "description": "Play online: draw offers, open challenges and waiting"
+  },
+  "online.open_challenges": {
+    "message": "Waiting for an opponent",
+    "description": "Play online: draw offers, open challenges and waiting"
+  },
+  "online.join_seek": {
+    "message": "Play",
+    "description": "Play online: draw offers, open challenges and waiting"
+  },
+  "online.rated.short": {
+    "message": "rated",
+    "description": "Play online: draw offers, open challenges and waiting"
+  },
+  "online.play_now.computer": {
+    "message": "Play the computer while you wait",
+    "description": "Play online: draw offers, open challenges and waiting"
+  },
+  "online.play_now.found": {
+    "message": "Opponent found!",
+    "description": "Play online: draw offers, open challenges and waiting"
+  },
+  "online.play_now.open": {
+    "message": "Open the game",
+    "description": "Play online: draw offers, open challenges and waiting"
+  },
+  "online.play_now.dismiss": {
+    "message": "Later",
+    "description": "Play online: draw offers, open challenges and waiting"
   }
 }

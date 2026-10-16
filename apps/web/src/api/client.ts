@@ -19,9 +19,11 @@
 import type {
   ApiErrorBody,
   CreateGameRequest,
+  DrawAction,
   GameList,
   Leaderboard,
   LeaderboardScope,
+  LiveLobby,
   LiveToken,
   MyRatings,
   OnlineGame,
@@ -229,6 +231,23 @@ export class ApiClient {
 
   cancelSeek(): Promise<SeekStatus> {
     return this.request<SeekStatus>('DELETE', '/v1/live/seek');
+  }
+
+  /** Other players looking for a live game right now. */
+  liveLobby(): Promise<LiveLobby> {
+    return this.request<LiveLobby>('GET', '/v1/live/lobby');
+  }
+
+  /** Play a waiting player now (409 when they're no longer waiting). */
+  joinSeek(userId: string): Promise<SeekStatus> {
+    return this.request<SeekStatus>('POST', '/v1/live/join', { user_id: userId });
+  }
+
+  /** Offer a draw, or accept or decline the opponent's offer. */
+  draw(id: string, action: DrawAction): Promise<OnlineGame> {
+    return this.request<OnlineGame>('POST', `/v1/games/${encodeURIComponent(id)}/draw`, {
+      action,
+    });
   }
 
   /** A relay token for your own channel and, with `gameId`, that game's (501 = no relay). */

@@ -7,7 +7,8 @@ use axum::{
     Json, Router,
 };
 use ouril_protocol::{
-    CreateGameRequest, GameList, JoinGameRequest, MoveRequest, OnlineGame, OpponentList,
+    CreateGameRequest, DrawRequest, GameList, JoinGameRequest, MoveRequest, OnlineGame,
+    OpponentList,
 };
 use uuid::Uuid;
 
@@ -35,6 +36,7 @@ pub fn router() -> Router<AppState> {
         .route("/games/{id}/moves", post(play))
         .route("/games/{id}/resign", post(resign))
         .route("/games/{id}/abort", post(abort))
+        .route("/games/{id}/draw", post(draw))
         .route("/opponents", get(opponents))
 }
 
@@ -118,6 +120,16 @@ async fn resign(
     Path(id): Path<String>,
 ) -> AppResult<Json<OnlineGame>> {
     let game = online::resign(&state.db, auth.user_id, game_id(&id)?).await?;
+    Ok(changed(&state, game))
+}
+
+async fn draw(
+    State(state): State<AppState>,
+    auth: AuthUser,
+    Path(id): Path<String>,
+    ApiJson(req): ApiJson<DrawRequest>,
+) -> AppResult<Json<OnlineGame>> {
+    let game = online::draw(&state.db, auth.user_id, game_id(&id)?, req.action).await?;
     Ok(changed(&state, game))
 }
 

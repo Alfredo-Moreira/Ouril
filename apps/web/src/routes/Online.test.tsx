@@ -33,6 +33,7 @@ function onlineApi(games: OnlineGame[], extra: Record<string, unknown> = {}) {
   return Object.assign(offlineApi(), {
     listGames: vi.fn(async () => ({ games })),
     opponents: vi.fn(async () => ({ opponents: [] })),
+    liveLobby: vi.fn(async () => ({ seeks: [] })),
     getGame: vi.fn(async (id: string) => games.find((g) => g.id === id) ?? games[0]!),
     createGame: vi.fn(async () => game({ id: 'new', status: 'invited' })),
     gameAction: vi.fn(async (id: string) => games.find((g) => g.id === id)!),
@@ -418,6 +419,88 @@ describe('Play online', () => {
       vi.unstubAllGlobals();
     }
   });
+
+  it("answers the opponent's draw offer, and offers one from the menu", async () => {
+    await signInLocally();
+    const offered = game({ moves: [0, 9], draw_offer: 'north' });
+    const api = onlineApi([offered], {
+      draw: vi.fn(async () =>
+        game({
+          moves: [0, 9],
+          status: 'finished',
+          your_turn: false,
+          result: { outcome: 'draw', reason: 'agreement', stores: [0, 0] },
+        }),
+      ),
+    });
+    renderApp({ route: '/online/g1', core: loadCoreSync(), createApi: () => api });
+    expect(await screen.findByText('Ana offers a draw.')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Accept the draw' }));
+    await waitFor(() => expect(api.draw).toHaveBeenCalledWith('g1', 'accept'));
+    const result = await screen.findByRole('dialog', { name: 'It’s a draw' });
+    expect(within(result).getByText('Draw agreed.')).toBeInTheDocument();
+  });
+
+  it('offers a draw from the menu once both players have moved', async () => {
+    await signInLocally();
+    const api = onlineApi([game({ moves: [0, 9] })], {
+      draw: vi.fn(async () => game({ moves: [0, 9], draw_offer: 'south' })),
+    });
+    renderApp({ route: '/online/g1', core: loadCoreSync(), createApi: () => api });
+    fireEvent.click(await screen.findByRole('button', { name: 'Game menu' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Offer a draw' }));
+    await waitFor(() => expect(api.draw).toHaveBeenCalledWith('g1', 'offer'));
+    expect(await screen.findByText(/You offered a draw/)).toBeInTheDocument();
+  });
+
+  it('joins a player waiting in the lobby', async () => {
+    await signInLocally();
+    const api = onlineApi([game({ id: 'joined', mode: 'live' })], {
+      liveLobby: vi.fn(async () => ({
+        seeks: [
+          {
+            player: { user_id: 'u-rui', display_name: 'Rui' },
+            rating: 1620,
+            variant_id: 'cv.standard',
+            time_control: { initial_secs: 300, increment_secs: 3 },
+            rated: true,
+            waiting_secs: 12,
+          },
+        ],
+      })),
+      joinSeek: vi.fn(async () => ({ state: 'matched', game_id: 'joined', players_seeking: 0 })),
+    });
+    renderApp({ route: '/online', core: loadCoreSync(), createApi: () => api });
+    const waiting = await screen.findByRole('region', { name: 'Waiting for an opponent' });
+    expect(within(waiting).getByText(/1620/)).toBeInTheDocument();
+    fireEvent.click(within(waiting).getByRole('button', { name: 'Play' }));
+    await waitFor(() => expect(api.joinSeek).toHaveBeenCalledWith('u-rui'));
+    expect(await screen.findByRole('heading', { name: 'You vs Ana' })).toBeInTheDocument();
+  });
+
+  it('keeps looking while you play the computer, and says when an opponent is found', async () => {
+    await signInLocally();
+    let calls = 0;
+    const api = onlineApi([game({ id: 'live1', mode: 'live' })], {
+      // Waiting at first, then paired on a later heartbeat.
+      seek: vi.fn(async () =>
+        ++calls < 2
+          ? { state: 'waiting', players_seeking: 1 }
+          : { state: 'matched', game_id: 'live1', players_seeking: 0 },
+      ),
+      cancelSeek: vi.fn(async () => ({ state: 'idle', players_seeking: 0 })),
+    });
+    renderApp({ route: '/online', core: loadCoreSync(), createApi: () => api });
+    const playNow = await screen.findByRole('region', { name: 'Play now' });
+    fireEvent.click(within(playNow).getByRole('button', { name: '5 + 3' }));
+    fireEvent.click(
+      await within(playNow).findByRole('link', { name: 'Play the computer while you wait' }),
+    );
+    expect(await screen.findByText('Looking for an opponent for 5 + 3…')).toBeInTheDocument();
+    expect(await screen.findByText('Opponent found!', {}, { timeout: 5_000 })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Open the game' }));
+    expect(await screen.findByRole('heading', { name: 'You vs Ana' })).toBeInTheDocument();
+  }, 10_000);
 
   it('an invite link asks a guest to sign in, then joins once signed in', async () => {
     const guest = renderApp({ route: '/join/abc123' });

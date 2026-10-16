@@ -67,7 +67,7 @@ type Status = 'playing' | 'south_wins' | 'north_wins' | 'draw';
 type Level = 'easy' | 'medium' | 'hard';
 type GameResult = 'south_wins' | 'north_wins' | 'draw';
 type EndReason = 'threshold' | 'no_feed' | 'endless_cycle' | 'no_moves';
-type RecordEndReason = EndReason | 'resigned' | 'timeout'; // records only (format 2, ADR 0022; format 3, ADR 0031)
+type RecordEndReason = EndReason | 'resigned' | 'timeout' | 'agreement'; // records only (format 2, ADR 0022; format 3, ADR 0031; agreement: a draw by agreement)
 type MoveErrorCode =
   | 'not_own_pit' | 'empty_pit' | 'single_seed_rule'
   | 'must_feed' | 'grand_slam_forbidden' | 'game_over';
