@@ -28,7 +28,10 @@ RUN case "$TARGETARCH" in \
  && rustup target add "$(cat /target)"
 ENV CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER=x86_64-linux-gnu-gcc \
     CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc
-RUN --mount=type=cache,target=/usr/local/cargo/registry \
+# Both architectures build at the same time and share the crate registry cache: `locked` makes
+# them take turns, or two cargo processes unpack the same crate at once and one fails with
+# "File exists". Each architecture has its own target cache.
+RUN --mount=type=cache,target=/usr/local/cargo/registry,id=ouril-relay-cargo-registry,sharing=locked \
     --mount=type=cache,target=/src/target,id=ouril-relay-target-${TARGETARCH} \
     cargo build --release --locked -p ouril-relay --target "$(cat /target)" \
  && cp "target/$(cat /target)/release/ouril-relay" /ouril-relay
