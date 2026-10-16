@@ -9,7 +9,7 @@
 ## pointing at Zoraxy. Nothing is published on the NAS itself.
 services:
   ouril-relay:
-    image: registry.lan:5000/ouril-relay:0.1.0
+    image: 192.168.4.29:5000/ouril-relay:0.1.0
     platform: linux/arm64
     container_name: ouril-relay
     restart: unless-stopped
