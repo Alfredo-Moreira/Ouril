@@ -131,15 +131,24 @@ jobs:
         if: steps.setup.outputs.ready == 'true'
         run: |
           # out/vercel.json: the two services and the routing. out/web: the site.
-          # out/api: the Rust workspace the container build needs (no target/, no web).
+          # out/api: the Rust workspace the container build needs (no target/, no web). Cargo
+          # loads every workspace member even to build one crate, so each member's sources
+          # must be here (the relay only for its manifest: it isn't built or deployed here).
           mkdir -p out/api/apps
           cp apps/web/vercel.json out/vercel.json
           cp -R apps/web/dist out/web
           cp Cargo.toml Cargo.lock out/api/
           rsync -a --exclude target --exclude 'wasm/pkg' core out/api/
-          rsync -a --exclude target apps/server out/api/apps/
+          rsync -a --exclude target apps/server apps/relay out/api/apps/
           cp apps/server/Dockerfile.vercel out/api/Dockerfile.vercel
           du -sh out/web out/api
+      - name: The assembled workspace loads (every member present, lockfile in step)
+        if: steps.setup.outputs.ready == 'true'
+        # Fails here, with cargo's message, instead of inside Vercel's image build.
+        run: >-
+          docker compose run --rm toolbox
+          cargo metadata --no-deps --offline --locked --format-version 1
+          --manifest-path out/api/Cargo.toml > /dev/null
       - uses: actions/setup-node@v4
         if: steps.setup.outputs.ready == 'true'
         with:

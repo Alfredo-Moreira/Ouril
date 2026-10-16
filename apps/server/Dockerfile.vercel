@@ -1,6 +1,7 @@
 # The server as a Vercel container service (ADR 0030). Vercel builds this image during the
 # deploy and runs it as a Function in the same project as the web app. deploy-web.yml assembles
-# the build context: Cargo.toml, Cargo.lock, core/ and apps/server/ (no target/, no web).
+# the build context: Cargo.toml, Cargo.lock, core/, apps/server/ and apps/relay/ (every workspace
+# member must be present for cargo to load the workspace; no target/, no web).
 # Same build as apps/server/Dockerfile, without BuildKit cache mounts. NEVER enables `dev-auth`
 # (a release build with it fails to compile anyway).
 
