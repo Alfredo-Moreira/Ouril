@@ -27,7 +27,7 @@
 
 ## Data model
 
-The MVP schema is implemented in [`apps/server/migrations/20261004000001_init.sql`](../../apps/server/migrations/20261004000001_init.sql). Games against other players add `online_games` and `user_opponents` ([below](#games-against-other-players)). Ratings add `ratings` (one row per player and pool) and `rating_changes` (one per game, player and pool), plus `mode`, `rated` and `rating_applied` on `online_games` (`20261014000001_ratings.sql`, [ADR 0034](../decisions/0034-ratings-and-leaderboards-in-postgres.md)).
+The MVP schema is implemented in [`apps/server/migrations/20261004000001_init.sql`](../../apps/server/migrations/20261004000001_init.sql). Games against other players add `online_games` and `user_opponents` ([below](#games-against-other-players)). Ratings add `ratings` (one row per player and pool) and `rating_changes` (one per game, player and pool), plus `mode`, `rated` and `rating_applied` on `online_games` (`20261014000001_ratings.sql`, [ADR 0034](../decisions/0034-ratings-and-leaderboards-in-postgres.md)). The points board adds `season_points` (per season and player) and `ai_points_daily` (the daily cap for wins against the computer, `20261018000001_season_points.sql`).
 
 ```mermaid
 erDiagram

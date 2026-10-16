@@ -46,6 +46,19 @@
 - Boards are indexed queries on Postgres (`ratings`, by pool and rating). There's no cache layer.
 - **Rank movement and best ranks:** a scheduled job on the homelab snapshots every board each hour, keeping one snapshot per day (UTC) ([ADR 0032](../../decisions/0032-small-services-on-the-homelab.md), [backend](../../architecture/backend.md#scheduled-jobs)). A board shows ▲/▼ places since the latest earlier day, and **new** for players who weren't on it then; your best rank on each board is kept even after old snapshots are pruned. Until the job has run once, boards show no movement.
 
+## Points board (seasons)
+
+A second board, **Points this season**, on the same page, so casual players can climb too (ADR 0034 listed it for later). Each calendar month (UTC) is a season; points start from zero on the 1st, and past seasons stay viewable. World and Country, like the rating boards.
+
+| Earns | Points (to tune) |
+|---|---|
+| An online game that counted for ratings (both moved, the daily per-pair limit) | win 10, draw 4, loss 1 |
+| A win against the computer, synced from the device | Easy 1, Medium 3, Hard 5, at most **20 a day** |
+
+- **Why so little for the computer:** those games are played on the device. The server replays them for legal moves but can't know they were played fairly, so they're capped, and they count in the season they reach the server, never in a past one.
+- Losses and forfeits against the computer, casual online games and games that didn't count for ratings earn nothing.
+- The board ranks players with points, by points; ties go to who got there first.
+
 ## Player profiles
 
 `/players/:id`, for signed-in players, opened from a leaderboard row or a name in the online lobby:
@@ -57,7 +70,6 @@
 
 ## Later
 
-- A **points board** (activity and wins, seasonal) for casual players.
 - **Region / island, city, friends** scopes. Cape Verde players may want islands (Santiago, São Vicente, Fogo, …) and diaspora communities (Boston, Lisbon, Rotterdam, …).
 - Fair play: reports, and refunds to the opponents of a player caught cheating.
 

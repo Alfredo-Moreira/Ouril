@@ -382,3 +382,33 @@ export interface OpenSeek {
 export interface LiveLobby {
   seeks: OpenSeek[];
 }
+
+// --- seasonal points board ---------------------------------------------------------------
+
+/** Points for an online game that counted for ratings: win, draw, loss. */
+export const POINTS_ONLINE = [10, 4, 1] as const;
+/** Points for a win against the computer: easy, medium, hard. */
+export const POINTS_AI_WIN = [1, 3, 5] as const;
+/** At most this many points a day from games against the computer. */
+export const POINTS_AI_DAILY_CAP = 20;
+
+export interface PointsEntry {
+  rank: number;
+  player: PlayerSummary;
+  country?: string;
+  points: number;
+  online_games: number;
+  ai_wins: number;
+}
+
+export interface PointsBoard {
+  /** `YYYY-MM` (UTC). */
+  season: string;
+  current: boolean;
+  scope: LeaderboardScope;
+  country?: string;
+  entries: PointsEntry[];
+  you?: PointsEntry;
+  /** Seasons with points, newest first. */
+  seasons: string[];
+}

@@ -82,6 +82,7 @@ describe('i18n keys', () => {
       'play.mode': ['computer', 'online'],
       'leaderboard.mode': ['async', 'live'],
       'leaderboard.scope': ['world', 'country'],
+      'leaderboard.kind': ['ratings', 'points'],
       'online.status': ['invited', 'declined', 'cancelled', 'expired'],
       'online.error': ['not_found', 'bad_request', 'conflict'],
       'online.join.error': ['not_found', 'conflict', 'bad_request'],
@@ -139,6 +140,7 @@ describe('i18n keys', () => {
       'online.join.error.',
       'leaderboard.mode.',
       'leaderboard.scope.',
+      'leaderboard.kind.',
     ];
     const unknown: string[] = [];
     for (const f of files) {

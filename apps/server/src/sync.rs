@@ -333,6 +333,22 @@ async fn game_finished(
     record: &GameRecord,
 ) -> AppResult<Result<(), &'static str>> {
     if insert_game_record(conn, user_id, record).await? {
+        // A new win against the computer earns a few season points (capped per day).
+        let won = matches!(
+            (record.human_player, record.result.outcome),
+            (
+                Some(ouril_engine::Player::South),
+                ouril_engine::GameResult::SouthWins
+            ) | (
+                Some(ouril_engine::Player::North),
+                ouril_engine::GameResult::NorthWins
+            )
+        );
+        if record.mode == GameMode::VsAi && won {
+            if let Some(level) = &record.ai_level {
+                crate::points::award_ai_win(conn, user_id, level).await?;
+            }
+        }
         return Ok(Ok(()));
     }
     let game_id = Uuid::parse_str(&record.id).expect("validated");

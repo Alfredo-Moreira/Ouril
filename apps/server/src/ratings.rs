@@ -155,6 +155,8 @@ pub async fn rate_finished_game(conn: &mut PgConnection, game: &FinishedGame) ->
         .bind(game.id)
         .execute(&mut *conn)
         .await?;
+    // The same game counts on the season's points board.
+    crate::points::award_online(conn, game.south, game.north, game.outcome).await?;
     Ok(())
 }
 

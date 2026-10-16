@@ -2,7 +2,7 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ApiClient } from '../api/client';
-import type { Leaderboard, LeaderboardEntry, Me, MyRatings } from '../api/types';
+import type { Leaderboard, LeaderboardEntry, Me, MyRatings, PointsBoard } from '../api/types';
 import { getDb } from '../storage/db';
 import { setConsent } from '../storage/repo';
 import { freshDb, offlineApi, renderApp, signInLocally, TEST_USER } from '../test/render';
@@ -153,6 +153,38 @@ describe('Leaderboard', () => {
     renderApp({ route: '/leaderboard', createApi: () => boardsApi() });
     await screen.findByRole('table');
     expect(screen.queryByText('new')).toBeNull();
+  });
+
+  it("shows the season's points board, past seasons and your country", async () => {
+    await signInLocally({ ...TEST_USER, country: 'cv' } as Me);
+    const points = vi.fn(async (scope: string, season?: string): Promise<PointsBoard> => ({
+      season: season ?? '2026-10',
+      current: !season,
+      scope: scope as 'world' | 'country',
+      entries: [
+        {
+          rank: 1,
+          player: { user_id: 'u-rui', display_name: 'Rui' },
+          points: 42,
+          online_games: 3,
+          ai_wins: 4,
+        },
+      ],
+      seasons: ['2026-10', '2026-09'],
+    }));
+    const api = Object.assign(boardsApi(), { points });
+    renderApp({ route: '/leaderboard', createApi: () => api });
+    fireEvent.click(await screen.findByRole('button', { name: 'Points this season' }));
+    await waitFor(() => expect(points).toHaveBeenCalledWith('world', undefined, undefined));
+    const table = await screen.findByRole('table', { name: 'Points, October 2026' });
+    expect(within(table).getByText('42')).toBeInTheDocument();
+    expect(within(table).getByText('7')).toBeInTheDocument();
+    expect(screen.getByText(/earn 10 points for a win/)).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('Season'), { target: { value: '2026-09' } });
+    await waitFor(() => expect(points).toHaveBeenCalledWith('world', '2026-09', undefined));
+    fireEvent.click(screen.getByRole('button', { name: 'Cape Verde' }));
+    await waitFor(() => expect(points).toHaveBeenCalledWith('country', '2026-09', 'cv'));
   });
 
   it('explains how to get on an empty board', async () => {

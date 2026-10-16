@@ -237,6 +237,8 @@ pub async fn delete_account(db: &PgPool, user_id: Uuid) -> crate::error::AppResu
         "DELETE FROM rating_changes WHERE user_id = $1",
         "DELETE FROM leaderboard_snapshots WHERE user_id = $1",
         "DELETE FROM rank_bests WHERE user_id = $1",
+        "DELETE FROM season_points WHERE user_id = $1",
+        "DELETE FROM ai_points_daily WHERE user_id = $1",
     ] {
         sqlx::query(sql).bind(user_id).execute(&mut *tx).await?;
     }
