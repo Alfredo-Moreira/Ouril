@@ -185,7 +185,7 @@ jobs:
           docker rm -f relay >/dev/null
       - name: Jobs refuses to start without its settings, and is unhealthy before a round
         run: |
-          if docker run --rm ouril-jobs:ci 2> /tmp/jobs.log; then
+          if docker run --rm ouril-jobs:ci > /tmp/jobs.log 2>&1; then
             echo "::error::ouril-jobs started without JOBS_URL"; exit 1
           fi
           grep -q "JOBS_URL is required" /tmp/jobs.log
