@@ -6,6 +6,7 @@ mod jobs;
 mod live;
 mod me;
 mod meta;
+mod players;
 mod ratings;
 mod sync;
 
@@ -49,6 +50,7 @@ pub fn router(state: AppState) -> Router {
         .merge(live::router())
         .merge(jobs::router())
         .merge(ratings::router())
+        .merge(players::router())
         .merge(sync::router())
         .fallback(not_found)
         .layer(middleware::from_fn(request_timeout))

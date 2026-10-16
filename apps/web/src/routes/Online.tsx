@@ -252,7 +252,9 @@ export function OnlineLobby() {
             {opponents.map((o) => (
               <li key={o.player.user_id} className="online__item">
                 <span>
-                  <strong>{o.player.display_name}</strong>
+                  <Link to={`/players/${o.player.user_id}`}>
+                    <strong>{o.player.display_name}</strong>
+                  </Link>
                   {o.player.handle && <span className="note"> @{o.player.handle}</span>}
                 </span>
                 <span className="note">
@@ -492,7 +494,13 @@ function GameSummary({ game }: { game: OnlineGame }) {
   }
   return (
     <span>
-      <strong>{name}</strong>
+      {game.opponent ? (
+        <Link to={`/players/${game.opponent.user_id}`}>
+          <strong>{name}</strong>
+        </Link>
+      ) : (
+        <strong>{name}</strong>
+      )}
       {game.opponent?.handle && <span className="note"> @{game.opponent.handle}</span>}
       {detail && <span className="note"> · {detail}</span>}
       {game.rated === false && <span className="note"> · {t('online.casual')}</span>}

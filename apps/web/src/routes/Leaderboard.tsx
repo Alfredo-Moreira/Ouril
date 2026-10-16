@@ -224,7 +224,9 @@ function Row({
         {movement && <Movement change={entry.change} />}
       </td>
       <td>
-        <strong>{entry.player.display_name}</strong>
+        <Link className="leaderboard__player" to={`/players/${entry.player.user_id}`}>
+          <strong>{entry.player.display_name}</strong>
+        </Link>
         {entry.player.handle && <span className="note"> @{entry.player.handle}</span>}
         {entry.country && (
           <span className="leaderboard__country">

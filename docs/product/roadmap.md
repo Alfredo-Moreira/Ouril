@@ -74,6 +74,7 @@ Native apps (SwiftUI, then Jetpack Compose; [ADR 0008](../decisions/0008-native-
 - **Scopes:** global, country, region/state, and city.
 - Seasons with periodic resets of the points board.
 - ✅ Rank movement (▲/▼ since the last daily snapshot) and best ranks, from snapshots taken by `ouril-jobs` on the homelab ([ADR 0032](../decisions/0032-small-services-on-the-homelab.md)).
+- ✅ Player profiles: ratings with their history, top-placement badges, your record against them, and Challenge ([leaderboards](features/leaderboards.md#player-profiles)).
 - See [leaderboards.md](features/leaderboards.md).
 
 ## Ongoing (not tied to a phase)
