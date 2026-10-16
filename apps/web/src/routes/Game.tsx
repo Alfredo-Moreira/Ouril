@@ -2,8 +2,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation, useNavigate } from 'react-router';
 
-import { hasMusic, skipTrack } from '../audio/music';
-import { useMusicPrefs } from '../audio/musicPrefs';
 import { useBoardPace } from '../board3d/pace';
 import { BoardView } from '../components/BoardView';
 import { Celebration, FinalScore, ScoreValue } from '../components/GameFx';
@@ -14,16 +12,14 @@ import {
   FullscreenIcon,
   HomeIcon,
   InfoIcon,
-  MusicIcon,
-  MusicOffIcon,
   PauseIcon,
-  SkipIcon,
   SeedIcon,
   StarIcon,
   UndoIcon,
 } from '../components/Icons';
 import { useFullscreen } from '../components/useFullscreen';
 import { Dialog } from '../components/Dialog';
+import { MusicControls } from '../components/MusicControls';
 import { MoveAnnouncer } from '../components/MoveAnnouncer';
 import { useCore } from '../engine/CoreContext';
 import { defaultSpeed } from '../game/animation';
@@ -152,7 +148,6 @@ function GameView({ initial, speed: baseSpeed }: { initial: CurrentGame; speed: 
   // The pause menu: keep playing, save and exit (resume later from Home), or forfeit.
   const [menu, setMenu] = useState<'closed' | 'menu' | 'confirm'>('closed');
   const [rulesOpen, setRulesOpen] = useState(false);
-  const [music, setMusicPrefs] = useMusicPrefs();
   const playing: PlayableVariant =
     PLAYABLE_VARIANTS.find((v) => v === game.variant.id) ?? PLAYABLE_VARIANTS[0];
   const forfeit = async () => {
@@ -196,29 +191,7 @@ function GameView({ initial, speed: baseSpeed }: { initial: CurrentGame; speed: 
           </div>
         </div>
         <div className="game__tools">
-          {hasMusic() && (
-            <>
-              <button
-                type="button"
-                className="icon-button"
-                onClick={() => void setMusicPrefs({ on: !music.on })}
-                aria-label={t(music.on ? 'game.music.pause' : 'game.music.play')}
-                aria-pressed={music.on}
-              >
-                {music.on ? <MusicIcon /> : <MusicOffIcon />}
-              </button>
-              {music.on && (
-                <button
-                  type="button"
-                  className="icon-button"
-                  onClick={skipTrack}
-                  aria-label={t('game.music.skip')}
-                >
-                  <SkipIcon />
-                </button>
-              )}
-            </>
-          )}
+          <MusicControls />
           <button
             type="button"
             className="icon-button"

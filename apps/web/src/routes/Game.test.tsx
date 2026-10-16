@@ -24,6 +24,21 @@ describe('Game screen (guest, real engine, inline AI)', () => {
     expect(await listGames()).toEqual([]);
   });
 
+  it('links the music to its YouTube playlist, joined with the play and skip buttons', async () => {
+    renderApp();
+    fireEvent.click(await screen.findByRole('button', { name: 'No thanks' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start game' }));
+    const music = await screen.findByRole('group', { name: 'Music' });
+    const playlist = within(music).getByRole('link', {
+      name: 'The music in this game is a YouTube playlist. Open it in a new tab.',
+    });
+    expect(playlist).toHaveAttribute('href', 'https://www.youtube.com/playlist?list=PLXiWtAXFYlTo');
+    expect(playlist).toHaveAttribute('target', '_blank');
+    expect(playlist).toHaveAttribute('rel', 'noopener noreferrer');
+    expect(playlist).toHaveAttribute('title', playlist.getAttribute('aria-label'));
+    expect(within(music).getByRole('button', { name: /music/i })).toBeInTheDocument();
+  });
+
   it('resumes the unfinished game', async () => {
     renderApp();
     fireEvent.click(await screen.findByRole('button', { name: 'No thanks' }));

@@ -264,3 +264,11 @@ export const SkipIcon = (p: IconProps) => (
     <path d="M19 5v14" />
   </Svg>
 );
+
+/** A playlist: lines of tracks with a play mark. */
+export const PlaylistIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M4 6h11M4 11h11M4 16h6" />
+    <path d="M15 14.5v5l4.5-2.5z" fill="currentColor" stroke="none" />
+  </Svg>
+);

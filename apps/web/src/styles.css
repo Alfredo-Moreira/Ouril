@@ -2653,3 +2653,34 @@ a.pay:active {
 .play-now .row {
   flex-wrap: wrap;
 }
+
+/* Buttons joined into one pill (the game screen's music controls). */
+.button-group {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.button-group > .icon-button {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.button-group > .icon-button + .icon-button {
+  border-left: 1px solid var(--line);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .button-group > .icon-button:hover {
+    background: var(--surface-2);
+  }
+}
+
+/* Keep the focus ring inside the pill (it clips its children). */
+.button-group > .icon-button:focus-visible {
+  outline-offset: -3px;
+}
