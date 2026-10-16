@@ -2254,5 +2254,13 @@
   "privacy.processors.6": {
     "message": "Live games use a relay that we run ourselves (at ouril-live.moreiralabs.org, behind Cloudflare, a United States company) to tell your device the moment your opponent moves. It only passes on notices that a game changed, never the game itself or your name. Cloudflare and the relay see your IP address while you're connected; the relay keeps nothing about who connected.",
     "description": "Privacy policy, processors section"
+  },
+  "game.music.controls": {
+    "message": "Music",
+    "description": "Game screen: music controls"
+  },
+  "game.music.playlist": {
+    "message": "The music in this game is a YouTube playlist. Open it in a new tab.",
+    "description": "Game screen: music controls"
   }
 }

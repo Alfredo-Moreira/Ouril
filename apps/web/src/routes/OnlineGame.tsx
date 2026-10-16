@@ -9,11 +9,10 @@ import {
   type RelayEvent,
   type Seat,
 } from '../api/types';
-import { hasMusic, skipTrack } from '../audio/music';
-import { useMusicPrefs } from '../audio/musicPrefs';
 import { useBoardPace } from '../board3d/pace';
 import { BoardView } from '../components/BoardView';
 import { Dialog } from '../components/Dialog';
+import { MusicControls } from '../components/MusicControls';
 import { Celebration, FinalScore, ScoreValue } from '../components/GameFx';
 import {
   ExitFullscreenIcon,
@@ -21,11 +20,8 @@ import {
   FullscreenIcon,
   HomeIcon,
   InfoIcon,
-  MusicIcon,
-  MusicOffIcon,
   PauseIcon,
   SeedIcon,
-  SkipIcon,
   StarIcon,
 } from '../components/Icons';
 import { MoveAnnouncer } from '../components/MoveAnnouncer';
@@ -341,7 +337,6 @@ function OnlineGameView({
 
   const root = useRef<HTMLElement>(null);
   const fullscreen = useFullscreen(root);
-  const [music, setMusicPrefs] = useMusicPrefs();
   const [menu, setMenu] = useState<'closed' | 'menu' | 'confirm'>('closed');
   const [rulesOpen, setRulesOpen] = useState(false);
   const [resultOpen, setResultOpen] = useState(true);
@@ -429,29 +424,7 @@ function OnlineGameView({
           </div>
         </div>
         <div className="game__tools">
-          {hasMusic() && (
-            <>
-              <button
-                type="button"
-                className="icon-button"
-                onClick={() => void setMusicPrefs({ on: !music.on })}
-                aria-label={t(music.on ? 'game.music.pause' : 'game.music.play')}
-                aria-pressed={music.on}
-              >
-                {music.on ? <MusicIcon /> : <MusicOffIcon />}
-              </button>
-              {music.on && (
-                <button
-                  type="button"
-                  className="icon-button"
-                  onClick={skipTrack}
-                  aria-label={t('game.music.skip')}
-                >
-                  <SkipIcon />
-                </button>
-              )}
-            </>
-          )}
+          <MusicControls />
           <button
             type="button"
             className="icon-button"
