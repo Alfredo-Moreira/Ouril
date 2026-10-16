@@ -40,6 +40,57 @@ pub struct Config {
     pub rate_limit_auth_per_minute: u32,
     /// Other `/v1` requests per client network per minute (`RATE_LIMIT_DEFAULT_PER_MINUTE`).
     pub rate_limit_default_per_minute: u32,
+    /// The live-game relay on the homelab (ADR 0032, 0033). `None` = not configured: live
+    /// games still work by polling, and `POST /v1/live/token` answers 501.
+    pub relay: Option<RelayConfig>,
+}
+
+/// The realtime relay: where it is and the two secrets shared with it.
+#[derive(Clone)]
+pub struct RelayConfig {
+    /// Base URL (`RELAY_URL`), e.g. `https://ouril-live.moreiralabs.org`. Players connect to
+    /// `<base>/ws` (as `wss://`); the server publishes to `<base>/publish`.
+    pub base_url: String,
+    /// Sent as `Authorization: Bearer` on `/publish` (`RELAY_API_KEY`).
+    pub api_key: String,
+    /// Signs players' relay tokens (`RELAY_TOKEN_SECRET`; never `JWT_SECRET`).
+    pub token_secret: String,
+    /// The WebSocket URL given to players, when it differs from `<base>/ws` (`RELAY_WS_URL`,
+    /// local development: the server reaches `http://relay:8090`, browsers `ws://localhost:8090/ws`).
+    pub ws_url_override: Option<String>,
+}
+
+impl RelayConfig {
+    /// The WebSocket URL players connect to.
+    pub fn ws_url(&self) -> String {
+        if let Some(url) = &self.ws_url_override {
+            return url.clone();
+        }
+        let base = self.base_url.trim_end_matches('/');
+        let ws = if let Some(rest) = base.strip_prefix("https://") {
+            format!("wss://{rest}")
+        } else if let Some(rest) = base.strip_prefix("http://") {
+            format!("ws://{rest}")
+        } else {
+            base.to_string()
+        };
+        format!("{ws}/ws")
+    }
+
+    pub fn publish_url(&self) -> String {
+        format!("{}/publish", self.base_url.trim_end_matches('/'))
+    }
+}
+
+impl fmt::Debug for RelayConfig {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("RelayConfig")
+            .field("base_url", &self.base_url)
+            .field("ws_url_override", &self.ws_url_override)
+            .field("api_key", &"<redacted>")
+            .field("token_secret", &"<redacted>")
+            .finish()
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -122,6 +173,7 @@ impl fmt::Debug for Config {
                 "rate_limit_default_per_minute",
                 &self.rate_limit_default_per_minute,
             )
+            .field("relay", &self.relay)
             .finish()
     }
 }
@@ -273,6 +325,52 @@ impl Config {
                 None
             }
         };
+        // The relay needs all three values; a partial set is "not configured".
+        let relay = match [
+            opt("RELAY_URL"),
+            opt("RELAY_API_KEY"),
+            opt("RELAY_TOKEN_SECRET"),
+        ] {
+            [Some(base_url), Some(api_key), Some(token_secret)] => {
+                for (name, secret) in [
+                    ("RELAY_API_KEY", &api_key),
+                    ("RELAY_TOKEN_SECRET", &token_secret),
+                ] {
+                    if secret.len() < MIN_ORIGIN_SECRET_BYTES {
+                        return Err(ConfigError(format!(
+                            "{name} must be at least {MIN_ORIGIN_SECRET_BYTES} bytes \
+                             (e.g. `openssl rand -hex 32`)"
+                        )));
+                    }
+                }
+                if token_secret == jwt_secret {
+                    return Err(ConfigError(
+                        "RELAY_TOKEN_SECRET must differ from JWT_SECRET".into(),
+                    ));
+                }
+                if !(base_url.starts_with("https://")
+                    || (!RELEASE_BUILD && base_url.starts_with("http://")))
+                {
+                    return Err(ConfigError(format!(
+                        "RELAY_URL must be an https:// URL: {base_url:?}"
+                    )));
+                }
+                Some(RelayConfig {
+                    base_url,
+                    api_key,
+                    token_secret,
+                    ws_url_override: opt("RELAY_WS_URL"),
+                })
+            }
+            ref parts => {
+                if parts.iter().any(Option::is_some) {
+                    tracing::warn!(
+                        "some RELAY_* variables are set but not all: the live relay stays off"
+                    );
+                }
+                None
+            }
+        };
         let access_token_ttl_secs =
             parse("ACCESS_TOKEN_TTL_SECS", opt("ACCESS_TOKEN_TTL_SECS"), 900)?;
         if !(60..=86_400).contains(&access_token_ttl_secs) {
@@ -352,6 +450,7 @@ impl Config {
                     crate::ratelimit::DEFAULT_LIMIT_PER_MINUTE,
                 )?,
             )?,
+            relay,
         })
     }
 

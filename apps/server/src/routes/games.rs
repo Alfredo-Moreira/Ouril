@@ -14,9 +14,15 @@ use uuid::Uuid;
 use crate::{
     auth::AuthUser,
     error::{ApiJson, AppError, AppResult},
-    online,
+    online, relay,
     state::AppState,
 };
+
+/// Answer with the game, and tell the relay both players' views changed (ADR 0033).
+fn changed(state: &AppState, game: OnlineGame) -> Json<OnlineGame> {
+    relay::game_changed(state.relay.as_ref(), &game);
+    Json(game)
+}
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -28,6 +34,7 @@ pub fn router() -> Router<AppState> {
         .route("/games/{id}/cancel", post(cancel))
         .route("/games/{id}/moves", post(play))
         .route("/games/{id}/resign", post(resign))
+        .route("/games/{id}/abort", post(abort))
         .route("/opponents", get(opponents))
 }
 
@@ -46,7 +53,7 @@ async fn create(
     ApiJson(req): ApiJson<CreateGameRequest>,
 ) -> AppResult<(StatusCode, Json<OnlineGame>)> {
     let game = online::create(&state.db, auth.user_id, req).await?;
-    Ok((StatusCode::CREATED, Json(game)))
+    Ok((StatusCode::CREATED, changed(&state, game)))
 }
 
 async fn join(
@@ -54,9 +61,8 @@ async fn join(
     auth: AuthUser,
     ApiJson(req): ApiJson<JoinGameRequest>,
 ) -> AppResult<Json<OnlineGame>> {
-    Ok(Json(
-        online::join(&state.db, auth.user_id, req.invite_code.trim()).await?,
-    ))
+    let game = online::join(&state.db, auth.user_id, req.invite_code.trim()).await?;
+    Ok(changed(&state, game))
 }
 
 async fn get_game(
@@ -74,9 +80,8 @@ async fn accept(
     auth: AuthUser,
     Path(id): Path<String>,
 ) -> AppResult<Json<OnlineGame>> {
-    Ok(Json(
-        online::accept(&state.db, auth.user_id, game_id(&id)?).await?,
-    ))
+    let game = online::accept(&state.db, auth.user_id, game_id(&id)?).await?;
+    Ok(changed(&state, game))
 }
 
 async fn decline(
@@ -84,9 +89,8 @@ async fn decline(
     auth: AuthUser,
     Path(id): Path<String>,
 ) -> AppResult<Json<OnlineGame>> {
-    Ok(Json(
-        online::close_invitation(&state.db, auth.user_id, game_id(&id)?, false).await?,
-    ))
+    let game = online::close_invitation(&state.db, auth.user_id, game_id(&id)?, false).await?;
+    Ok(changed(&state, game))
 }
 
 async fn cancel(
@@ -94,9 +98,8 @@ async fn cancel(
     auth: AuthUser,
     Path(id): Path<String>,
 ) -> AppResult<Json<OnlineGame>> {
-    Ok(Json(
-        online::close_invitation(&state.db, auth.user_id, game_id(&id)?, true).await?,
-    ))
+    let game = online::close_invitation(&state.db, auth.user_id, game_id(&id)?, true).await?;
+    Ok(changed(&state, game))
 }
 
 async fn play(
@@ -105,9 +108,8 @@ async fn play(
     Path(id): Path<String>,
     ApiJson(req): ApiJson<MoveRequest>,
 ) -> AppResult<Json<OnlineGame>> {
-    Ok(Json(
-        online::play(&state.db, auth.user_id, game_id(&id)?, req).await?,
-    ))
+    let game = online::play(&state.db, auth.user_id, game_id(&id)?, req).await?;
+    Ok(changed(&state, game))
 }
 
 async fn resign(
@@ -115,9 +117,17 @@ async fn resign(
     auth: AuthUser,
     Path(id): Path<String>,
 ) -> AppResult<Json<OnlineGame>> {
-    Ok(Json(
-        online::resign(&state.db, auth.user_id, game_id(&id)?).await?,
-    ))
+    let game = online::resign(&state.db, auth.user_id, game_id(&id)?).await?;
+    Ok(changed(&state, game))
+}
+
+async fn abort(
+    State(state): State<AppState>,
+    auth: AuthUser,
+    Path(id): Path<String>,
+) -> AppResult<Json<OnlineGame>> {
+    let game = online::abort_live(&state.db, auth.user_id, game_id(&id)?).await?;
+    Ok(changed(&state, game))
 }
 
 async fn opponents(State(state): State<AppState>, auth: AuthUser) -> AppResult<Json<OpponentList>> {

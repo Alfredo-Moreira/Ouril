@@ -24,7 +24,7 @@ describe('privacy policy and account deletion pages', () => {
     renderApp({ route: '/privacy' });
     expect(await screen.findByRole('heading', { level: 1, name: 'Privacy policy' })).toBeVisible();
     expect(screen.getAllByRole('heading', { level: 2 })).toHaveLength(PRIVACY_SECTIONS.length);
-    expect(screen.getByText(/Last updated: October 13, 2026/)).toBeVisible();
+    expect(screen.getByText(/Last updated: October 14, 2026/)).toBeVisible();
     expect(screen.getByText(new RegExp(`made by ${PRIVACY.controller}`))).toBeVisible();
     expect(screen.getByRole('link', { name: PRIVACY.email })).toHaveAttribute(
       'href',

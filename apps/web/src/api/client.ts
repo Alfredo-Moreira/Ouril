@@ -22,6 +22,7 @@ import type {
   GameList,
   Leaderboard,
   LeaderboardScope,
+  LiveToken,
   MyRatings,
   OnlineGame,
   OpponentList,
@@ -29,6 +30,8 @@ import type {
   GoogleSignInRequest,
   Me,
   Meta,
+  SeekRequest,
+  SeekStatus,
   SignInResponse,
   SyncPull,
   SyncPush,
@@ -188,7 +191,10 @@ export class ApiClient {
     return this.request<OnlineGame>('POST', '/v1/games/join', { invite_code: inviteCode });
   }
 
-  gameAction(id: string, action: 'accept' | 'decline' | 'cancel' | 'resign'): Promise<OnlineGame> {
+  gameAction(
+    id: string,
+    action: 'accept' | 'decline' | 'cancel' | 'resign' | 'abort',
+  ): Promise<OnlineGame> {
     return this.request<OnlineGame>('POST', `/v1/games/${encodeURIComponent(id)}/${action}`, {});
   }
 
@@ -202,6 +208,26 @@ export class ApiClient {
 
   opponents(): Promise<OpponentList> {
     return this.request<OpponentList>('GET', '/v1/opponents');
+  }
+
+  // --- live games (ADR 0033) ---------------------------------------------------------------
+
+  /** Look for an opponent; repeat while waiting (it's also the heartbeat). */
+  seek(request: SeekRequest): Promise<SeekStatus> {
+    return this.request<SeekStatus>('POST', '/v1/live/seek', request);
+  }
+
+  seekStatus(): Promise<SeekStatus> {
+    return this.request<SeekStatus>('GET', '/v1/live/seek');
+  }
+
+  cancelSeek(): Promise<SeekStatus> {
+    return this.request<SeekStatus>('DELETE', '/v1/live/seek');
+  }
+
+  /** A relay token for your own channel and, with `gameId`, that game's (501 = no relay). */
+  liveToken(gameId?: string): Promise<LiveToken> {
+    return this.request<LiveToken>('POST', '/v1/live/token', gameId ? { game_id: gameId } : {});
   }
 
   // --- ratings and leaderboards (ADR 0034) ------------------------------------------------

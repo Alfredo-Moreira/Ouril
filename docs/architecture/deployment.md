@@ -72,12 +72,12 @@ It listens on `127.0.0.1` only and asks for its own login, because it can change
 
 ## The homelab
 
-Small, optional services run on the developer's homelab: a UGREEN DH4300 Plus NAS (arm64, 8 GB RAM) behind an outbound-only Cloudflare Tunnel and the Zoraxy reverse proxy, documented in its own `home-lab` repository ([ADR 0032](../decisions/0032-small-services-on-the-homelab.md)). Usage statistics already run there ([ADR 0026](../decisions/0026-usage-statistics-with-matomo.md)). Nothing in this section is built yet; the paths are where it will go.
+Small, optional services run on the developer's homelab: a UGREEN DH4300 Plus NAS (arm64, 8 GB RAM) behind an outbound-only Cloudflare Tunnel and the Zoraxy reverse proxy, documented in its own `home-lab` repository ([ADR 0032](../decisions/0032-small-services-on-the-homelab.md)). Usage statistics already run there ([ADR 0026](../decisions/0026-usage-statistics-with-matomo.md)). The relay is built; scheduled jobs are still to come.
 
-| Service | What it does | Planned for |
+| Service | What it does | State |
 |---|---|---|
-| **Realtime relay** (`apps/relay`, `ouril-relay`, at `ouril-live.moreiralabs.org`) | Delivers live-game moves and "match found" to players over WebSocket. The server publishes to it; players subscribe with a token the server signs. Stores nothing durable ([ADR 0033](../decisions/0033-live-games-http-moves-and-relay.md)) | Live games |
-| **Scheduled jobs** (`ouril-jobs`) | A crontab that calls authenticated server endpoints (`POST /v1/internal/jobs/<name>`): leaderboard snapshots, clean-ups, anything more often than Vercel's daily cron | Leaderboards |
+| **Realtime relay** (`apps/relay`, `ouril-relay`, at `ouril-live.moreiralabs.org`) | Tells players over WebSocket when their game changed or a seek was matched. The server publishes to it; players subscribe with a token the server signs. Stores nothing ([ADR 0033](../decisions/0033-live-games-http-moves-and-relay.md), [relay API](../../apps/relay/API.md)) | ✅ Built |
+| **Scheduled jobs** (`ouril-jobs`) | A crontab that calls authenticated server endpoints (`POST /v1/internal/jobs/<name>`): leaderboard snapshots, clean-ups, anything more often than Vercel's daily cron | Not built |
 
 ```mermaid
 flowchart LR
@@ -113,22 +113,37 @@ It's a home network, so every homelab service assumes the internet is hostile.
 
 The same approach as the `home-lab` repository. The NAS never builds; nothing is copied to it.
 
-- **Files (planned):** `deploy/homelab/build-and-push.sh`, `deploy/homelab/docker-compose.homelab.yml`, `deploy/homelab/.env.example` (copy it to the gitignored `deploy/homelab/.env`) and `deploy/homelab/VERSION`.
-- **Build:** `deploy/homelab/build-and-push.sh` checks `.env`, builds every homelab image for `linux/amd64` and `linux/arm64` with `docker buildx`, with `.env` baked in, and pushes `:vX.Y.Z` (from `VERSION`) and `:latest` to the private registry named by `REGISTRY`. It then rewrites the image tags in `docker-compose.homelab.yml`.
+- **Files:** `deploy/homelab/build-and-push.sh`, `deploy/homelab/docker-compose.homelab.yml`, `deploy/homelab/.env.example` (copy it to the gitignored `deploy/homelab/.env`), `deploy/homelab/VERSION`, and the relay's image, `apps/relay/Dockerfile`.
+- **Build:** `deploy/homelab/build-and-push.sh` checks `.env` (registry, secrets of at least 32 characters that differ, `https://` origins), builds the relay for `linux/amd64` and `linux/arm64` with `docker buildx`, and pushes `:<VERSION>` and `:latest` to the private registry named by `REGISTRY`. It then points `docker-compose.homelab.yml` at the new tag.
+  - **No emulation:** the relay is pure Rust, so the Dockerfile cross-compiles on the build machine with Debian's cross linkers (about 3 MB binaries).
+  - **The image** is distroless (no shell, no package manager), runs as a non-root user, and has a built-in health check (`ouril-relay healthcheck`).
+  - **`.env` reaches only this image:** it's baked in as `/app/.env` through a named build context (`--build-context homelab=deploy/homelab`), and the main context excludes it (`.dockerignore`), so it can't end up in the server's image. Values set in the compose file win over it.
 - **Deploy:** paste `docker-compose.homelab.yml` into the UGOS Docker UI. Rolling back means pasting the previous tag.
-- **Expose:** in Zoraxy, route `ouril-live.moreiralabs.org` to the relay container, with WebSockets on. In Cloudflare, add the tunnel's public hostname for it. Jobs make outbound calls only and need no route.
-- **CI** validates the compose file and builds the images, without pushing. The registry is only reachable on the home network, so images reach the NAS only through the script.
+- **Expose:** in Zoraxy, route `ouril-live.moreiralabs.org` to `http://ouril-relay:8090`, with WebSockets on and the upstream health check on `/healthz`. In Cloudflare, add the tunnel's public hostname for it. Jobs make outbound calls only and need no route.
+- **CI** (`homelab` job) validates the compose file, runs `shellcheck` on the script, builds the relay for both architectures, and boots the amd64 image read-only to check its health, that it runs as non-root, and that it holds no `.env`. It never pushes: the registry is only reachable on the home network, so images reach the NAS only through the script.
+- **Locally:** `just relay` runs the relay on `localhost:8090` (with the `RELAY_*` values from `.env.example` set in `.env`), and `just build-relay-image` builds the image for this machine.
 - **Never push these images to a public registry:** like `home-lab`'s, they carry their `.env`.
+
+### First deploy of the relay
+
+1. `cp deploy/homelab/.env.example deploy/homelab/.env`, then set `REGISTRY` and two new secrets (`openssl rand -hex 32` each).
+2. On a machine on the home network: `deploy/homelab/build-and-push.sh`.
+3. Paste `deploy/homelab/docker-compose.homelab.yml` into the UGOS Docker UI.
+4. Zoraxy: route `ouril-live.moreiralabs.org` to `http://ouril-relay:8090` (WebSockets on, health check `/healthz`).
+5. Cloudflare: add the public hostname `ouril-live.moreiralabs.org` to the tunnel, pointing at Zoraxy, and a rate-limiting rule on `/ws`.
+6. GitHub, `production` environment: the variable `RELAY_URL=https://ouril-live.moreiralabs.org` and the secrets `RELAY_API_KEY` and `RELAY_TOKEN_SECRET` (the same values). The next deploy turns the relay on.
+7. Check: `https://ouril-live.moreiralabs.org/healthz` says `ok`, and in a live game the opponent's moves appear at once. Add the health check to the `home-lab` dashboard (`config/homelab.yaml`).
 
 ### Settings
 
 | Where | Setting | For |
 |---|---|---|
 | `deploy/homelab/.env` | `REGISTRY` | The private registry the script pushes to |
-| `deploy/homelab/.env` | `RELAY_API_KEY`, `RELAY_TOKEN_SECRET` | The relay's publish API key, and the secret that verifies players' subscription tokens |
-| `deploy/homelab/.env` | `JOBS_URL`, `JOBS_TOKEN` | The server's base URL and the bearer token jobs send |
-| `production` GitHub environment | `RELAY_URL`, `RELAY_API_KEY`, `RELAY_TOKEN_SECRET`, `JOBS_TOKEN` | The server's side of the same values (passed by `deploy-web.yml`) |
-| `apps/web/vercel.json` | `connect-src` gains the relay's `wss://` host | So the browser may open the WebSocket |
+| `deploy/homelab/.env` | `RELAY_API_KEY`, `RELAY_TOKEN_SECRET` | The relay's publish API key, and the secret that verifies players' tokens (`openssl rand -hex 32` each) |
+| `deploy/homelab/.env` | `ALLOWED_ORIGINS` | Web origins allowed to open a WebSocket (`https://ouril.vercel.app`) |
+| `production` GitHub environment | variable `RELAY_URL` (`https://ouril-live.moreiralabs.org`), secrets `RELAY_API_KEY`, `RELAY_TOKEN_SECRET` | The server's side of the same values (passed by `deploy-web.yml`). Without all three, live games work by polling |
+| `apps/web/vercel.json` | `connect-src` includes `wss://ouril-live.moreiralabs.org` | So the browser may open the WebSocket (done) |
+| later: `deploy/homelab/.env` and the GitHub environment | `JOBS_URL`, `JOBS_TOKEN` | Scheduled jobs |
 
 Each secret pair must match on both sides. Rotating one means a homelab deploy and a Vercel deploy.
 

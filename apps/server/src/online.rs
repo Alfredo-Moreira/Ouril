@@ -17,9 +17,10 @@ use ouril_engine::{
     VariantConfig,
 };
 use ouril_protocol::{
-    CreateGameRequest, GameList, MoveRequest, OnlineGame, OnlineGameResult, OnlineGameStatus,
-    OpponentList, OpponentSummary, PlayerSummary, RatingChange, Seat, INVITE_TTL_DAYS,
-    MAX_OPEN_INVITES, TURN_DEADLINE_DAYS,
+    Clocks, CreateGameRequest, GameList, GamePace, MoveRequest, OnlineGame, OnlineGameResult,
+    OnlineGameStatus, OpponentList, OpponentSummary, PlayerSummary, RatingChange, Seat,
+    TimeControl, INVITE_TTL_DAYS, LIVE_FIRST_MOVE_SECS, LIVE_TIME_CONTROLS, MAX_OPEN_INVITES,
+    TURN_DEADLINE_DAYS,
 };
 use ouril_sync::{
     GameMode, GameRecord, GameRecordResult, RecordEndReason, RecordOpponent, VariantRef,
@@ -48,7 +49,8 @@ macro_rules! columns {
     () => {
         "id, variant_id, variant_version, first_player, south_user, north_user,
     invited_user, invite_code, status, moves, turn_deadline, result_outcome, result_reason,
-    store_south, store_north, created_at, updated_at, started_at, mode, rated, rating_applied"
+    store_south, store_north, created_at, updated_at, started_at, mode, rated, rating_applied,
+    initial_ms, increment_ms, clock_south_ms, clock_north_ms, turn_started_at"
     };
 }
 
@@ -75,9 +77,49 @@ struct Row {
     mode: String,
     rated: bool,
     rating_applied: bool,
+    initial_ms: Option<i64>,
+    increment_ms: Option<i64>,
+    clock_south_ms: Option<i64>,
+    clock_north_ms: Option<i64>,
+    turn_started_at: Option<OffsetDateTime>,
 }
 
 impl Row {
+    fn is_live(&self) -> bool {
+        self.mode == GamePace::Live.as_str()
+    }
+
+    fn pace(&self) -> GamePace {
+        if self.is_live() {
+            GamePace::Live
+        } else {
+            GamePace::Async
+        }
+    }
+
+    fn time_control(&self) -> Option<TimeControl> {
+        match (self.initial_ms, self.increment_ms) {
+            (Some(i), Some(inc)) if self.is_live() => Some(TimeControl {
+                initial_secs: (i / 1000) as u32,
+                increment_secs: (inc / 1000) as u32,
+            }),
+            _ => None,
+        }
+    }
+
+    /// A live game's clocks run once both players have moved (ADR 0033).
+    fn clock_running(&self) -> bool {
+        self.is_live() && self.status == "active" && self.moves.len() >= 2
+    }
+
+    /// `player`'s time left when the current turn started.
+    fn clock_ms(&self, player: Player) -> i64 {
+        match player {
+            Player::South => self.clock_south_ms.unwrap_or(0),
+            Player::North => self.clock_north_ms.unwrap_or(0),
+        }
+    }
+
     /// The seat `me` plays (or will play, as the invited player), if any.
     fn seat_of(&self, me: Uuid) -> Option<Seat> {
         if self.south_user == me {
@@ -166,6 +208,7 @@ fn status_of(s: &str) -> OnlineGameStatus {
         "declined" => OnlineGameStatus::Declined,
         "cancelled" => OnlineGameStatus::Cancelled,
         "expired" => OnlineGameStatus::Expired,
+        "aborted" => OnlineGameStatus::Aborted,
         _ => OnlineGameStatus::Invited,
     }
 }
@@ -258,6 +301,23 @@ async fn view_with(
         invited_by_you,
         rated: row.rated,
         rating_changes,
+        mode: row.pace(),
+        time_control: row.time_control(),
+        clocks: if row.is_live() && row.clock_south_ms.is_some() {
+            Some(Clocks {
+                south_ms: row.clock_ms(Player::South),
+                north_ms: row.clock_ms(Player::North),
+                turn_started_at: row
+                    .turn_started_at
+                    .filter(|_| row.status == "active")
+                    .map(rfc3339)
+                    .transpose()?,
+                running: row.clock_running(),
+            })
+        } else {
+            None
+        },
+        server_now: rfc3339(OffsetDateTime::now_utc())?,
         created_at: rfc3339(row.created_at)?,
         updated_at: rfc3339(row.updated_at)?,
     })
@@ -306,13 +366,30 @@ async fn settle(conn: &mut PgConnection, row: &mut Row, now: OffsetDateTime) -> 
         .await?;
         *row = reload(conn, row.id).await?;
     } else if row.status == "active" && row.turn_deadline.is_some_and(|d| d < now) {
+        let ended = row.turn_deadline.expect("checked");
+        // A live game where someone never made their first move: no result.
+        if row.is_live() && row.moves.len() < 2 {
+            return abort(conn, row, ended).await;
+        }
         let pos = row.position()?;
         let loser = if pos.to_move == Player::South {
             Seat::South
         } else {
             Seat::North
         };
-        let ended = row.turn_deadline.expect("checked");
+        if row.is_live() {
+            // Their flag fell: their clock shows zero.
+            sqlx::query(
+                "UPDATE online_games
+                    SET clock_south_ms = CASE WHEN $2 THEN 0 ELSE clock_south_ms END,
+                        clock_north_ms = CASE WHEN $2 THEN clock_north_ms ELSE 0 END
+                  WHERE id = $1",
+            )
+            .bind(row.id)
+            .bind(loser == Seat::South)
+            .execute(&mut *conn)
+            .await?;
+        }
         finish(
             conn,
             row,
@@ -324,6 +401,22 @@ async fn settle(conn: &mut PgConnection, row: &mut Row, now: OffsetDateTime) -> 
         )
         .await?;
     }
+    Ok(())
+}
+
+/// Call off a live game before both players moved: no result, no history, no rating. The row
+/// must be locked.
+async fn abort(conn: &mut PgConnection, row: &mut Row, ended: OffsetDateTime) -> AppResult<()> {
+    sqlx::query(
+        "UPDATE online_games
+            SET status = 'aborted', turn_deadline = NULL, ended_at = $2, updated_at = now()
+          WHERE id = $1",
+    )
+    .bind(row.id)
+    .bind(ended)
+    .execute(&mut *conn)
+    .await?;
+    *row = reload(conn, row.id).await?;
     Ok(())
 }
 
@@ -444,6 +537,56 @@ async fn find_opponent(
     id.map(Some).ok_or_else(AppError::not_found)
 }
 
+/// One of the clocks players can choose (`LIVE_TIME_CONTROLS`), or 400.
+pub(crate) fn live_time_control(tc: TimeControl) -> AppResult<TimeControl> {
+    if LIVE_TIME_CONTROLS.contains(&tc) {
+        Ok(tc)
+    } else {
+        Err(AppError::bad_request("unknown time control"))
+    }
+}
+
+/// A game to create: turn by turn, or live with `time_control`.
+pub(crate) struct NewGame<'a> {
+    pub variant: &'a VariantConfig,
+    pub south: Uuid,
+    pub invited: Option<Uuid>,
+    pub invite_code: Option<String>,
+    pub rated: bool,
+    pub time_control: Option<TimeControl>,
+}
+
+/// Insert a new game (status `invited`; [`start`] makes it active). Who moves first is a coin
+/// toss.
+pub(crate) async fn insert_game(conn: &mut PgConnection, g: NewGame<'_>) -> AppResult<Uuid> {
+    let id = Uuid::now_v7();
+    let pace = if g.time_control.is_some() {
+        GamePace::Live
+    } else {
+        GamePace::Async
+    };
+    sqlx::query(
+        "INSERT INTO online_games (id, variant_id, variant_version, first_player, south_user,
+                                   invited_user, invite_code, rated, mode, initial_ms,
+                                   increment_ms)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)",
+    )
+    .bind(id)
+    .bind(&g.variant.id)
+    .bind(i32::from(g.variant.version))
+    .bind(enum_str(&coin_toss()))
+    .bind(g.south)
+    .bind(g.invited)
+    .bind(g.invite_code)
+    .bind(g.rated)
+    .bind(pace.as_str())
+    .bind(g.time_control.map(|t| i64::from(t.initial_secs) * 1000))
+    .bind(g.time_control.map(|t| i64::from(t.increment_secs) * 1000))
+    .execute(&mut *conn)
+    .await?;
+    Ok(id)
+}
+
 /// `POST /v1/games`: invite a player, or create an invite link.
 pub async fn create(db: &PgPool, me: Uuid, req: CreateGameRequest) -> AppResult<OnlineGame> {
     let variant_id = req.variant_id.as_deref().unwrap_or(DEFAULT_VARIANT);
@@ -462,21 +605,18 @@ pub async fn create(db: &PgPool, me: Uuid, req: CreateGameRequest) -> AppResult<
     if open >= MAX_OPEN_INVITES {
         return Err(AppError::conflict("too many open invitations"));
     }
-    let id = Uuid::now_v7();
-    sqlx::query(
-        "INSERT INTO online_games (id, variant_id, variant_version, first_player, south_user,
-                                   invited_user, invite_code, rated)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+    let time_control = req.time_control.map(live_time_control).transpose()?;
+    let id = insert_game(
+        &mut tx,
+        NewGame {
+            variant: v,
+            south: me,
+            invited: opponent,
+            invite_code: opponent.is_none().then(invite_code),
+            rated: req.rated.unwrap_or(true),
+            time_control,
+        },
     )
-    .bind(id)
-    .bind(&v.id)
-    .bind(i32::from(v.version))
-    .bind(enum_str(&coin_toss()))
-    .bind(me)
-    .bind(opponent)
-    .bind(opponent.is_none().then(invite_code))
-    .bind(req.rated.unwrap_or(true))
-    .execute(&mut *tx)
     .await?;
     let row = reload(&mut tx, id).await?;
     let game = view(&mut tx, &row, me).await?;
@@ -551,16 +691,23 @@ pub async fn get(db: &PgPool, me: Uuid, id: Uuid) -> AppResult<OnlineGame> {
 }
 
 /// Start an accepted game: `north` takes the North seat, the first turn's clock starts.
-async fn start(conn: &mut PgConnection, id: Uuid, north: Uuid) -> AppResult<()> {
+pub(crate) async fn start(conn: &mut PgConnection, id: Uuid, north: Uuid) -> AppResult<()> {
+    // Live: both clocks full, and the first move due within `LIVE_FIRST_MOVE_SECS`.
     sqlx::query(
         "UPDATE online_games
             SET north_user = $2, status = 'active', invite_code = NULL, started_at = now(),
-                turn_deadline = now() + make_interval(days => $3), updated_at = now()
+                turn_deadline = now() + CASE WHEN mode = 'live'
+                                             THEN make_interval(secs => $4)
+                                             ELSE make_interval(days => $3) END,
+                clock_south_ms = initial_ms, clock_north_ms = initial_ms,
+                turn_started_at = CASE WHEN mode = 'live' THEN now() END,
+                updated_at = now()
           WHERE id = $1",
     )
     .bind(id)
     .bind(north)
     .bind(TURN_DEADLINE_DAYS as i32)
+    .bind(LIVE_FIRST_MOVE_SECS as f64)
     .execute(&mut *conn)
     .await?;
     Ok(())
@@ -660,17 +807,58 @@ pub async fn play(db: &PgPool, me: Uuid, id: Uuid, req: MoveRequest) -> AppResul
         return Err(AppError::conflict("it isn't your turn"));
     }
     let result = apply_move(v, &pos, req.pit).map_err(|_| AppError::bad_request("illegal move"))?;
-    sqlx::query(
-        "UPDATE online_games
-            SET moves = array_append(moves, $2),
-                turn_deadline = now() + make_interval(days => $3), updated_at = now()
-          WHERE id = $1",
-    )
-    .bind(id)
-    .bind(i32::from(req.pit))
-    .bind(TURN_DEADLINE_DAYS as i32)
-    .execute(&mut *tx)
-    .await?;
+    if row.is_live() {
+        let now = OffsetDateTime::now_utc();
+        let mut clocks = [row.clock_ms(Player::South), row.clock_ms(Player::North)];
+        let mover = usize::from(pos.to_move == Player::North);
+        if row.clock_running() {
+            let started = row.turn_started_at.unwrap_or(now);
+            let left = clocks[mover] - (now - started).whole_milliseconds() as i64;
+            if left <= 0 {
+                // Out of time just now (after the settle above): the flag fell before the move.
+                row.turn_deadline = Some(started + Duration::milliseconds(clocks[mover]));
+                settle(&mut tx, &mut row, now).await?;
+                let game = view(&mut tx, &row, me).await?;
+                tx.commit().await?;
+                return Ok(game);
+            }
+            clocks[mover] = left + row.increment_ms.unwrap_or(0);
+        }
+        // Until both players have moved, the next move is due within the first-move window;
+        // after that, when the next player's clock runs out.
+        let deadline = if row.moves.len() + 1 < 2 {
+            now + Duration::seconds(LIVE_FIRST_MOVE_SECS)
+        } else {
+            let next = usize::from(result.state.to_move == Player::North);
+            now + Duration::milliseconds(clocks[next])
+        };
+        sqlx::query(
+            "UPDATE online_games
+                SET moves = array_append(moves, $2), clock_south_ms = $3, clock_north_ms = $4,
+                    turn_started_at = $5, turn_deadline = $6, updated_at = now()
+              WHERE id = $1",
+        )
+        .bind(id)
+        .bind(i32::from(req.pit))
+        .bind(clocks[0])
+        .bind(clocks[1])
+        .bind(now)
+        .bind(deadline)
+        .execute(&mut *tx)
+        .await?;
+    } else {
+        sqlx::query(
+            "UPDATE online_games
+                SET moves = array_append(moves, $2),
+                    turn_deadline = now() + make_interval(days => $3), updated_at = now()
+              WHERE id = $1",
+        )
+        .bind(id)
+        .bind(i32::from(req.pit))
+        .bind(TURN_DEADLINE_DAYS as i32)
+        .execute(&mut *tx)
+        .await?;
+    }
     row = reload(&mut tx, id).await?;
     if result.state.status != Status::Playing {
         let outcome = match result.state.status {
@@ -720,6 +908,19 @@ pub async fn resign(db: &PgPool, me: Uuid, id: Uuid) -> AppResult<OnlineGame> {
         true,
     )
     .await?;
+    let game = view(&mut tx, &row, me).await?;
+    tx.commit().await?;
+    Ok(game)
+}
+
+/// `POST /v1/games/{id}/abort`: call off a live game before both players have moved.
+pub async fn abort_live(db: &PgPool, me: Uuid, id: Uuid) -> AppResult<OnlineGame> {
+    let mut tx = db.begin().await?;
+    let (mut row, _) = lock_mine(&mut tx, id, me).await?;
+    if !(row.is_live() && row.status == "active" && row.moves.len() < 2) {
+        return Err(AppError::conflict("this game can't be aborted"));
+    }
+    abort(&mut tx, &mut row, OffsetDateTime::now_utc()).await?;
     let game = view(&mut tx, &row, me).await?;
     tx.commit().await?;
     Ok(game)

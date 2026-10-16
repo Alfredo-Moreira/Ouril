@@ -129,3 +129,54 @@ jobs:
             echo "::error::release binary contains the dev-auth route"
             exit 1
           fi
+
+  homelab:
+    name: Homelab images (relay; built, never pushed)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Compose file is valid
+        run: docker compose -f deploy/homelab/docker-compose.homelab.yml config --quiet
+      - name: Shellcheck the build script
+        run: shellcheck deploy/homelab/build-and-push.sh
+      # Both architectures, cross-compiled like the real build (the NAS is arm64). Images go to
+      # the private registry only through deploy/homelab/build-and-push.sh, never from CI.
+      - name: Build the relay image (amd64 and arm64)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/relay/Dockerfile
+          build-contexts: homelab=deploy/homelab
+          platforms: linux/amd64,linux/arm64
+          push: false
+          cache-from: type=gha,scope=relay
+          cache-to: type=gha,mode=max,scope=relay
+      - name: Load the amd64 image to boot it
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/relay/Dockerfile
+          build-contexts: homelab=deploy/homelab
+          platforms: linux/amd64
+          tags: ouril-relay:ci
+          load: true
+          cache-from: type=gha,scope=relay
+      - name: Boots read-only, non-root, healthy, with no baked-in secrets
+        run: |
+          docker run -d --name relay --read-only --cap-drop ALL -p 127.0.0.1:8090:8090 \
+            -e RELAY_API_KEY="$(openssl rand -hex 32)" \
+            -e RELAY_TOKEN_SECRET="$(openssl rand -hex 32)" \
+            -e ALLOWED_ORIGINS=https://ouril.vercel.app \
+            ouril-relay:ci
+          for _ in $(seq 1 20); do curl -sf localhost:8090/healthz && break; sleep 1; done
+          test "$(curl -s -o /dev/null -w '%{http_code}' localhost:8090/admin)" = 404
+          docker exec relay /ouril-relay healthcheck
+          test "$(docker inspect relay --format '{{.Config.User}}')" != ""
+          # CI has no deploy/homelab/.env, so the image must not contain one.
+          id=$(docker create ouril-relay:ci)
+          if docker cp "$id:/app/.env" /tmp/leaked.env 2>/dev/null; then
+            echo "::error::the CI image contains a .env"; exit 1
+          fi
+          docker rm "$id" >/dev/null
+          docker rm -f relay >/dev/null

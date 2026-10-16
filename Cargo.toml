@@ -8,6 +8,7 @@ members = [
     "core/protocol",
     "core/wasm",
     "apps/server",
+    "apps/relay",
 ]
 
 # Shared metadata only. Each crate declares its own dependencies (no [workspace.dependencies]).

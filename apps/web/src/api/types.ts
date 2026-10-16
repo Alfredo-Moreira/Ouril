@@ -138,7 +138,14 @@ export const MAX_PUSH_BATCH = 100;
 // --- Games against other players (ADR 0031) -------------------------------------------------
 
 export type OnlineGameStatus =
-  'invited' | 'active' | 'finished' | 'declined' | 'cancelled' | 'expired' | (string & {});
+  | 'invited'
+  | 'active'
+  | 'finished'
+  | 'declined'
+  | 'cancelled'
+  | 'expired'
+  | 'aborted'
+  | (string & {});
 
 export type Seat = 'south' | 'north';
 
@@ -176,6 +183,14 @@ export interface OnlineGame {
   rated?: boolean;
   /** Finished and counted: your rating changes, overall pool first. */
   rating_changes?: RatingChange[];
+  /** `async` (turn by turn) or `live` (ADR 0033); absent from older servers. */
+  mode?: GamePace;
+  /** Live games: the clock both players got. */
+  time_control?: TimeControl;
+  /** Live games: each side's time left when the current turn started. */
+  clocks?: Clocks;
+  /** The server's time when it answered (RFC 3339), to count down accurately. */
+  server_now?: string;
   created_at: string;
   updated_at: string;
 }
@@ -186,6 +201,8 @@ export interface CreateGameRequest {
   variant_id?: string;
   /** Counts for ratings; the server defaults to true. */
   rated?: boolean;
+  /** A live game with this clock (one of LIVE_TIME_CONTROLS); absent = turn by turn. */
+  time_control?: TimeControl;
 }
 
 export interface GameList {
@@ -250,3 +267,57 @@ export interface Leaderboard {
   entries: LeaderboardEntry[];
   you?: LeaderboardEntry;
 }
+
+// --- live games and the relay (ADR 0033) ------------------------------------------------------
+
+export type GamePace = 'async' | 'live';
+
+export interface TimeControl {
+  initial_secs: number;
+  increment_secs: number;
+}
+
+/** The clocks players can choose: 3+2, 5+3, 10+5. */
+export const LIVE_TIME_CONTROLS: readonly TimeControl[] = [
+  { initial_secs: 180, increment_secs: 2 },
+  { initial_secs: 300, increment_secs: 3 },
+  { initial_secs: 600, increment_secs: 5 },
+];
+
+/** Each player must make their first move within this, or the game is aborted. */
+export const LIVE_FIRST_MOVE_SECS = 30;
+
+export interface Clocks {
+  south_ms: number;
+  north_ms: number;
+  /** When the current turn began; absent once the game is over. */
+  turn_started_at?: string;
+  /** Whether the side to move is losing time (false until both players have moved). */
+  running: boolean;
+}
+
+export interface SeekRequest {
+  time_control: TimeControl;
+  variant_id?: string;
+  rated?: boolean;
+}
+
+export type SeekState = 'idle' | 'waiting' | 'matched';
+
+export interface SeekStatus {
+  state: SeekState;
+  game_id?: string;
+  players_seeking: number;
+}
+
+export interface LiveToken {
+  token: string;
+  url: string;
+  expires_in: number;
+}
+
+/** What the relay sends: only IDs and counts; details come from the server. */
+export type RelayEvent =
+  | { type: 'game_changed'; game_id: string; moves: number }
+  | { type: 'matched'; game_id: string }
+  | { type: 'games_changed' };

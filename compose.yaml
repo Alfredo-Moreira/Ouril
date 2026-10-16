@@ -72,6 +72,29 @@ services:
     working_dir: /workspace
     command: sh -c "pnpm install && pnpm --filter web dev --host 0.0.0.0 --port 5173"
 
+  # The live-game relay (ADR 0032, 0033), opt-in: `just relay` (or
+  # `docker compose --profile live up relay`). Uses RELAY_API_KEY, RELAY_TOKEN_SECRET and
+  # ALLOWED_ORIGINS from .env; see .env.example for local values. Production runs the image
+  # from apps/relay/Dockerfile on the homelab instead.
+  relay:
+    profiles: ["live"]
+    image: ouril-toolbox
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      CARGO_TARGET_DIR: /workspace/target
+      PORT: "8090"
+    ports:
+      - "127.0.0.1:${RELAY_PORT:-8090}:8090"
+    volumes:
+      - .:/workspace
+      - cargo-registry:/usr/local/cargo/registry
+      - cargo-git:/usr/local/cargo/git
+      - cargo-target-relay:/workspace/target
+    working_dir: /workspace
+    command: cargo run --release -p ouril-relay
+
   # pgAdmin for the local database: `just pgadmin` (or `docker compose up -d pgadmin`), then
   # http://localhost:5050, no login. Password for "Ouril local": ouril. Opt-in (profile), so
   # `just dev` doesn't start it. Neon has its own: docker/pgadmin/compose.neon.yaml.
@@ -124,5 +147,6 @@ volumes:
   cargo-git:
   cargo-target:
   cargo-target-server:
+  cargo-target-relay:
   node-modules:
   web-node-modules:

@@ -10,3 +10,6 @@ apps/web/src/generated
 !.env.example
 *.p8
 docs
+
+# The homelab stack's secrets (deploy/homelab/.env, ADR 0032): only the relay image gets them.
+deploy/homelab/.env

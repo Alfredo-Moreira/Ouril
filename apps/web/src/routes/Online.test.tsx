@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ApiClient, ApiError } from '../api/client';
@@ -280,6 +280,143 @@ describe('Play online', () => {
     renderApp({ route: '/online/g1', core: loadCoreSync(), createApi: () => onlineApi([casual]) });
     const result = await screen.findByRole('dialog', { name: 'You lost' });
     expect(within(result).getByText("A casual game: ratings didn't change.")).toBeInTheDocument();
+  });
+
+  it('plays now: looks for an opponent, shows who else is looking, and can stop', async () => {
+    await signInLocally();
+    const api = onlineApi([], {
+      seek: vi.fn(async () => ({ state: 'waiting', players_seeking: 3 })),
+      cancelSeek: vi.fn(async () => ({ state: 'idle', players_seeking: 2 })),
+    });
+    renderApp({ route: '/online', createApi: () => api });
+    const playNow = await screen.findByRole('region', { name: 'Play now' });
+    fireEvent.click(within(playNow).getByRole('button', { name: '5 + 3' }));
+    await waitFor(() =>
+      expect(api.seek).toHaveBeenCalledWith({
+        time_control: { initial_secs: 300, increment_secs: 3 },
+        rated: true,
+      }),
+    );
+    expect(await within(playNow).findByText('Looking for an opponent for 5 + 3…')).toBeDefined();
+    expect(within(playNow).getByText('3 players looking')).toBeInTheDocument();
+    fireEvent.click(within(playNow).getByRole('button', { name: 'Cancel' }));
+    await waitFor(() => expect(api.cancelSeek).toHaveBeenCalled());
+    expect(within(playNow).getByRole('button', { name: '3 + 2' })).toBeInTheDocument();
+  });
+
+  it('opens the game when a live opponent is found', async () => {
+    await signInLocally();
+    const live = game({ id: 'live1', mode: 'live' });
+    const api = onlineApi([live], {
+      seek: vi.fn(async () => ({ state: 'matched', game_id: 'live1', players_seeking: 0 })),
+      cancelSeek: vi.fn(async () => ({ state: 'idle', players_seeking: 0 })),
+    });
+    renderApp({ route: '/online', core: loadCoreSync(), createApi: () => api });
+    fireEvent.click(
+      within(await screen.findByRole('region', { name: 'Play now' })).getByRole('button', {
+        name: '10 + 5',
+      }),
+    );
+    expect(await screen.findByRole('heading', { name: 'You vs Ana' })).toBeInTheDocument();
+    expect(api.cancelSeek).toHaveBeenCalled();
+  });
+
+  it('invites to a live game with the chosen clock', async () => {
+    await signInLocally();
+    const api = onlineApi([]);
+    renderApp({ route: '/online', createApi: () => api });
+    fireEvent.change(await screen.findByLabelText('Game pace'), { target: { value: '180+2' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Create an invite link' }));
+    await waitFor(() =>
+      expect(api.createGame).toHaveBeenCalledWith({
+        rated: true,
+        time_control: { initial_secs: 180, increment_secs: 2 },
+      }),
+    );
+  });
+
+  it('shows both clocks in a live game and can call it off before both have moved', async () => {
+    await signInLocally();
+    const now = new Date().toISOString();
+    const live = game({
+      mode: 'live',
+      time_control: { initial_secs: 300, increment_secs: 3 },
+      clocks: { south_ms: 300_000, north_ms: 254_000, turn_started_at: now, running: false },
+      server_now: now,
+    });
+    const api = onlineApi([live], {
+      gameAction: vi.fn(async () => ({ ...live, status: 'aborted' })),
+    });
+    renderApp({ route: '/online/g1', core: loadCoreSync(), createApi: () => api });
+    const timers = await screen.findAllByRole('timer');
+    expect(timers.map((t) => t.textContent)).toEqual(['4:14', '5:00']);
+    expect(screen.getByText(/Make your first move within 30 seconds/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Game menu' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Call off the game' }));
+    await waitFor(() => expect(api.gameAction).toHaveBeenCalledWith('g1', 'abort'));
+    expect(
+      await screen.findByText("Game called off: a player didn't make their first move in time."),
+    ).toBeInTheDocument();
+  });
+
+  it('asks the server when a live clock reaches zero', async () => {
+    await signInLocally();
+    const now = Date.now();
+    const live = game({
+      mode: 'live',
+      moves: [0, 9],
+      time_control: { initial_secs: 180, increment_secs: 2 },
+      // Your clock had 1 s left when your turn started 5 s ago.
+      clocks: {
+        south_ms: 1_000,
+        north_ms: 90_000,
+        turn_started_at: new Date(now - 5_000).toISOString(),
+        running: true,
+      },
+      server_now: new Date(now).toISOString(),
+    });
+    const api = onlineApi([live]);
+    renderApp({ route: '/online/g1', core: loadCoreSync(), createApi: () => api });
+    expect(await screen.findByText('0:00.0')).toBeInTheDocument();
+    await waitFor(() => expect(vi.mocked(api.getGame).mock.calls.length).toBeGreaterThanOrEqual(2));
+  });
+
+  it('refetches the game the moment the relay says it changed', async () => {
+    await signInLocally();
+    const sockets: FakeSocket[] = [];
+    class FakeSocket {
+      onopen: (() => void) | null = null;
+      onmessage: ((m: { data: string }) => void) | null = null;
+      onclose: ((e: { code: number }) => void) | null = null;
+      sent: string[] = [];
+      constructor(readonly url: string) {
+        sockets.push(this);
+        setTimeout(() => this.onopen?.(), 0);
+      }
+      send(data: string) {
+        this.sent.push(data);
+      }
+      close() {}
+    }
+    vi.stubGlobal('WebSocket', FakeSocket);
+    try {
+      const api = onlineApi([game({ your_turn: false })], {
+        liveToken: vi.fn(async () => ({ token: 'tok', url: 'wss://relay/ws', expires_in: 600 })),
+      });
+      renderApp({ route: '/online/g1', core: loadCoreSync(), createApi: () => api });
+      await waitFor(() => expect(sockets[0]?.sent).toEqual(['{"token":"tok"}']));
+      expect(api.liveToken).toHaveBeenCalledWith('g1');
+      const before = vi.mocked(api.getGame).mock.calls.length;
+      act(() => sockets[0]!.onmessage?.({ data: '{"type":"ready"}' }));
+      act(() =>
+        sockets[0]!.onmessage?.({
+          data: '{"type":"game_changed","game_id":"g1","moves":1}',
+        }),
+      );
+      await waitFor(() => expect(vi.mocked(api.getGame).mock.calls.length).toBe(before + 1));
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it('an invite link asks a guest to sign in, then joins once signed in', async () => {

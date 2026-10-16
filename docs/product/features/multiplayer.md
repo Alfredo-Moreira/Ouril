@@ -41,15 +41,20 @@ Both modes support **rated** games (which affect the [skill rating](leaderboards
 - Engine-assistance detection (comparing moves to strong AI play) is a later concern.
 - Block and report players.
 
-## Live games (planned)
+## Live games
 
-Proposed in [ADR 0033](../../decisions/0033-live-games-http-moves-and-relay.md), on the hosting from [ADR 0032](../../decisions/0032-small-services-on-the-homelab.md):
+Built, per [ADR 0033](../../decisions/0033-live-games-http-moves-and-relay.md), on the hosting from [ADR 0032](../../decisions/0032-small-services-on-the-homelab.md) (both Proposed):
 
-- **Same game screen** as turn-by-turn and computer games, plus a clock for each player in the scoreboard, with a low-time warning.
-- **Time controls** (to playtest): 3 + 2, 5 + 3 (default) and 10 + 5, in minutes per player plus seconds added per move. PlayOK's usual oware setting is 5 minutes each.
-- **Moves arrive in well under a second** through a realtime relay on the developer's homelab. If it can't be reached, the app polls the game every second instead, so a game is never stuck.
-- **Starting:** **Play now** (pick a time control; you're paired with someone near your rating, and the range widens the longer you wait), open challenges in a lobby, or a live challenge to a handle or past opponent. With few players online, the lobby and direct challenges matter more than automatic pairing; the app shows how many are looking and offers a game against the computer while you wait.
-- **During the game:** resign, offer a draw, and abort before your first move. The server owns the clocks and every rule.
+- **Same game screen** as turn-by-turn and computer games, plus each player's clock in the scoreboard: it darkens on that player's turn and turns red under 20 seconds.
+- **Clocks** (to playtest): 3 + 2, 5 + 3 and 10 + 5, in minutes per player plus seconds added after each move. PlayOK's usual oware setting is 5 minutes each. The clocks start once both players have moved.
+- **Moves arrive in well under a second** (about 50 ms in a local test) through the relay on the developer's homelab. If it can't be reached, the app polls the game every second instead, so a game is never stuck.
+- **Starting:**
+  - **Play now:** pick a clock; you're paired with someone near your rating (the range widens the longer they've waited, and anyone after 30 seconds). The card shows how many players are looking, and **Cancel** stops.
+  - **Invite live:** the lobby's **Game pace** applies a clock to an invitation by handle, an invite link or a challenge to a past opponent. **Rematch** keeps the clock.
+- **First move:** each player has 30 seconds to make their first move, or the game is called off (no result, no rating). Either player can also call it off from the menu until both have moved.
+- **During the game:** resign from the menu. The server owns the clocks and every rule; when a clock reaches zero on screen, the app asks the server, which decides.
+- **Rated** live games have their own pool per variant (`<variant>:live`) and count in the overall rating ([leaderboards](leaderboards.md)).
+- **Not yet:** draw offers, open challenges in a lobby list, and offering a game against the computer while waiting.
 
 ## As built (async, ADR 0031)
 
@@ -62,7 +67,7 @@ Turn-by-turn games are built ([ADR 0031](../../decisions/0031-online-games-over-
 - **Notifications:** in the app only. The games list shows invitations for you and games waiting for your move. Push notifications come later.
 - **After the game:** **Rematch** invites the same player to a new game. Both players get it in their history, and in Stats under "Against other players", and the opponent appears under "People you've played".
 - **Rated or casual:** invitations are rated by default; a rated game updates both players' ratings and shows the change in the result ([leaderboards](leaderboards.md), [ADR 0034](../../decisions/0034-ratings-and-leaderboards-in-postgres.md)).
-- **Not yet:** timed live games and matchmaking ([planned](#live-games-planned)), draw offers, preset messages, block and report, and the friends list.
+- **Not yet:** draw offers, preset messages, block and report, and the friends list.
 
 ## Open questions
 

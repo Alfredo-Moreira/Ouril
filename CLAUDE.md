@@ -7,10 +7,10 @@ Guidance for AI agents (and humans) working in this repo.
 **Ouril** is a digital version of the Cape Verdean seed-sowing game (Oware family), shipping native apps for iOS (SwiftUI) and Android (Jetpack Compose), a web app (TypeScript + React), and a Rust server. A shared **Rust core** (rules engine, AI, sync rules) is compiled into every app and the server.
 
 **Current state:** Phase 0 (documentation) is done. Phase 1, **the MVP, is the web app alone as a static site with no server** ([ADR 0025](docs/decisions/0025-web-first-static-mvp.md), [deployment](docs/architecture/deployment.md)):
-- **Built:** the Rust core (`core/engine`, `core/ai`, `core/rating`, `core/sync`, `core/protocol`, `core/wasm`; `cv.standard@1` passes every test vector), the server (`apps/server`: dev sign-in, profile, account deletion, sync push and pull, turn-by-turn games against other players over HTTP, [ADR 0031](docs/decisions/0031-online-games-over-http.md), and ratings with world and country leaderboards, [ADR 0034](docs/decisions/0034-ratings-and-leaderboards-in-postgres.md)), and the guest-first web app (`apps/web`: play vs AI, tutorial, rules, settings, About; a 3D board, ADR 0021; sign-in with sync and Stats are built but off for the MVP, `apps/web/src/features.ts`).
+- **Built:** the Rust core (`core/engine`, `core/ai`, `core/rating`, `core/sync`, `core/protocol`, `core/wasm`; `cv.standard@1` passes every test vector), the server (`apps/server`: dev sign-in, profile, account deletion, sync push and pull, turn-by-turn and live games against other players over HTTP, [ADR 0031](docs/decisions/0031-online-games-over-http.md), [ADR 0033](docs/decisions/0033-live-games-http-moves-and-relay.md), and ratings with world and country leaderboards, [ADR 0034](docs/decisions/0034-ratings-and-leaderboards-in-postgres.md)), the live-game relay (`apps/relay`, for the homelab), and the guest-first web app (`apps/web`: play vs AI, tutorial, rules, settings, About; a 3D board, ADR 0021; sign-in with sync and Stats are built but off for the MVP, `apps/web/src/features.ts`).
 - **Placeholders:** Google and Apple sign-in answer `501 not_configured` until client IDs exist. The web Google button works once `VITE_GOOGLE_CLIENT_ID` is set (an OpenID Connect redirect, [accounts](docs/product/features/accounts.md#google-on-the-web)); Apple's stays disabled. Use dev sign-in (`POST /v1/auth/dev`) locally. `just i18n` and `core/ffi` (UniFFI) aren't built yet.
 - **Not started:** iOS and Android.
-- **Hosting:** the web app and the server on Vercel, Postgres on Neon. Small, optional services (the live-game relay, scheduled jobs) are planned for the developer's homelab, built and deployed like the `home-lab` repo (`deploy/homelab/`, [ADR 0032](docs/decisions/0032-small-services-on-the-homelab.md), Proposed). They're never the source of truth, and every client path keeps a fallback (for example polling).
+- **Hosting:** the web app and the server on Vercel, Postgres on Neon. Small, optional services run on the developer's homelab, built and deployed like the `home-lab` repo (`deploy/homelab/`, [ADR 0032](docs/decisions/0032-small-services-on-the-homelab.md), Proposed): the live-game relay (built, not deployed yet), later scheduled jobs. They're never the source of truth, and every client path keeps a fallback (for example polling).
 
 Development is **local-first and Docker-first** (ADR 0017): run things through `just` / `docker compose`, not host-installed toolchains, except for iOS/Xcode and the Android Emulator. Build order: core → web → iOS → Android (ADR 0018). See the [roadmap](docs/product/roadmap.md).
 
@@ -65,7 +65,7 @@ Development is **local-first and Docker-first** (ADR 0017): run things through `
 
 ## Commands
 
-The host needs only Docker, plus `just` if you want it. Don't use host Rust or Node: everything runs in containers. The `toolbox` image includes `just`, so without `just` on the host, run any recipe as `docker compose run --rm toolbox just <recipe>`. Recipes that start other containers are the exception (`dev`, `test-web`, `fmt`, `lint`, `build-server-image`); use the plain `docker compose` command for those.
+The host needs only Docker, plus `just` if you want it. Don't use host Rust or Node: everything runs in containers. The `toolbox` image includes `just`, so without `just` on the host, run any recipe as `docker compose run --rm toolbox just <recipe>`. Recipes that start other containers are the exception (`dev`, `test-web`, `fmt`, `lint`, `build-server-image`, `relay`, `build-relay-image`); use the plain `docker compose` command for those.
 
 | Task | With `just` | Without `just` on the host |
 |---|---|---|
@@ -73,6 +73,9 @@ The host needs only Docker, plus `just` if you want it. Don't use host Rust or N
 | Build the WASM package (`core/wasm/pkg`, needed before `pnpm install`) | `just bindings` | `docker compose run --rm toolbox just bindings` |
 | Run the stack (db, server with dev-auth and hot reload on :8080, web on :5173) | `just dev` | build the WASM package, then `docker compose up db server web` |
 | Rust core tests (engine, AI, sync, protocol, wasm, test vectors) | `just test-core` | `docker compose run --rm toolbox just test-core` |
+| Relay tests (`apps/relay`) | `just test-relay` | `docker compose run --rm toolbox just test-relay` |
+| Run the relay locally on :8090 (set `RELAY_*` in `.env`) / build its image | `just relay` / `just build-relay-image` | `docker compose --profile live up relay` / see the `build-relay-image` recipe |
+| Homelab images: build both architectures and push to the private registry | `deploy/homelab/build-and-push.sh` | same ([deployment](docs/architecture/deployment.md#the-homelab)) |
 | Server tests (needs `db`) | `just test-server` | `docker compose up -d --wait db && docker compose run --rm toolbox just test-server` |
 | Web tests (Vitest) | `just test-web` | build the WASM package, then `docker compose run --rm web sh -c "pnpm install --frozen-lockfile && pnpm --filter web test"` |
 | Everything | `just test` | the three rows above |
@@ -87,4 +90,4 @@ The host needs only Docker, plus `just` if you want it. Don't use host Rust or N
 - Published ports bind to `127.0.0.1`. For LAN or phone testing: `docker compose -f compose.yaml -f docker/compose.lan.yaml up db server web`.
 - Docker Desktop: don't run two heavy cargo builds at once. The `server` service has its own target volume, so `cargo-watch` and toolbox builds don't block each other.
 
-Contracts: [core/wasm/API.md](core/wasm/API.md) (web ↔ core) and [apps/server/API.md](apps/server/API.md) (HTTP API).
+Contracts: [core/wasm/API.md](core/wasm/API.md) (web ↔ core), [apps/server/API.md](apps/server/API.md) (HTTP API) and [apps/relay/API.md](apps/relay/API.md) (live-game relay).

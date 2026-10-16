@@ -3,7 +3,12 @@ import { useTranslation } from 'react-i18next';
 import { Link, useNavigate, useParams } from 'react-router';
 
 import { ApiError } from '../api/client';
-import type { OnlineGame as Game } from '../api/types';
+import {
+  LIVE_FIRST_MOVE_SECS,
+  type OnlineGame as Game,
+  type RelayEvent,
+  type Seat,
+} from '../api/types';
 import { hasMusic, skipTrack } from '../audio/music';
 import { useMusicPrefs } from '../audio/musicPrefs';
 import { useBoardPace } from '../board3d/pace';
@@ -32,15 +37,21 @@ import { buildFrames, defaultSpeed, frameDelay, type Frame } from '../game/anima
 import { PLAYABLE_VARIANTS, type PlayableVariant } from '../game/session';
 import { playEndSound, playFrameSound } from '../game/sound';
 import { trackInviteAnswer, trackOnlineFinished } from '../online/analytics';
+import { clockOffset, formatClock, timeLeft } from '../online/clock';
 import { newer } from '../online/freshness';
 import { displayPosition, flipPit, resultFor } from '../online/perspective';
 import { poolLabel } from '../online/pools';
 import { usePolling } from '../online/usePolling';
+import { useRelay } from '../online/useRelay';
 import { useImmersiveScreen } from '../state/immersive';
 import { useApp, useStatsVisible } from '../state/useApp';
 
 /** While waiting for the opponent's move: how often to ask the server. */
 const WAITING_POLL_MS = 2_000;
+/** A live game without the relay: every second, so moves and flag falls show up quickly. */
+const LIVE_POLL_MS = 1_000;
+/** With the relay, which announces every change: only a safety net. */
+const RELAY_POLL_MS = 10_000;
 /** On your turn or before the game starts: only to notice a resign, timeout or acceptance. */
 const IDLE_POLL_MS = 15_000;
 
@@ -73,11 +84,14 @@ function OnlineGameScreen({ id, animationSpeed }: OnlineGameProps & { id: string
   const [busy, setBusy] = useState(false);
   const wasFinished = useRef<boolean | null>(null);
   const [speed] = useState(() => animationSpeed ?? defaultSpeed());
+  // Server time minus this device's, for counting live clocks down accurately.
+  const [offset, setOffset] = useState(0);
 
   const refresh = useCallback(() => {
     void api()
       .getGame(id)
       .then((g) => {
+        setOffset(clockOffset(g.server_now, Date.now()));
         setGame((prev) => newer(prev, g));
         setError(null);
       })
@@ -102,17 +116,37 @@ function OnlineGameScreen({ id, animationSpeed }: OnlineGameProps & { id: string
     wasFinished.current = finished;
   }, [game, notifyLocalChange]);
 
-  const live = game?.status === 'active' || game?.status === 'invited';
-  usePolling(
-    refresh,
-    !live ? null : game?.status === 'active' && !game.your_turn ? WAITING_POLL_MS : IDLE_POLL_MS,
+  const open = game?.status === 'active' || game?.status === 'invited';
+  // The relay announces changes the moment they happen (ADR 0033); polling stays as the
+  // fallback, faster when the relay isn't there.
+  const relayUp = useRelay(
+    id,
+    useCallback(
+      (e: RelayEvent) => {
+        if (e.type === 'game_changed' && e.game_id === id) refresh();
+      },
+      [id, refresh],
+    ),
+    open,
   );
+  const isLive = game?.mode === 'live';
+  const pollMs = !open
+    ? null
+    : relayUp
+      ? RELAY_POLL_MS
+      : isLive && game?.status === 'active'
+        ? LIVE_POLL_MS
+        : game?.status === 'active' && !game.your_turn
+          ? WAITING_POLL_MS
+          : IDLE_POLL_MS;
+  usePolling(refresh, pollMs);
 
   const act: Act = async (action, onDone) => {
     setBusy(true);
     setError(null);
     try {
       const next = await action();
+      setOffset(clockOffset(next.server_now, Date.now()));
       setGame((prev) => newer(prev, next));
       onDone?.();
       return true;
@@ -136,7 +170,17 @@ function OnlineGameScreen({ id, animationSpeed }: OnlineGameProps & { id: string
   }
   if (!game) return <p role="status">{t('common.loading')}</p>;
   if (game.status === 'active' || game.status === 'finished') {
-    return <OnlineGameView game={game} act={act} busy={busy} error={error} speed={speed} />;
+    return (
+      <OnlineGameView
+        game={game}
+        act={act}
+        busy={busy}
+        error={error}
+        speed={speed}
+        offset={offset}
+        onClockOut={refresh}
+      />
+    );
   }
   return <Invitation game={game} act={act} busy={busy} error={error} />;
 }
@@ -164,7 +208,7 @@ function Invitation({
           (game.invited_by_you
             ? t('online.game.waiting_accept', { name: opponentName })
             : t('online.game.invited_you', { name: opponentName }))}
-        {['declined', 'cancelled', 'expired'].includes(game.status) &&
+        {['declined', 'cancelled', 'expired', 'aborted'].includes(game.status) &&
           t(`online.status.${game.status}`)}
       </p>
       <ErrorLine error={error} />
@@ -226,12 +270,18 @@ function OnlineGameView({
   busy,
   error,
   speed: baseSpeed,
+  offset,
+  onClockOut,
 }: {
   game: Game;
   act: Act;
   busy: boolean;
   error: string | null;
   speed: number;
+  /** Server time minus device time. */
+  offset: number;
+  /** A live clock reached zero on screen: ask the server, which settles the flag fall. */
+  onClockOut: () => void;
 }) {
   useImmersiveScreen();
   const { t, i18n } = useTranslation();
@@ -320,14 +370,20 @@ function OnlineGameView({
       const next = await api().createGame({
         opponent_id: opponent.user_id,
         rated: game.rated !== false,
+        time_control: game.time_control,
       });
       navigate(`/online/${next.id}`);
       return next;
     });
   };
 
+  const isLive = game.mode === 'live';
+  const firstMoves = isLive && game.status === 'active' && game.moves.length < 2;
+  const abortGame = async () => {
+    if (await act(() => api().gameAction(game.id, 'abort'))) setMenu('closed');
+  };
   const deadline =
-    playing && game.turn_deadline
+    playing && !isLive && game.turn_deadline
       ? new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium', timeStyle: 'short' }).format(
           new Date(game.turn_deadline),
         )
@@ -356,6 +412,9 @@ function OnlineGameView({
             </span>
             <span className="score__name">{opponentName}</span>
             <ScoreValue value={shown.stores[1]} />
+            {game.clocks && (
+              <LiveClock game={game} side="them" offset={offset} onOut={onClockOut} />
+            )}
           </div>
           <p className="game-status" role="status">
             {status}
@@ -366,6 +425,7 @@ function OnlineGameView({
             </span>
             <span className="score__name">{t('online.you')}</span>
             <ScoreValue value={shown.stores[0]} />
+            {game.clocks && <LiveClock game={game} side="you" offset={offset} onOut={onClockOut} />}
           </div>
         </div>
         <div className="game__tools">
@@ -502,6 +562,16 @@ function OnlineGameView({
               <HomeIcon />
               {t('online.menu.back')}
             </Link>
+            {firstMoves && (
+              <button
+                type="button"
+                className="button button--ghost"
+                onClick={() => void abortGame()}
+                disabled={busy}
+              >
+                {t('online.abort')}
+              </button>
+            )}
             <button
               type="button"
               className="button button--ghost button--danger-text"
@@ -536,6 +606,11 @@ function OnlineGameView({
       )}
       {deadline && (
         <p className="note game__note">{t('online.game.deadline', { date: deadline })}</p>
+      )}
+      {firstMoves && (
+        <p className="note game__note">
+          {t('online.first_move', { seconds: LIVE_FIRST_MOVE_SECS })}
+        </p>
       )}
 
       {finished && outcome && game.result && (
@@ -596,6 +671,63 @@ function OnlineGameView({
       )}
     </section>
   );
+}
+
+/**
+ * One side's live clock, counting down locally while it's that side's turn. At zero it asks
+ * the server once per turn; the server decides whether the flag fell.
+ */
+function LiveClock({
+  game,
+  side,
+  offset,
+  onOut,
+}: {
+  game: Game;
+  side: 'you' | 'them';
+  offset: number;
+  onOut: () => void;
+}) {
+  const { t } = useTranslation();
+  const clocks = game.clocks!;
+  const them: Seat = game.you === 'south' ? 'north' : 'south';
+  const seat = side === 'you' ? game.you : them;
+  const toMove: Seat = game.your_turn ? game.you : them;
+  const ticking = clocks.running && game.status === 'active' && toMove === seat;
+  const now = useNow(ticking);
+  const left = timeLeft(clocks, toMove, now, offset)[seat];
+  const asked = useRef<string | null>(null);
+  useEffect(() => {
+    // Once per turn (the turn's start identifies it).
+    const turn = clocks.turn_started_at ?? '';
+    if (ticking && left <= 0 && asked.current !== turn) {
+      asked.current = turn;
+      onOut();
+    }
+  }, [ticking, left, clocks.turn_started_at, onOut]);
+  const time = formatClock(left);
+  return (
+    <span
+      className={`score__clock${ticking ? ' score__clock--running' : ''}${
+        left < 20_000 ? ' score__clock--low' : ''
+      }`}
+      role="timer"
+      aria-label={t('online.clock', { time })}
+    >
+      {time}
+    </span>
+  );
+}
+
+/** Now, refreshed ten times a second while `running`. */
+function useNow(running: boolean): number {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!running) return;
+    const timer = setInterval(() => setNow(Date.now()), 100);
+    return () => clearInterval(timer);
+  }, [running]);
+  return now;
 }
 
 /** How the game moved your ratings, or why it didn't. */
