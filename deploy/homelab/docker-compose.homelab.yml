@@ -1,15 +1,15 @@
 ## TO BE USED IN THE NAS ENVIRONMENT ONLY (ADR 0032).
 ##
 ## Deploy: run deploy/homelab/build-and-push.sh on a machine on the home network, then paste
-## this file into the UGOS Docker UI. Nothing else goes on the NAS: the relay's settings are
-## baked into its image from deploy/homelab/.env.
+## this file into the UGOS Docker UI. Nothing else goes on the NAS: each service's settings are
+## baked into its own image from deploy/homelab/.env (only the keys it uses).
 ##
 ## Expose: Zoraxy routes ouril-live.moreiralabs.org to http://ouril-relay:8090 (WebSockets
 ## on, upstream health check /healthz), and the Cloudflare Tunnel has that public hostname
 ## pointing at Zoraxy. Nothing is published on the NAS itself.
 services:
   ouril-relay:
-    image: 192.168.4.29:5000/ouril-relay:0.1.0
+    image: 192.168.4.29:5000/ouril-relay:0.2.0
     platform: linux/arm64
     container_name: ouril-relay
     restart: unless-stopped
@@ -29,6 +29,29 @@ services:
       # outbound connections.
       - internal_public_apps
 
+  # Scheduled jobs: calls the server's job endpoints every hour (leaderboard snapshots, pruning).
+  # No inbound route at all; outbound HTTPS only, on its own network.
+  ouril-jobs:
+    image: 192.168.4.29:5000/ouril-jobs:0.2.0
+    platform: linux/arm64
+    container_name: ouril-jobs
+    restart: unless-stopped
+    read_only: true
+    # The heartbeat file behind its health check (a missed round shows as unhealthy).
+    tmpfs:
+      - /tmp:size=1m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 64m
+    pids_limit: 32
+    networks:
+      - ouril_jobs
+
 networks:
   internal_public_apps:
     external: true
+  # Outbound internet only; shared with nothing else in the lab.
+  ouril_jobs:
+    name: ouril_jobs

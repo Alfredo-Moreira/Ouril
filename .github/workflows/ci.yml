@@ -131,7 +131,7 @@ jobs:
           fi
 
   homelab:
-    name: Homelab images (relay; built, never pushed)
+    name: Homelab images (relay, jobs; built, never pushed)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -146,23 +146,32 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: apps/relay/Dockerfile
+          file: deploy/homelab/Dockerfile
           build-contexts: homelab=deploy/homelab
+          build-args: PACKAGE=ouril-relay
           platforms: linux/amd64,linux/arm64
           push: false
           cache-from: type=gha,scope=relay
           cache-to: type=gha,mode=max,scope=relay
-      - name: Load the amd64 image to boot it
+      - name: Build the jobs image (amd64 and arm64)
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: apps/relay/Dockerfile
+          file: deploy/homelab/Dockerfile
           build-contexts: homelab=deploy/homelab
-          platforms: linux/amd64
-          tags: ouril-relay:ci
-          load: true
-          cache-from: type=gha,scope=relay
-      - name: Boots read-only, non-root, healthy, with no baked-in secrets
+          build-args: PACKAGE=ouril-jobs
+          platforms: linux/amd64,linux/arm64
+          push: false
+          cache-from: type=gha,scope=jobs
+          cache-to: type=gha,mode=max,scope=jobs
+      - name: Load the amd64 images to boot them
+        run: |
+          for p in ouril-relay ouril-jobs; do
+            docker buildx build --load --platform linux/amd64 -f deploy/homelab/Dockerfile \
+              --build-context homelab=deploy/homelab --build-arg PACKAGE=$p \
+              --cache-from type=gha,scope=${p#ouril-} -t $p:ci .
+          done
+      - name: Relay boots read-only, non-root, healthy
         run: |
           docker run -d --name relay --read-only --cap-drop ALL -p 127.0.0.1:8090:8090 \
             -e RELAY_API_KEY="$(openssl rand -hex 32)" \
@@ -171,12 +180,25 @@ jobs:
             ouril-relay:ci
           for _ in $(seq 1 20); do curl -sf localhost:8090/healthz && break; sleep 1; done
           test "$(curl -s -o /dev/null -w '%{http_code}' localhost:8090/admin)" = 404
-          docker exec relay /ouril-relay healthcheck
+          docker exec relay /service healthcheck
           test "$(docker inspect relay --format '{{.Config.User}}')" != ""
-          # CI has no deploy/homelab/.env, so the image must not contain one.
-          id=$(docker create ouril-relay:ci)
-          if docker cp "$id:/app/.env" /tmp/leaked.env 2>/dev/null; then
-            echo "::error::the CI image contains a .env"; exit 1
-          fi
-          docker rm "$id" >/dev/null
           docker rm -f relay >/dev/null
+      - name: Jobs refuses to start without its settings, and is unhealthy before a round
+        run: |
+          if docker run --rm ouril-jobs:ci 2> /tmp/jobs.log; then
+            echo "::error::ouril-jobs started without JOBS_URL"; exit 1
+          fi
+          grep -q "JOBS_URL is required" /tmp/jobs.log
+          if docker run --rm -e JOBS_URL=https://example.invalid -e JOBS_TOKEN="$(openssl rand -hex 32)" \
+              ouril-jobs:ci healthcheck; then
+            echo "::error::healthy before any round"; exit 1
+          fi
+      - name: CI images hold no .env (CI has no deploy/homelab/.env)
+        run: |
+          for p in ouril-relay ouril-jobs; do
+            id=$(docker create $p:ci)
+            if docker cp "$id:/app/.env" /tmp/leaked.env 2>/dev/null; then
+              echo "::error::$p contains a .env"; exit 1
+            fi
+            docker rm "$id" >/dev/null
+          done

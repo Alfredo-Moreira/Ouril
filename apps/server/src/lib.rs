@@ -14,6 +14,7 @@ pub mod auth;
 pub mod client;
 pub mod config;
 pub mod error;
+pub mod jobs;
 pub mod live;
 pub mod online;
 pub mod opponents;

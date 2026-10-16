@@ -258,6 +258,8 @@ export interface LeaderboardEntry {
   country?: string;
   rating: number;
   games: number;
+  /** Places gained since `movement_since` (negative: lost); absent = new to the board. */
+  change?: number;
 }
 
 export interface Leaderboard {
@@ -266,6 +268,10 @@ export interface Leaderboard {
   country?: string;
   entries: LeaderboardEntry[];
   you?: LeaderboardEntry;
+  /** The day movement is measured from; absent until the scheduled job has run. */
+  movement_since?: string;
+  /** Your best rank ever on this board. */
+  your_best_rank?: number;
 }
 
 // --- live games and the relay (ADR 0033) ------------------------------------------------------

@@ -2684,3 +2684,26 @@ a.pay:active {
 .button-group > .icon-button:focus-visible {
   outline-offset: -3px;
 }
+
+/* Rank movement since the last daily snapshot. */
+.leaderboard__move {
+  display: inline-flex;
+  gap: 0.1rem;
+  margin-left: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 650;
+}
+
+.leaderboard__move--up {
+  color: var(--win);
+}
+
+.leaderboard__move--down {
+  color: var(--danger);
+}
+
+.leaderboard__move--new {
+  color: var(--sea);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
