@@ -319,6 +319,43 @@ pub async fn mine(db: &PgPool, me: Uuid) -> AppResult<MyRatings> {
     })
 }
 
+/// Who may appear on a board, as SQL over `ratings r JOIN users u` (shared by boards and
+/// snapshots, so they can't disagree). Parameters: `$1` min games, `$2` now, `$3` active days,
+/// `$4` the provisional deviation, `$5` ouril-rating's `SCALE`, `$6` its `PERIOD_SECS`. The
+/// deviation is grown for time exactly like ouril-rating's `deviation_after`
+/// (`deviation_grows_like_ouril_rating` keeps them equal).
+macro_rules! eligible {
+    () => {
+        "u.deleted_at IS NULL
+         AND r.games >= $1
+         AND r.last_rated_at > $2 - make_interval(days => $3)
+         AND sqrt(power(r.deviation / $5, 2)
+                  + extract(epoch FROM ($2 - r.last_rated_at)) / $6
+                    * power(r.volatility, 2)) * $5 <= $4"
+    };
+}
+
+/// Bind the six parameters [`eligible!`] uses, in order.
+fn bind_eligibility<'q, O>(
+    q: sqlx::query::QueryAs<'q, sqlx::Postgres, O, sqlx::postgres::PgArguments>,
+    now: OffsetDateTime,
+) -> sqlx::query::QueryAs<'q, sqlx::Postgres, O, sqlx::postgres::PgArguments> {
+    q.bind(LEADERBOARD_MIN_GAMES as i32)
+        .bind(now)
+        .bind(LEADERBOARD_ACTIVE_DAYS as i32)
+        .bind(config().provisional_deviation)
+        .bind(glicko::SCALE)
+        .bind(glicko::PERIOD_SECS)
+}
+
+/// A board's key in snapshots: `world`, or the country code.
+fn scope_key(scope: LeaderboardScope, country: Option<&str>) -> String {
+    match (scope, country) {
+        (LeaderboardScope::Country, Some(c)) => c.to_string(),
+        _ => "world".to_string(),
+    }
+}
+
 #[derive(sqlx::FromRow)]
 struct BoardRow {
     user_id: Uuid,
@@ -331,7 +368,8 @@ struct BoardRow {
 }
 
 /// `GET /v1/leaderboard`. `country` is already validated (lowercase ISO 3166-1 alpha-2) for a
-/// country board.
+/// country board. Movement compares with the latest snapshot before today, when the
+/// scheduled job has written one.
 pub async fn leaderboard(
     db: &PgPool,
     me: Uuid,
@@ -339,41 +377,63 @@ pub async fn leaderboard(
     scope: LeaderboardScope,
     country: Option<String>,
 ) -> AppResult<Leaderboard> {
-    let cfg = config();
-    // The deviation grown for time (ouril-rating `deviation_after`, computed in SQL so ranks
-    // can be counted in the database; `deviation_grows_like_ouril_rating` keeps them equal).
-    let rows: Vec<BoardRow> = sqlx::query_as(
-        "WITH eligible AS (
-            SELECT r.user_id, u.display_name, u.handle, u.country, r.rating, r.games,
-                   row_number() OVER (ORDER BY r.rating DESC, r.user_id) AS rank
-              FROM ratings r JOIN users u ON u.id = r.user_id
-             WHERE r.pool = $1
-               AND u.deleted_at IS NULL
-               AND r.games >= $2
-               AND r.last_rated_at > $3 - make_interval(days => $4)
-               AND ($5::text IS NULL OR u.country = $5)
-               AND sqrt(power(r.deviation / $9, 2)
-                        + extract(epoch FROM ($3 - r.last_rated_at)) / $10
-                          * power(r.volatility, 2)) * $9 <= $6
-         )
-         SELECT * FROM eligible WHERE rank <= $7 OR user_id = $8 ORDER BY rank",
+    let now = OffsetDateTime::now_utc();
+    let country = country.filter(|_| scope == LeaderboardScope::Country);
+    let rows: Vec<BoardRow> = bind_eligibility(
+        sqlx::query_as(concat!(
+            "WITH eligible AS (
+                SELECT r.user_id, u.display_name, u.handle, u.country, r.rating, r.games,
+                       row_number() OVER (ORDER BY r.rating DESC, r.user_id) AS rank
+                  FROM ratings r JOIN users u ON u.id = r.user_id
+                 WHERE r.pool = $7 AND ($8::text IS NULL OR u.country = $8) AND ",
+            eligible!(),
+            "
+             )
+             SELECT * FROM eligible WHERE rank <= $9 OR user_id = $10 ORDER BY rank"
+        )),
+        now,
     )
     .bind(pool)
-    .bind(LEADERBOARD_MIN_GAMES as i32)
-    .bind(OffsetDateTime::now_utc())
-    .bind(LEADERBOARD_ACTIVE_DAYS as i32)
-    .bind(
-        country
-            .as_deref()
-            .filter(|_| scope == LeaderboardScope::Country),
-    )
-    .bind(cfg.provisional_deviation)
+    .bind(country.as_deref())
     .bind(i64::from(LEADERBOARD_SIZE))
     .bind(me)
-    .bind(glicko::SCALE)
-    .bind(glicko::PERIOD_SECS)
     .fetch_all(db)
     .await?;
+
+    let key = scope_key(scope, country.as_deref());
+    let since: Option<time::Date> = sqlx::query_scalar(
+        "SELECT max(taken_on) FROM leaderboard_snapshots
+          WHERE pool = $1 AND scope = $2 AND taken_on < $3",
+    )
+    .bind(pool)
+    .bind(&key)
+    .bind(now.date())
+    .fetch_one(db)
+    .await?;
+    let before: HashMap<Uuid, i32> = match since {
+        Some(day) => sqlx::query_as::<_, (Uuid, i32)>(
+            "SELECT user_id, rank FROM leaderboard_snapshots
+              WHERE taken_on = $1 AND pool = $2 AND scope = $3 AND user_id = ANY($4)",
+        )
+        .bind(day)
+        .bind(pool)
+        .bind(&key)
+        .bind(rows.iter().map(|r| r.user_id).collect::<Vec<_>>())
+        .fetch_all(db)
+        .await?
+        .into_iter()
+        .collect(),
+        None => HashMap::new(),
+    };
+    let best: Option<i32> = sqlx::query_scalar(
+        "SELECT best_rank FROM rank_bests WHERE user_id = $1 AND pool = $2 AND scope = $3",
+    )
+    .bind(me)
+    .bind(pool)
+    .bind(&key)
+    .fetch_optional(db)
+    .await?;
+
     let entry = |r: &BoardRow| LeaderboardEntry {
         rank: r.rank.max(0) as u32,
         player: PlayerSummary {
@@ -384,18 +444,76 @@ pub async fn leaderboard(
         country: r.country.clone(),
         rating: r.rating.round() as i32,
         games: r.games.max(0) as u32,
+        // Places gained since the earlier snapshot (negative: lost). None: new to the board.
+        change: before.get(&r.user_id).map(|&old| old - r.rank as i32),
     };
     Ok(Leaderboard {
         pool: pool.to_string(),
         scope,
-        country: country.filter(|_| scope == LeaderboardScope::Country),
+        country,
         entries: rows
             .iter()
             .filter(|r| r.rank <= i64::from(LEADERBOARD_SIZE))
             .map(entry)
             .collect(),
         you: rows.iter().find(|r| r.user_id == me).map(entry),
+        movement_since: since.map(|d| d.to_string()),
+        your_best_rank: best.map(|b| b.max(1) as u32),
     })
+}
+
+/// The `leaderboard-snapshot` job: today's ranks on every board (each pool, worldwide and
+/// per country) replace today's earlier snapshot, and best ranks improve. Idempotent: running
+/// it again the same day just refreshes today. Returns the rows written.
+pub async fn snapshot_boards(db: &PgPool) -> AppResult<u64> {
+    let now = OffsetDateTime::now_utc();
+    let mut tx = db.begin().await?;
+    sqlx::query("DELETE FROM leaderboard_snapshots WHERE taken_on = $1")
+        .bind(now.date())
+        .execute(&mut *tx)
+        .await?;
+    let written = bind_eligibility(
+        sqlx::query_as::<_, (i64,)>(concat!(
+            "WITH eligible AS (
+                SELECT r.pool, r.user_id, u.country, r.rating
+                  FROM ratings r JOIN users u ON u.id = r.user_id
+                 WHERE ",
+            eligible!(),
+            "
+             ), ranked AS (
+                SELECT pool, 'world' AS scope, user_id, rating,
+                       row_number() OVER (PARTITION BY pool ORDER BY rating DESC, user_id) AS rank
+                  FROM eligible
+                UNION ALL
+                SELECT pool, country, user_id, rating,
+                       row_number() OVER (PARTITION BY pool, country
+                                          ORDER BY rating DESC, user_id)
+                  FROM eligible WHERE country IS NOT NULL
+             ), inserted AS (
+                INSERT INTO leaderboard_snapshots (taken_on, pool, scope, user_id, rank, rating)
+                SELECT $7, pool, scope, user_id, rank, rating FROM ranked
+                RETURNING 1
+             )
+             SELECT count(*) FROM inserted"
+        )),
+        now,
+    )
+    .bind(now.date())
+    .fetch_one(&mut *tx)
+    .await?
+    .0;
+    sqlx::query(
+        "INSERT INTO rank_bests (user_id, pool, scope, best_rank, achieved_on)
+         SELECT user_id, pool, scope, rank, taken_on FROM leaderboard_snapshots WHERE taken_on = $1
+         ON CONFLICT (user_id, pool, scope) DO UPDATE
+            SET best_rank = EXCLUDED.best_rank, achieved_on = EXCLUDED.achieved_on
+          WHERE EXCLUDED.best_rank < rank_bests.best_rank",
+    )
+    .bind(now.date())
+    .execute(&mut *tx)
+    .await?;
+    tx.commit().await?;
+    Ok(written.max(0) as u64)
 }
 
 /// A player's country, for a country board without an explicit one.

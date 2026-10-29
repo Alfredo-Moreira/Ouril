@@ -13,7 +13,8 @@
 # and GOOGLE_CLIENT_ID. Until VERCEL_TOKEN exists, this workflow skips the deploy.
 # The live-game relay on the homelab (ADR 0032, 0033) is optional: the variable RELAY_URL
 # (https://ouril-live.moreiralabs.org) and the secrets RELAY_API_KEY and RELAY_TOKEN_SECRET (the
-# same values as deploy/homelab/.env). Without all three, live games work by polling.
+# same values as deploy/homelab/.env). Without all three, live games work by polling. The secret
+# JOBS_TOKEN (also in deploy/homelab/.env) opens the scheduled-jobs endpoint for ouril-jobs.
 name: Deploy
 
 on:
@@ -56,6 +57,7 @@ jobs:
       RELAY_URL: ${{ vars.RELAY_URL }}
       RELAY_API_KEY: ${{ secrets.RELAY_API_KEY }}
       RELAY_TOKEN_SECRET: ${{ secrets.RELAY_TOKEN_SECRET }}
+      JOBS_TOKEN: ${{ secrets.JOBS_TOKEN }}
     steps:
       - name: Check the setup
         id: setup
@@ -139,7 +141,7 @@ jobs:
           cp -R apps/web/dist out/web
           cp Cargo.toml Cargo.lock out/api/
           rsync -a --exclude target --exclude 'wasm/pkg' core out/api/
-          rsync -a --exclude target apps/server apps/relay out/api/apps/
+          rsync -a --exclude target apps/server apps/relay apps/jobs out/api/apps/
           cp apps/server/Dockerfile.vercel out/api/Dockerfile.vercel
           du -sh out/web out/api
       - name: The assembled workspace loads (every member present, lockfile in step)
@@ -166,6 +168,7 @@ jobs:
             --env RELAY_URL="$RELAY_URL" \
             --env RELAY_API_KEY="$RELAY_API_KEY" \
             --env RELAY_TOKEN_SECRET="$RELAY_TOKEN_SECRET" \
+            --env JOBS_TOKEN="$JOBS_TOKEN" \
             --env CLIENT_IP_HEADER=x-real-ip \
             --env PORT=8080 \
             --env LOG_FORMAT=json \

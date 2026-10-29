@@ -75,7 +75,7 @@ services:
   # The live-game relay (ADR 0032, 0033), opt-in: `just relay` (or
   # `docker compose --profile live up relay`). Uses RELAY_API_KEY, RELAY_TOKEN_SECRET and
   # ALLOWED_ORIGINS from .env; see .env.example for local values. Production runs the image
-  # from apps/relay/Dockerfile on the homelab instead.
+  # from deploy/homelab/Dockerfile on the homelab instead.
   relay:
     profiles: ["live"]
     image: ouril-toolbox
@@ -94,6 +94,28 @@ services:
       - cargo-target-relay:/workspace/target
     working_dir: /workspace
     command: cargo run --release -p ouril-relay
+
+  # Scheduled jobs (ADR 0032), opt-in: `just jobs` (or `docker compose --profile jobs up jobs`).
+  # Calls the dev server's job endpoints with JOBS_TOKEN from .env; production runs the image
+  # from deploy/homelab/Dockerfile on the homelab instead.
+  jobs:
+    profiles: ["jobs"]
+    image: ouril-toolbox
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      CARGO_TARGET_DIR: /workspace/target
+      JOBS_URL: http://server:8080
+      JOBS_INTERVAL_SECS: ${JOBS_INTERVAL_SECS:-3600}
+      JOBS_HEARTBEAT_FILE: /tmp/ouril-jobs-ok
+    volumes:
+      - .:/workspace
+      - cargo-registry:/usr/local/cargo/registry
+      - cargo-git:/usr/local/cargo/git
+      - cargo-target-relay:/workspace/target
+    working_dir: /workspace
+    command: cargo run --release -p ouril-jobs
 
   # pgAdmin for the local database: `just pgadmin` (or `docker compose up -d pgadmin`), then
   # http://localhost:5050, no login. Password for "Ouril local": ouril. Opt-in (profile), so
