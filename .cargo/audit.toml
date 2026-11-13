@@ -1,0 +1,8 @@
+# cargo audit settings (scripts/check.sh and CI read them). Every ignore says why and when to drop it.
+[advisories]
+ignore = [
+  # libsqlite3-sys 0.37 (C SQLite CVE). It's in Cargo.lock only because sqlx lists sqlx-sqlite for
+  # the resolver; we use Postgres, so it's never compiled (`cargo tree -i libsqlite3-sys
+  # --all-features` is empty). Drop this once an sqlx release depends on libsqlite3-sys >= 0.39.
+  "RUSTSEC-2026-0459",
+]
