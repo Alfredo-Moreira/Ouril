@@ -12,7 +12,7 @@ export const PRIVACY = {
   /** Where privacy questions and deletion requests go. */
   email: 'devops.moreira@gmail.com',
   /** Date of the last change, ISO `YYYY-MM-DD`. */
-  updated: '2026-10-14',
+  updated: '2026-10-16',
   /** Longest time deleted data can survive in database backups. */
   backupDays: 30,
 } as const;

@@ -769,6 +769,76 @@ pub struct MyRatings {
     pub ratings: Vec<PoolRating>,
 }
 
+/// One point of a rating's history: after a rated game.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(TS), ts(export))]
+pub struct RatingPoint {
+    /// RFC 3339.
+    pub at: String,
+    pub rating: i32,
+}
+
+/// A pool's rating history, oldest first.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(TS), ts(export))]
+pub struct RatingHistory {
+    pub pool: String,
+    pub points: Vec<RatingPoint>,
+}
+
+/// A top placement, from the player's best rank on a board.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(TS), ts(export))]
+pub struct Badge {
+    pub pool: String,
+    /// `world`, or a country code.
+    pub scope: String,
+    pub rank: u32,
+    /// `YYYY-MM-DD`.
+    pub achieved_on: String,
+}
+
+/// Your record against this player, from your side (finished games against each other).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(TS), ts(export))]
+pub struct HeadToHead {
+    pub wins: u32,
+    pub draws: u32,
+    pub losses: u32,
+}
+
+/// Best ranks at or above this one are badges.
+pub const BADGE_MAX_RANK: u32 = 10;
+/// Rating history covers this many days...
+pub const PROFILE_HISTORY_DAYS: i64 = 180;
+/// ...and at most this many points per pool (the latest).
+pub const PROFILE_HISTORY_POINTS: i64 = 200;
+
+/// `GET /v1/players/{id}` (an ID or `@handle`): a player's public profile, for signed-in
+/// players.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(TS), ts(export))]
+pub struct PlayerProfile {
+    pub player: PlayerSummary,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub country: Option<String>,
+    /// RFC 3339.
+    pub member_since: String,
+    /// The profile is yours.
+    pub you: bool,
+    /// Every pool with rated games, overall first.
+    pub ratings: Vec<PoolRating>,
+    /// Rating history per pool, last `PROFILE_HISTORY_DAYS`.
+    pub history: Vec<RatingHistory>,
+    /// Best ranks in the top `BADGE_MAX_RANK`, best first.
+    pub badges: Vec<Badge>,
+    /// Your record against this player (absent on your own profile).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub head_to_head: Option<HeadToHead>,
+}
+
 /// A leaderboard's scope.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "ts", derive(TS), ts(export))]

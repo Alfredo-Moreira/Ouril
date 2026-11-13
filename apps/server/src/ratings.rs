@@ -302,21 +302,26 @@ pub async fn changes_for_games(
 
 /// `GET /v1/ratings/me`: the overall pool first, then the rest by name.
 pub async fn mine(db: &PgPool, me: Uuid) -> AppResult<MyRatings> {
+    Ok(MyRatings {
+        ratings: pools_of(db, me).await?,
+    })
+}
+
+/// A player's rating in every pool they've played rated games in, overall first.
+pub async fn pools_of(db: &PgPool, user: Uuid) -> AppResult<Vec<PoolRating>> {
     let rows: Vec<Row> = sqlx::query_as(
         "SELECT user_id, pool, rating, deviation, volatility, games, wins, draws, losses, peak,
                 last_rated_at
            FROM ratings WHERE user_id = $1 AND games > 0
           ORDER BY pool <> $2, pool",
     )
-    .bind(me)
+    .bind(user)
     .bind(RATING_POOL_OVERALL)
     .fetch_all(db)
     .await?;
     let cfg = config();
     let now = OffsetDateTime::now_utc();
-    Ok(MyRatings {
-        ratings: rows.iter().map(|r| r.view(&cfg, now)).collect(),
-    })
+    Ok(rows.iter().map(|r| r.view(&cfg, now)).collect())
 }
 
 /// Who may appear on a board, as SQL over `ratings r JOIN users u` (shared by boards and

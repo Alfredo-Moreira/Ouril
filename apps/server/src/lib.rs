@@ -18,6 +18,7 @@ pub mod jobs;
 pub mod live;
 pub mod online;
 pub mod opponents;
+pub mod profiles;
 pub mod proxy;
 pub mod ratelimit;
 pub mod ratings;

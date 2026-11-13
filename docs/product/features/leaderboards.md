@@ -46,11 +46,19 @@
 - Boards are indexed queries on Postgres (`ratings`, by pool and rating). There's no cache layer.
 - **Rank movement and best ranks:** a scheduled job on the homelab snapshots every board each hour, keeping one snapshot per day (UTC) ([ADR 0032](../../decisions/0032-small-services-on-the-homelab.md), [backend](../../architecture/backend.md#scheduled-jobs)). A board shows ▲/▼ places since the latest earlier day, and **new** for players who weren't on it then; your best rank on each board is kept even after old snapshots are pruned. Until the job has run once, boards show no movement.
 
+## Player profiles
+
+`/players/:id`, for signed-in players, opened from a leaderboard row or a name in the online lobby:
+
+- display name, handle, country and when they started playing;
+- **badges** for their best placements in the top 10 of any board (for example "#1 in Cape Verde · Overall", "#4 in the world · Standard · Live"), from best ranks;
+- each pool's rating (provisional with a `?`), record and best rating, with a **chart of the rating over time** (the last 180 days; one line per pool, a tooltip on hover, and the same points as a table for screen readers);
+- on someone else's profile, **your record against them**, and **Challenge** (a rated invitation).
+
 ## Later
 
 - A **points board** (activity and wins, seasonal) for casual players.
 - **Region / island, city, friends** scopes. Cape Verde players may want islands (Santiago, São Vicente, Fogo, …) and diaspora communities (Boston, Lisbon, Rotterdam, …).
-- Profile badges for top placements (for example "#1 in Cape Verde · Overall").
 - Fair play: reports, and refunds to the opponents of a player caught cheating.
 
 ## Open questions

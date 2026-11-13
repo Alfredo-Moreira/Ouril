@@ -327,3 +327,40 @@ export type RelayEvent =
   | { type: 'game_changed'; game_id: string; moves: number }
   | { type: 'matched'; game_id: string }
   | { type: 'games_changed' };
+
+// --- player profiles ---------------------------------------------------------------------
+
+export interface RatingPoint {
+  at: string;
+  rating: number;
+}
+
+export interface RatingHistory {
+  pool: string;
+  points: RatingPoint[];
+}
+
+/** A top placement: `scope` is `world` or a country code. */
+export interface Badge {
+  pool: string;
+  scope: string;
+  rank: number;
+  achieved_on: string;
+}
+
+export interface HeadToHead {
+  wins: number;
+  draws: number;
+  losses: number;
+}
+
+export interface PlayerProfile {
+  player: PlayerSummary;
+  country?: string;
+  member_since: string;
+  you: boolean;
+  ratings: PoolRating[];
+  history: RatingHistory[];
+  badges: Badge[];
+  head_to_head?: HeadToHead;
+}

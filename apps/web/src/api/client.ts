@@ -26,6 +26,7 @@ import type {
   MyRatings,
   OnlineGame,
   OpponentList,
+  PlayerProfile,
   DevSignInRequest,
   GoogleSignInRequest,
   Me,
@@ -208,6 +209,11 @@ export class ApiClient {
 
   opponents(): Promise<OpponentList> {
     return this.request<OpponentList>('GET', '/v1/opponents');
+  }
+
+  /** A player's profile, by user ID or `@handle`. */
+  player(idOrHandle: string): Promise<PlayerProfile> {
+    return this.request<PlayerProfile>('GET', `/v1/players/${encodeURIComponent(idOrHandle)}`);
   }
 
   // --- live games (ADR 0033) ---------------------------------------------------------------

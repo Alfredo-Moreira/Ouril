@@ -42,6 +42,7 @@ import { JoinGame } from './routes/JoinGame';
 import { GameHub } from './routes/GameHub';
 import { Leaderboard } from './routes/Leaderboard';
 import { OnlineGame } from './routes/OnlineGame';
+import { Profile } from './routes/Profile';
 import { SignIn } from './routes/SignIn';
 import { Stats } from './routes/Stats';
 import { Tutorial } from './routes/Tutorial';
@@ -238,6 +239,9 @@ function Layout({ animationSpeed }: { animationSpeed?: number }) {
             {FEATURES.accounts && <Route path="/join/:code" element={<JoinGame />} />}
             {FEATURES.accounts && (
               <Route path="/leaderboard" element={onlineVisible ? <Leaderboard /> : signInGate} />
+            )}
+            {FEATURES.accounts && (
+              <Route path="/players/:id" element={onlineVisible ? <Profile /> : signInGate} />
             )}
             <Route path="/about" element={<About />} />
             <Route path="/privacy" element={<Privacy />} />

@@ -2200,7 +2200,7 @@
     "description": "Settings, profile"
   },
   "privacy.account.6": {
-    "message": "Rated games against other players give you a rating, which we keep with your results. If you have played enough rated games recently, other signed-in players can see your display name, handle, country and rating on the leaderboards.",
+    "message": "Rated games against other players give you a rating, which we keep with your results. Other signed-in players can see your profile: your display name, handle, country, when you started playing, your ratings and their history, your best leaderboard placements, and their own record against you. If you have played enough rated games recently, you also appear on the leaderboards.",
     "description": "Privacy policy, account section"
   },
   "online.status.aborted": {
@@ -2278,5 +2278,53 @@
   "leaderboard.best_rank": {
     "message": "Your best rank on this board: #{rank}",
     "description": "Leaderboard page: rank movement since the last daily snapshot"
+  },
+  "profile.not_found": {
+    "message": "This player isn't available.",
+    "description": "Player profile page"
+  },
+  "profile.since": {
+    "message": "Playing since {date}",
+    "description": "Player profile page"
+  },
+  "profile.challenge": {
+    "message": "Challenge",
+    "description": "Player profile page"
+  },
+  "profile.h2h": {
+    "message": "You against {name}: {wins} won, {draws} drawn, {losses} lost",
+    "description": "Player profile page"
+  },
+  "profile.badges": {
+    "message": "Top placements",
+    "description": "Player profile page"
+  },
+  "profile.badge.world": {
+    "message": "#{rank} in the world · {pool}",
+    "description": "Player profile page"
+  },
+  "profile.badge.country": {
+    "message": "#{rank} in {country} · {pool}",
+    "description": "Player profile page"
+  },
+  "profile.ratings": {
+    "message": "Ratings",
+    "description": "Player profile page"
+  },
+  "profile.no_ratings": {
+    "message": "No rated games yet.",
+    "description": "Player profile page"
+  },
+  "profile.peak": {
+    "message": "best {rating}",
+    "description": "Player profile page"
+  },
+  "profile.chart.label": {
+    "message": "{pool} rating over time",
+    "description": "Player profile page"
+  },
+  "profile.chart.date": {
+    "message": "Date",
+    "description": "Player profile page"
   }
 }
