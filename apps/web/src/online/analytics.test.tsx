@@ -35,6 +35,7 @@ function api(extra: Record<string, unknown>) {
   return Object.assign(offlineApi(), {
     listGames: vi.fn(async () => ({ games: [] })),
     opponents: vi.fn(async () => ({ opponents: [] })),
+    liveLobby: vi.fn(async () => ({ seeks: [] })),
     ...extra,
   }) as unknown as ApiClient & Record<string, ReturnType<typeof vi.fn>>;
 }

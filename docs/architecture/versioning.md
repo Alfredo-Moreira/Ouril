@@ -51,7 +51,7 @@ Every stored game, local or on the server, contains everything needed to replay 
 
 **Format 2** ([ADR 0022](../decisions/0022-forfeit-and-record-format-2.md)) adds one end reason, `resigned`: the local player forfeited before the rules ended the game. Clients write format 2 only for forfeits, so servers that only know format 1 still accept every other game.
 
-**Format 3** ([ADR 0031](../decisions/0031-online-games-over-http.md)) is a game against another player, written only by the server, one record per player: `mode: "vs_player"`, `opponent` (ID, name, handle) and a new end reason, `timeout` (a missed turn deadline). Clients read format 3 from sync and never push it.
+**Format 3** ([ADR 0031](../decisions/0031-online-games-over-http.md)) is a game against another player, written only by the server, one record per player: `mode: "vs_player"`, `opponent` (ID, name, handle) and new end reasons, `timeout` (a missed turn deadline) and `agreement` (both players agreed to a draw; added with draw offers, still format 3). Clients read format 3 from sync and never push it, nor either reason. An app older than the `agreement` reason can't read such a record until it updates; the web app updates itself on the next visit.
 
 As built, records also carry these optional fields: `mode` (`vs_ai` \| `vs_player`), `ai_level` (`easy` \| `medium` \| `hard`), `human_player` (`south` \| `north`, needed to count wins and losses) and `opponent`. Records without them still replay. The full shape is in the [WASM API](../../core/wasm/API.md#game-records-and-stats).
 

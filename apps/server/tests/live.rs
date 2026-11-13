@@ -543,3 +543,137 @@ async fn moves_and_matches_are_published_to_the_relay_with_ids_only(db: PgPool) 
         .iter()
         .any(|b| b["channel"] == lia_channel.as_str() && b["event"]["type"] == "matched"));
 }
+
+async fn draw(app: &TestApp, who: &Session, id: &str, action: &str) -> TestResponse {
+    app.call(
+        Req::post(format!("/v1/games/{id}/draw"))
+            .bearer(&who.access)
+            .json(json!({ "action": action })),
+    )
+    .await
+}
+
+#[sqlx::test]
+async fn a_draw_offer_can_be_declined_closes_on_a_move_and_ends_the_game_when_accepted(db: PgPool) {
+    let app = TestApp::new(db.clone());
+    let (ana, rui, game) = live_game(&app, json!({})).await;
+    let id = game["id"].as_str().unwrap().to_string();
+    let game = move_once(&app, &ana, &rui, &game).await;
+    let game = move_once(&app, &ana, &rui, &game).await;
+
+    // Ana offers; Rui sees it; Ana can't answer her own offer or offer twice.
+    let offered = draw(&app, &ana, &id, "offer").await;
+    offered.assert_status(StatusCode::OK);
+    assert_eq!(offered.json()["draw_offer"], "south");
+    let rui_view = get(&app, &rui, &format!("/v1/games/{id}")).await;
+    assert_eq!(rui_view["draw_offer"], "south");
+    draw(&app, &ana, &id, "accept")
+        .await
+        .assert_status(StatusCode::CONFLICT);
+    draw(&app, &ana, &id, "offer")
+        .await
+        .assert_status(StatusCode::CONFLICT);
+
+    // Rui declines; Ana can't offer again right away.
+    let declined = draw(&app, &rui, &id, "decline").await;
+    declined.assert_status(StatusCode::OK);
+    assert!(declined.json().get("draw_offer").is_none());
+    draw(&app, &ana, &id, "offer")
+        .await
+        .assert_status(StatusCode::CONFLICT);
+
+    // Rui's own offer closes with the next move.
+    draw(&app, &rui, &id, "offer")
+        .await
+        .assert_status(StatusCode::OK);
+    let game = move_once(&app, &ana, &rui, &game).await;
+    assert!(game.get("draw_offer").is_none(), "a move closes the offer");
+    draw(&app, &ana, &id, "accept")
+        .await
+        .assert_status(StatusCode::CONFLICT);
+
+    // Ten moves after her offer, Ana may offer again; Rui accepts: a rated draw.
+    sqlx::query("UPDATE online_games SET draw_offer_ply = draw_offer_ply - 10 WHERE id = $1::uuid")
+        .bind(&id)
+        .execute(&db)
+        .await
+        .unwrap();
+    let _ = game;
+    draw(&app, &ana, &id, "offer")
+        .await
+        .assert_status(StatusCode::OK);
+    let done = draw(&app, &rui, &id, "accept").await;
+    done.assert_status(StatusCode::OK);
+    let done = done.json();
+    assert_eq!(done["status"], "finished");
+    assert_eq!(done["result"]["outcome"], "draw");
+    assert_eq!(done["result"]["reason"], "agreement");
+    assert_eq!(done["rating_changes"].as_array().unwrap().len(), 2);
+    // Both histories hold the game, as a draw by agreement.
+    let reason: String =
+        sqlx::query_scalar("SELECT record->'result'->>'reason' FROM games WHERE user_id = $1")
+            .bind(ana.user_id)
+            .fetch_one(&db)
+            .await
+            .unwrap();
+    assert_eq!(reason, "agreement");
+}
+
+#[sqlx::test]
+async fn the_lobby_lists_waiting_players_and_joining_one_starts_the_game(db: PgPool) {
+    let app = TestApp::new(db.clone());
+    let ana = with_handle(&app, "ana", "ana").await;
+    let rui = app.sign_in("rui").await;
+    post(
+        &app,
+        &ana,
+        "/v1/live/seek".into(),
+        json!({ "time_control": tc(), "rated": false }),
+    )
+    .await;
+
+    // Ana doesn't see herself; Rui sees her, with her clock and choice.
+    let own = get(&app, &ana, "/v1/live/lobby").await;
+    assert_eq!(own["seeks"], json!([]));
+    let lobby = get(&app, &rui, "/v1/live/lobby").await;
+    let seek = &lobby["seeks"][0];
+    assert_eq!(seek["player"]["handle"], "ana");
+    assert_eq!(seek["rating"], 1500);
+    assert_eq!(seek["time_control"], tc());
+    assert_eq!(seek["rated"], false);
+    assert_eq!(seek["variant_id"], "cv.standard");
+
+    let joined = post(
+        &app,
+        &rui,
+        "/v1/live/join".into(),
+        json!({ "user_id": ana.user_id.to_string() }),
+    )
+    .await;
+    assert_eq!(joined["state"], "matched");
+    let id = joined["game_id"].as_str().unwrap().to_string();
+    let ana_status = get(&app, &ana, "/v1/live/seek").await;
+    assert_eq!(ana_status["game_id"], id);
+    let game = get(&app, &rui, &format!("/v1/games/{id}")).await;
+    assert_eq!(game["status"], "active");
+    assert_eq!(game["rated"], false);
+    assert_eq!(game["you"], "north", "the joining player sits North");
+
+    // She's no longer listed, and can't be joined twice.
+    let lia = app.sign_in("lia").await;
+    assert_eq!(get(&app, &lia, "/v1/live/lobby").await["seeks"], json!([]));
+    app.call(
+        Req::post("/v1/live/join")
+            .bearer(&lia.access)
+            .json(json!({ "user_id": ana.user_id.to_string() })),
+    )
+    .await
+    .assert_error(StatusCode::CONFLICT, "conflict");
+    app.call(
+        Req::post("/v1/live/join")
+            .bearer(&lia.access)
+            .json(json!({ "user_id": lia.user_id.to_string() })),
+    )
+    .await
+    .assert_status(StatusCode::BAD_REQUEST);
+}

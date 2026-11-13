@@ -2815,3 +2815,37 @@ a.pay:active {
   white-space: nowrap;
   pointer-events: none;
 }
+
+/* An open draw offer from the opponent. */
+.draw-offer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin: 0.5rem 0;
+}
+
+.draw-offer p {
+  margin: 0;
+  font-weight: 650;
+}
+
+/* Play now still searching, or an opponent found, over any screen. */
+.seek-toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(1rem + var(--tabbar-h));
+  transform: translateX(-50%);
+  z-index: 50;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  max-width: calc(100vw - 2rem);
+  padding: 0.6rem 0.9rem;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  box-shadow: var(--shadow-3);
+}

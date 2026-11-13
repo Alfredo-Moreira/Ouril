@@ -448,3 +448,22 @@ async fn clients_cannot_push_games_against_players(db: PgPool) {
     assert_eq!(result["status"], "rejected");
     assert_eq!(result["reason"], "invalid_payload");
 }
+
+#[sqlx::test]
+async fn clients_cannot_push_server_only_end_reasons(db: PgPool) {
+    let app = TestApp::new(db);
+    let ana = app.sign_in("ana").await;
+    for reason in ["timeout", "agreement"] {
+        let mut record = serde_json::to_value(played_record()).unwrap();
+        record["result"]["reason"] = json!(reason);
+        let res = app
+            .call(
+                Req::post("/v1/sync/push")
+                    .bearer(&ana.access)
+                    .json(push_body(vec![mutation("game_finished", record)])),
+            )
+            .await;
+        res.assert_status(StatusCode::OK);
+        assert_eq!(res.json()["results"][0]["status"], "rejected", "{reason}");
+    }
+}

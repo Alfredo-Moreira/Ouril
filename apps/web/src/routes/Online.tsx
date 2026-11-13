@@ -6,23 +6,21 @@ import { ApiError } from '../api/client';
 import {
   LIVE_TIME_CONTROLS,
   type OnlineGame,
+  type OpenSeek,
   type OpponentSummary,
   type RelayEvent,
-  type SeekStatus,
   type TimeControl,
 } from '../api/types';
 import { trackInvite, trackInviteAnswer } from '../online/analytics';
 import { inviteLink } from '../online/links';
 import { resultFor } from '../online/perspective';
 import { usePolling } from '../online/usePolling';
+import { useLiveSeek } from '../online/liveSeek';
 import { useRelay } from '../online/useRelay';
 import { useApp } from '../state/useApp';
 
 /** How often the games list refreshes while it's open. */
 const LIST_POLL_MS = 10_000;
-/** While looking for a live opponent: the heartbeat that keeps the seek alive (and pairs). */
-const SEEK_HEARTBEAT_MS = 3_000;
-
 const tcKey = (tc: TimeControl) => `${tc.initial_secs}+${tc.increment_secs}`;
 
 /** `5 + 3`, translated. */
@@ -288,84 +286,34 @@ export function OnlineLobby() {
 }
 
 /**
- * Play now (ADR 0033): pick a clock and be paired with someone looking for the same game,
- * near your rating. Repeats the seek as a heartbeat while waiting; the relay (or the next
- * heartbeat) says when a partner is found, and the game opens.
+ * Play now (ADR 0033): pick a clock and be paired with someone near your rating, or join
+ * someone already waiting. The search itself lives in `LiveSeekProvider`, so it keeps going
+ * while you play the computer.
  */
 function PlayNow({ rated }: { rated: boolean }) {
   const { t } = useTranslation();
-  const { api } = useApp();
-  const navigate = useNavigate();
+  const seek = useLiveSeek();
   const clockLabel = useClockLabel();
-  const [seeking, setSeeking] = useState<TimeControl | null>(null);
-  const [players, setPlayers] = useState(0);
-  const [error, setError] = useState<string | null>(null);
-
-  const matched = useCallback(
-    (gameId: string) => {
-      setSeeking(null);
-      // Picked up: forget the seek, then open the game.
-      void api()
-        .cancelSeek()
-        .catch(() => undefined);
-      navigate(`/online/${gameId}`);
-    },
-    [api, navigate],
-  );
-  const handle = useCallback(
-    (st: SeekStatus) => {
-      setPlayers(st.players_seeking);
-      if (st.state === 'matched' && st.game_id) matched(st.game_id);
-    },
-    [matched],
-  );
-  const send = useCallback(() => {
-    if (!seeking) return;
-    void api()
-      .seek({ time_control: seeking, rated })
-      .then(handle)
-      .catch((e: unknown) => {
-        setSeeking(null);
-        setError(e instanceof ApiError ? e.code : 'network');
-      });
-  }, [api, seeking, rated, handle]);
-
-  useEffect(send, [send]);
-  usePolling(send, seeking ? SEEK_HEARTBEAT_MS : null);
-  useRelay(
-    null,
-    useCallback(
-      (e: RelayEvent) => {
-        if (e.type === 'matched') matched(e.game_id);
-      },
-      [matched],
-    ),
-    seeking !== null,
-  );
-  // Leaving the page while looking: stop looking.
-  useEffect(() => {
-    if (!seeking) return;
-    return () => {
-      void api()
-        .cancelSeek()
-        .catch(() => undefined);
-    };
-  }, [api, seeking]);
 
   return (
     <section className="card play-now" aria-labelledby="play-now-title">
       <h2 id="play-now-title" className="card__title">
         {t('online.play_now')}
       </h2>
-      {seeking ? (
+      {seek.seeking ? (
         <>
           <p role="status">
-            {t('online.play_now.looking', { clock: clockLabel(seeking) })}{' '}
-            <span className="note">{t('online.play_now.players', { count: players })}</span>
+            {t('online.play_now.looking', { clock: clockLabel(seek.seeking.timeControl) })}{' '}
+            <span className="note">{t('online.play_now.players', { count: seek.players })}</span>
           </p>
-          <button type="button" className="button" onClick={() => setSeeking(null)}>
-            {t('common.cancel')}
-          </button>
+          <div className="row">
+            <button type="button" className="button" onClick={seek.cancel}>
+              {t('common.cancel')}
+            </button>
+            <Link className="button button--ghost" to="/play">
+              {t('online.play_now.computer')}
+            </Link>
+          </div>
         </>
       ) : (
         <>
@@ -376,10 +324,7 @@ function PlayNow({ rated }: { rated: boolean }) {
                 key={tcKey(tc)}
                 type="button"
                 className="button"
-                onClick={() => {
-                  setError(null);
-                  setSeeking(tc);
-                }}
+                onClick={() => seek.start(tc, rated)}
               >
                 {clockLabel(tc)}
               </button>
@@ -387,11 +332,64 @@ function PlayNow({ rated }: { rated: boolean }) {
           </div>
         </>
       )}
-      {error && (
+      {seek.error && (
         <p className="error" role="alert">
-          {t(`error.${error}`, { defaultValue: t('error.internal') })}
+          {t(`online.error.${seek.error}`, {
+            defaultValue: t(`error.${seek.error}`, { defaultValue: t('error.internal') }),
+          })}
         </p>
       )}
+      <OpenChallenges />
+    </section>
+  );
+}
+
+/** How often the open-challenges list refreshes. */
+const LOBBY_POLL_MS = 5_000;
+
+/** Players waiting for a live game right now, each with a Join button. */
+function OpenChallenges() {
+  const { t } = useTranslation();
+  const { api } = useApp();
+  const seek = useLiveSeek();
+  const clockLabel = useClockLabel();
+  const [seeks, setSeeks] = useState<OpenSeek[]>([]);
+  const refresh = useCallback(() => {
+    void api()
+      .liveLobby()
+      .then((l) => setSeeks(l.seeks))
+      .catch(() => undefined);
+  }, [api]);
+  useEffect(refresh, [refresh]);
+  usePolling(refresh, LOBBY_POLL_MS);
+  if (seeks.length === 0) return null;
+  return (
+    <section aria-labelledby="open-challenges">
+      <h3 id="open-challenges">{t('online.open_challenges')}</h3>
+      <ul className="online__list">
+        {seeks.map((s) => (
+          <li key={s.player.user_id} className="online__item">
+            <span>
+              <Link to={`/players/${s.player.user_id}`}>
+                <strong>{s.player.display_name}</strong>
+              </Link>
+              <span className="note">
+                {' '}
+                ({s.rating}) · {clockLabel(s.time_control)} · {t(`variant.${s.variant_id}.short`)}
+                {' · '}
+                {t(s.rated ? 'online.rated.short' : 'online.casual')}
+              </span>
+            </span>
+            <button
+              type="button"
+              className="button"
+              onClick={() => void seek.join(s.player.user_id)}
+            >
+              {t('online.join_seek')}
+            </button>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }

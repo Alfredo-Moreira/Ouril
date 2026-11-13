@@ -62,7 +62,7 @@ Online play against real people, turn by turn. Requires sign-in.
 Native apps (SwiftUI, then Jetpack Compose; [ADR 0008](../decisions/0008-native-apps-per-platform.md)) with the same Rust core through UniFFI. They launch with everything above: play vs AI, accounts and sync, and games with friends, with native push notifications. Until then the installable web app covers phones.
 
 ## Phase 6: Live games
-- ✅ Live games over HTTP with server clocks computed from timestamps (3 + 2, 5 + 3, 10 + 5), a 30-second first move or the game is called off, **Play now** matchmaking near your rating, live invitations, and a Rust relay for the homelab with polling as the fallback ([ADR 0033](../decisions/0033-live-games-http-moves-and-relay.md)). ⏳ Deploy the relay to the homelab; draw offers; open challenges.
+- ✅ Live games over HTTP with server clocks computed from timestamps (3 + 2, 5 + 3, 10 + 5), a 30-second first move or the game is called off, **Play now** matchmaking near your rating, live invitations, and a Rust relay for the homelab with polling as the fallback ([ADR 0033](../decisions/0033-live-games-http-moves-and-relay.md)). ✅ Draw offers, a lobby of players waiting (join one directly), and playing the computer while you wait. ⏳ Deploy the relay to the homelab.
 - Real-time matches with server-owned clocks (for example 5 or 10 minutes): moves over HTTP, delivered through a realtime relay on the developer's homelab, with polling as the fallback ([ADR 0032](../decisions/0032-small-services-on-the-homelab.md), [ADR 0033](../decisions/0033-live-games-http-moves-and-relay.md), both Proposed).
 - **Matchmaking** by skill, plus direct challenges.
 - Reconnection handling, resign, draw offers, and rematch.

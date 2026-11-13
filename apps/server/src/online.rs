@@ -17,10 +17,10 @@ use ouril_engine::{
     VariantConfig,
 };
 use ouril_protocol::{
-    Clocks, CreateGameRequest, GameList, GamePace, MoveRequest, OnlineGame, OnlineGameResult,
-    OnlineGameStatus, OpponentList, OpponentSummary, PlayerSummary, RatingChange, Seat,
-    TimeControl, INVITE_TTL_DAYS, LIVE_FIRST_MOVE_SECS, LIVE_TIME_CONTROLS, MAX_OPEN_INVITES,
-    TURN_DEADLINE_DAYS,
+    Clocks, CreateGameRequest, DrawAction, GameList, GamePace, MoveRequest, OnlineGame,
+    OnlineGameResult, OnlineGameStatus, OpponentList, OpponentSummary, PlayerSummary, RatingChange,
+    Seat, TimeControl, DRAW_OFFER_GAP_PLIES, INVITE_TTL_DAYS, LIVE_FIRST_MOVE_SECS,
+    LIVE_TIME_CONTROLS, MAX_OPEN_INVITES, TURN_DEADLINE_DAYS,
 };
 use ouril_sync::{
     GameMode, GameRecord, GameRecordResult, RecordEndReason, RecordOpponent, VariantRef,
@@ -50,7 +50,8 @@ macro_rules! columns {
         "id, variant_id, variant_version, first_player, south_user, north_user,
     invited_user, invite_code, status, moves, turn_deadline, result_outcome, result_reason,
     store_south, store_north, created_at, updated_at, started_at, mode, rated, rating_applied,
-    initial_ms, increment_ms, clock_south_ms, clock_north_ms, turn_started_at"
+    initial_ms, increment_ms, clock_south_ms, clock_north_ms, turn_started_at, draw_offer_by,
+    draw_offer_ply, draw_offer_open"
     };
 }
 
@@ -82,6 +83,9 @@ struct Row {
     clock_south_ms: Option<i64>,
     clock_north_ms: Option<i64>,
     turn_started_at: Option<OffsetDateTime>,
+    draw_offer_by: Option<String>,
+    draw_offer_ply: Option<i32>,
+    draw_offer_open: bool,
 }
 
 impl Row {
@@ -316,6 +320,11 @@ async fn view_with(
             })
         } else {
             None
+        },
+        draw_offer: match (row.draw_offer_open, row.draw_offer_by.as_deref()) {
+            (true, Some("south")) => Some(Seat::South),
+            (true, Some("north")) => Some(Seat::North),
+            _ => None,
         },
         server_now: rfc3339(OffsetDateTime::now_utc())?,
         created_at: rfc3339(row.created_at)?,
@@ -835,7 +844,8 @@ pub async fn play(db: &PgPool, me: Uuid, id: Uuid, req: MoveRequest) -> AppResul
         sqlx::query(
             "UPDATE online_games
                 SET moves = array_append(moves, $2), clock_south_ms = $3, clock_north_ms = $4,
-                    turn_started_at = $5, turn_deadline = $6, updated_at = now()
+                    turn_started_at = $5, turn_deadline = $6, draw_offer_open = false,
+                    updated_at = now()
               WHERE id = $1",
         )
         .bind(id)
@@ -850,7 +860,8 @@ pub async fn play(db: &PgPool, me: Uuid, id: Uuid, req: MoveRequest) -> AppResul
         sqlx::query(
             "UPDATE online_games
                 SET moves = array_append(moves, $2),
-                    turn_deadline = now() + make_interval(days => $3), updated_at = now()
+                    turn_deadline = now() + make_interval(days => $3), draw_offer_open = false,
+                    updated_at = now()
               WHERE id = $1",
         )
         .bind(id)
@@ -908,6 +919,82 @@ pub async fn resign(db: &PgPool, me: Uuid, id: Uuid) -> AppResult<OnlineGame> {
         true,
     )
     .await?;
+    let game = view(&mut tx, &row, me).await?;
+    tx.commit().await?;
+    Ok(game)
+}
+
+/// `POST /v1/games/{id}/draw`: offer a draw, or accept or decline the opponent's offer. An
+/// offer stays open until the next move; a player may offer again only
+/// `DRAW_OFFER_GAP_PLIES` after their last offer. An accepted draw ends the game (`agreement`),
+/// rated like any draw.
+pub async fn draw(db: &PgPool, me: Uuid, id: Uuid, action: DrawAction) -> AppResult<OnlineGame> {
+    let mut tx = db.begin().await?;
+    let (mut row, seat) = lock_mine(&mut tx, id, me).await?;
+    if row.status != "active" {
+        return Err(AppError::conflict("this game isn't being played"));
+    }
+    let mine = enum_str(&seat);
+    let ply = row.moves.len() as i32;
+    let open_from_them = row.draw_offer_open && row.draw_offer_by.as_deref() != Some(mine.as_str());
+    match action {
+        DrawAction::Offer => {
+            if row.draw_offer_open {
+                return Err(AppError::conflict("a draw offer is already open"));
+            }
+            let too_soon = row.draw_offer_by.as_deref() == Some(mine.as_str())
+                && row
+                    .draw_offer_ply
+                    .is_some_and(|last| ply - last < DRAW_OFFER_GAP_PLIES);
+            if too_soon {
+                return Err(AppError::conflict("you offered a draw recently"));
+            }
+            sqlx::query(
+                "UPDATE online_games
+                    SET draw_offer_by = $2, draw_offer_ply = $3, draw_offer_open = true,
+                        updated_at = now()
+                  WHERE id = $1",
+            )
+            .bind(id)
+            .bind(&mine)
+            .bind(ply)
+            .execute(&mut *tx)
+            .await?;
+            row = reload(&mut tx, id).await?;
+        }
+        DrawAction::Decline => {
+            if !open_from_them {
+                return Err(AppError::conflict("there's no draw offer to answer"));
+            }
+            sqlx::query(
+                "UPDATE online_games SET draw_offer_open = false, updated_at = now() WHERE id = $1",
+            )
+            .bind(id)
+            .execute(&mut *tx)
+            .await?;
+            row = reload(&mut tx, id).await?;
+        }
+        DrawAction::Accept => {
+            if !open_from_them {
+                return Err(AppError::conflict("there's no draw offer to answer"));
+            }
+            sqlx::query("UPDATE online_games SET draw_offer_open = false WHERE id = $1")
+                .bind(id)
+                .execute(&mut *tx)
+                .await?;
+            let stores = row.position()?.stores;
+            finish(
+                &mut tx,
+                &mut row,
+                GameResult::Draw,
+                RecordEndReason::Agreement,
+                stores,
+                OffsetDateTime::now_utc(),
+                true,
+            )
+            .await?;
+        }
+    }
     let game = view(&mut tx, &row, me).await?;
     tx.commit().await?;
     Ok(game)

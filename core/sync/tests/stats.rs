@@ -406,3 +406,11 @@ fn older_records_without_mode_or_opponent_still_read() {
     assert_eq!(r.mode, GameMode::VsAi);
     assert_eq!(r.opponent, None);
 }
+
+#[test]
+fn a_draw_by_agreement_round_trips() {
+    let json = serde_json::to_value(RecordEndReason::Agreement).unwrap();
+    assert_eq!(json, "agreement");
+    let back: RecordEndReason = serde_json::from_value(json).unwrap();
+    assert_eq!(back, RecordEndReason::Agreement);
+}

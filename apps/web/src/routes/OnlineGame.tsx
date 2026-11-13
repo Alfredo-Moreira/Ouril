@@ -377,6 +377,11 @@ function OnlineGameView({
   const abortGame = async () => {
     if (await act(() => api().gameAction(game.id, 'abort'))) setMenu('closed');
   };
+  const drawOffered = game.status === 'active' ? game.draw_offer : undefined;
+  const offerDraw = async () => {
+    if (await act(() => api().draw(game.id, 'offer'))) setMenu('closed');
+  };
+  const answerDraw = (action: 'accept' | 'decline') => void act(() => api().draw(game.id, action));
   const deadline =
     playing && !isLive && game.turn_deadline
       ? new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium', timeStyle: 'short' }).format(
@@ -468,6 +473,34 @@ function OnlineGameView({
         opponent={opponentName}
       />
       <ErrorLine error={error} />
+      {drawOffered && drawOffered !== game.you && (
+        <div className="card draw-offer" role="status">
+          <p>{t('online.draw.offered_to_you', { name: opponentName })}</p>
+          <div className="row">
+            <button
+              type="button"
+              className="button button--primary"
+              onClick={() => answerDraw('accept')}
+              disabled={busy}
+            >
+              {t('online.draw.accept')}
+            </button>
+            <button
+              type="button"
+              className="button"
+              onClick={() => answerDraw('decline')}
+              disabled={busy}
+            >
+              {t('online.draw.decline')}
+            </button>
+          </div>
+        </div>
+      )}
+      {drawOffered === game.you && (
+        <p className="note game__note" role="status">
+          {t('online.draw.offered_by_you', { name: opponentName })}
+        </p>
+      )}
 
       <div className="game-actions">
         {finished ? (
@@ -543,6 +576,16 @@ function OnlineGameView({
                 disabled={busy}
               >
                 {t('online.abort')}
+              </button>
+            )}
+            {game.status === 'active' && !firstMoves && drawOffered === undefined && (
+              <button
+                type="button"
+                className="button button--ghost"
+                onClick={() => void offerDraw()}
+                disabled={busy}
+              >
+                {t('online.draw.offer')}
               </button>
             )}
             <button
@@ -746,6 +789,8 @@ function endReasonText(
       return youLost ? t('online.over.resigned_you') : t('online.over.resigned_them', { name });
     case 'timeout':
       return youLost ? t('online.over.timeout_you') : t('online.over.timeout_them', { name });
+    case 'agreement':
+      return t('online.over.agreement');
     default:
       return t(`game.over.reason.${reason}`, { defaultValue: '' });
   }

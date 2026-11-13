@@ -41,6 +41,7 @@ import { GoogleCallback } from './routes/GoogleCallback';
 import { JoinGame } from './routes/JoinGame';
 import { GameHub } from './routes/GameHub';
 import { Leaderboard } from './routes/Leaderboard';
+import { LiveSeekProvider, SeekToast } from './online/LiveSeekProvider';
 import { OnlineGame } from './routes/OnlineGame';
 import { Profile } from './routes/Profile';
 import { SignIn } from './routes/SignIn';
@@ -119,7 +120,7 @@ function Layout({ animationSpeed }: { animationSpeed?: number }) {
   }, [immersive, music]);
   const wide = pathname === '/';
   return (
-    <>
+    <LiveSeekProvider>
       <a className="skip-link" href="#main">
         {t('common.skip_to_content')}
       </a>
@@ -252,6 +253,7 @@ function Layout({ animationSpeed }: { animationSpeed?: number }) {
       </main>
       {/* Asked only when a telemetry service is configured (ADR 0014): nothing to consent to otherwise. */}
       {telemetryConfigured() && <ConsentPrompt />}
-    </>
+      <SeekToast />
+    </LiveSeekProvider>
   );
 }

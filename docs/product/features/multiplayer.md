@@ -52,9 +52,9 @@ Built, per [ADR 0033](../../decisions/0033-live-games-http-moves-and-relay.md), 
   - **Play now:** pick a clock; you're paired with someone near your rating (the range widens the longer they've waited, and anyone after 30 seconds). The card shows how many players are looking, and **Cancel** stops.
   - **Invite live:** the lobby's **Game pace** applies a clock to an invitation by handle, an invite link or a challenge to a past opponent. **Rematch** keeps the clock.
 - **First move:** each player has 30 seconds to make their first move, or the game is called off (no result, no rating). Either player can also call it off from the menu until both have moved.
-- **During the game:** resign from the menu. The server owns the clocks and every rule; when a clock reaches zero on screen, the app asks the server, which decides.
+- **During the game:** resign, or **offer a draw**, from the menu (live and turn-by-turn games). The opponent sees the offer with **Accept the draw** and **Keep playing**; it stands until the next move, and the same player may offer again only ten moves later. An accepted draw ends the game ("Draw agreed"), rated like any draw. The server owns the clocks and every rule; when a clock reaches zero on screen, the app asks the server, which decides.
 - **Rated** live games have their own pool per variant (`<variant>:live`) and count in the overall rating ([leaderboards](leaderboards.md)).
-- **Not yet:** draw offers, open challenges in a lobby list, and offering a game against the computer while waiting.
+- **Waiting for an opponent:** the lobby lists the players looking for a game right now (rating, clock, variant, rated or casual) with **Play**, which starts the game with them straight away, whatever the ratings. While Play now is searching, **Play the computer while you wait** keeps the search going in the background: a small notice says when an opponent is found, with **Open the game**.
 
 ## As built (async, ADR 0031)
 
@@ -67,7 +67,7 @@ Turn-by-turn games are built ([ADR 0031](../../decisions/0031-online-games-over-
 - **Notifications:** in the app only. The games list shows invitations for you and games waiting for your move. Push notifications come later.
 - **After the game:** **Rematch** invites the same player to a new game. Both players get it in their history, and in Stats under "Against other players", and the opponent appears under "People you've played".
 - **Rated or casual:** invitations are rated by default; a rated game updates both players' ratings and shows the change in the result ([leaderboards](leaderboards.md), [ADR 0034](../../decisions/0034-ratings-and-leaderboards-in-postgres.md)).
-- **Not yet:** draw offers, preset messages, block and report, and the friends list.
+- **Not yet:** preset messages, block and report, and the friends list.
 
 ## Open questions
 

@@ -43,6 +43,9 @@ pub enum RecordEndReason {
     /// The losing side missed their turn deadline in a game against another player
     /// (format 3). The engine never produces this.
     Timeout,
+    /// Both players agreed to a draw in a game against another player (format 3). Only the
+    /// server writes this.
+    Agreement,
 }
 
 impl From<EndReason> for RecordEndReason {

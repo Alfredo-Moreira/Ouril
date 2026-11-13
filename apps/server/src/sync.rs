@@ -104,7 +104,10 @@ fn check_game_record(
     // a client can't push one.
     if r.mode != GameMode::VsAi
         || r.opponent.is_some()
-        || r.result.reason == RecordEndReason::Timeout
+        || matches!(
+            r.result.reason,
+            RecordEndReason::Timeout | RecordEndReason::Agreement
+        )
     {
         return Err(reasons::INVALID_PAYLOAD);
     }

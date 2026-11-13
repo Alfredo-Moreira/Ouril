@@ -455,6 +455,10 @@ pub struct OnlineGame {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[cfg_attr(feature = "ts", ts(optional))]
     pub clocks: Option<Clocks>,
+    /// Who has an open draw offer (it closes on the next move).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub draw_offer: Option<Seat>,
     /// The server's time when it answered (RFC 3339), so clients can count down accurately.
     #[serde(default)]
     pub server_now: String,
@@ -651,6 +655,52 @@ pub struct LiveToken {
     /// The relay's WebSocket URL.
     pub url: String,
     pub expires_in: u32,
+}
+
+/// `POST /v1/games/{id}/draw`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(TS), ts(export))]
+#[serde(rename_all = "snake_case")]
+pub enum DrawAction {
+    Offer,
+    Accept,
+    Decline,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(TS), ts(export))]
+pub struct DrawRequest {
+    pub action: DrawAction,
+}
+
+/// After offering a draw, a player may offer again only this many moves later.
+pub const DRAW_OFFER_GAP_PLIES: i32 = 10;
+
+/// Someone looking for a live game, as listed in the lobby.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(TS), ts(export))]
+pub struct OpenSeek {
+    pub player: PlayerSummary,
+    /// Their rating in the variant's live pool (1500 when new).
+    pub rating: i32,
+    pub variant_id: String,
+    pub time_control: TimeControl,
+    pub rated: bool,
+    pub waiting_secs: u32,
+}
+
+/// `GET /v1/live/lobby`: open seeks from other players, longest waiting first.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(TS), ts(export))]
+pub struct LiveLobby {
+    pub seeks: Vec<OpenSeek>,
+}
+
+/// `POST /v1/live/join`: play this waiting player now, whatever the ratings.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(TS), ts(export))]
+pub struct JoinSeekRequest {
+    pub user_id: String,
 }
 
 /// Relay tokens: who issues them and for whom.
