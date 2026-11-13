@@ -41,6 +41,7 @@ Development is **local-first and Docker-first** (ADR 0017): run things through `
 7. **Significant decisions get an ADR** in `docs/decisions/` (template in its README). Update the docs in the same change as the code they describe.
 8. **Never hand-edit or commit generated code** (UniFFI and wasm-bindgen output, generated string files). Regenerate it with `just bindings` / `just i18n` (ADRs 0015, 0016).
 9. Don't commit, push, or create releases unless asked. When you do, let the git hooks run (`just hooks`); don't use `--no-verify` unless the user says so.
+10. **When you commit and the branch is ready for review, write its PR description** following [the PR template](.github/pull_request_template.md). Keep the template's sections, tick what applies, strike through or explain the Definition of done items that don't, and delete sections that don't apply. Give the description in your reply, ready to paste, even if nobody asked for a PR.
 
 ## Project skills and hooks
 
