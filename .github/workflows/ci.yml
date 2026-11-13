@@ -138,8 +138,8 @@ jobs:
       - uses: docker/setup-buildx-action@v3
       - name: Compose file is valid
         run: docker compose -f deploy/homelab/docker-compose.homelab.yml config --quiet
-      - name: Shellcheck the build script
-        run: shellcheck deploy/homelab/build-and-push.sh
+      - name: Shellcheck the scripts (the build script, scripts/check.sh and the git hooks)
+        run: shellcheck $(git ls-files '*.sh' '.githooks/*')
       # Both architectures, cross-compiled like the real build (the NAS is arm64). Images go to
       # the private registry only through deploy/homelab/build-and-push.sh, never from CI.
       - name: Build the relay image (amd64 and arm64)
@@ -171,34 +171,5 @@ jobs:
               --build-context homelab=deploy/homelab --build-arg PACKAGE=$p \
               --cache-from type=gha,scope=${p#ouril-} -t $p:ci .
           done
-      - name: Relay boots read-only, non-root, healthy
-        run: |
-          docker run -d --name relay --read-only --cap-drop ALL -p 127.0.0.1:8090:8090 \
-            -e RELAY_API_KEY="$(openssl rand -hex 32)" \
-            -e RELAY_TOKEN_SECRET="$(openssl rand -hex 32)" \
-            -e ALLOWED_ORIGINS=https://ouril.vercel.app \
-            ouril-relay:ci
-          for _ in $(seq 1 20); do curl -sf localhost:8090/healthz && break; sleep 1; done
-          test "$(curl -s -o /dev/null -w '%{http_code}' localhost:8090/admin)" = 404
-          docker exec relay /service healthcheck
-          test "$(docker inspect relay --format '{{.Config.User}}')" != ""
-          docker rm -f relay >/dev/null
-      - name: Jobs refuses to start without its settings, and is unhealthy before a round
-        run: |
-          if docker run --rm ouril-jobs:ci 2> /tmp/jobs.log; then
-            echo "::error::ouril-jobs started without JOBS_URL"; exit 1
-          fi
-          grep -q "JOBS_URL is required" /tmp/jobs.log
-          if docker run --rm -e JOBS_URL=https://example.invalid -e JOBS_TOKEN="$(openssl rand -hex 32)" \
-              ouril-jobs:ci healthcheck; then
-            echo "::error::healthy before any round"; exit 1
-          fi
-      - name: CI images hold no .env (CI has no deploy/homelab/.env)
-        run: |
-          for p in ouril-relay ouril-jobs; do
-            id=$(docker create $p:ci)
-            if docker cp "$id:/app/.env" /tmp/leaked.env 2>/dev/null; then
-              echo "::error::$p contains a .env"; exit 1
-            fi
-            docker rm "$id" >/dev/null
-          done
+      - name: The images boot (relay read-only, non-root, healthy; jobs refuses without settings; no .env)
+        run: scripts/ci/homelab-boot.sh

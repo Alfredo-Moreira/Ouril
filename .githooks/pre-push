@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# CI's checks, tests, audits and image builds for the pushed commits' areas (scripts/check.sh;
+# git passes the refs on stdin). Turn on with `just hooks`; skip once with `git push --no-verify`.
+exec "$(git rev-parse --show-toplevel)/scripts/check.sh" pre-push

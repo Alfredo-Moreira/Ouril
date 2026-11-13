@@ -40,7 +40,8 @@ Development is **local-first and Docker-first** (ADR 0017): run things through `
 6. **Offline-first:** gameplay never depends on the network. **Guests make no network requests** unless they have opted into telemetry ([ADR 0014](docs/decisions/0014-telemetry-consent.md)).
 7. **Significant decisions get an ADR** in `docs/decisions/` (template in its README). Update the docs in the same change as the code they describe.
 8. **Never hand-edit or commit generated code** (UniFFI and wasm-bindgen output, generated string files). Regenerate it with `just bindings` / `just i18n` (ADRs 0015, 0016).
-9. Don't commit, push, or create releases unless asked.
+9. Don't commit, push, or create releases unless asked. When you do, let the git hooks run (`just hooks`); don't use `--no-verify` unless the user says so.
+10. **When you commit and the branch is ready for review, write its PR description** following [the PR template](.github/pull_request_template.md). Keep the template's sections, tick what applies, strike through or explain the Definition of done items that don't, and delete sections that don't apply. Give the description in your reply, ready to paste, even if nobody asked for a PR.
 
 ## Project skills and hooks
 
@@ -80,6 +81,8 @@ The host needs only Docker, plus `just` if you want it. Don't use host Rust or N
 | Web tests (Vitest) | `just test-web` | build the WASM package, then `docker compose run --rm web sh -c "pnpm install --frozen-lockfile && pnpm --filter web test"` |
 | Everything | `just test` | the three rows above |
 | Lint (rustfmt, clippy `-D warnings`, ESLint, Prettier, tsc) / format | `just lint` / `just fmt` | see the `lint` and `fmt` recipes in the `justfile` |
+| Git hooks: CI's checks for the changed areas before each commit (fast) and push (tests, audits, images) | `just hooks` | `git config core.hooksPath .githooks` |
+| Every CI check locally | `just ci` | `scripts/check.sh all` |
 | TS types for the API (`apps/web/src/generated/protocol`) | `just protocol-ts` | `docker compose run --rm toolbox just protocol-ts` |
 | New migration / apply / reset the db ([migrations](docs/architecture/backend.md#migrations)) | `just migration <name>` / `just migrate` / `just db-reset` | `docker compose run --rm toolbox just migration <name>` |
 | pgAdmin: local db on :5050 / Neon on :5051 (own project, needs `docker/pgadmin/.env`) | `just pgadmin` / `just pgadmin-neon` | `docker compose up -d pgadmin` / `docker compose -f docker/pgadmin/compose.neon.yaml up -d` |
