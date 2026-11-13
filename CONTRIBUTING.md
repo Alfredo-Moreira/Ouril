@@ -86,7 +86,9 @@ docker compose up db server web
 | `just relay` | Run the relay on <http://localhost:8090> (set the `RELAY_*` values from `.env.example` in `.env` first) |
 | `just jobs` | Run the scheduled jobs against the dev server (set `JOBS_TOKEN` in `.env` first) |
 | `just build-homelab-images` | Build the relay and jobs images for this machine |
-| `just lint` / `just fmt` | rustfmt, clippy (warnings are errors), ESLint, Prettier and tsc / format Rust and web code |
+| `just lint` / `just fmt` | rustfmt, clippy (all features, warnings are errors), ESLint, Prettier and tsc / format Rust and web code |
+| `just hooks` | Turn on the git hooks: CI's checks before each commit and push ([below](#git-hooks)) |
+| `just ci` | Every CI check locally, as CI runs them (`scripts/check.sh all`, both image architectures included) |
 | `just bindings` | Build `core/wasm/pkg` (WASM only for now; UniFFI comes with iOS/Android) |
 | `just protocol-ts` | Export the API and core TypeScript types to `apps/web/src/generated/protocol/` |
 | `just migration <name>` | Create an empty server migration in `apps/server/migrations` ([migrations](docs/architecture/backend.md#migrations)) |
@@ -104,6 +106,20 @@ Without `just` on the host, run any toolbox recipe as `docker compose run --rm t
 - Docker Desktop on macOS: give the VM at least 8 GB of memory and 60 GB of disk, and avoid running two heavy cargo builds at once.
 - Native toolchains (Rust via `rustup`, `wasm-pack`, Node LTS + pnpm) still work if you prefer them: set `OURIL_IN_TOOLBOX=1` so the `just` recipes run commands directly. Docker is the supported default.
 - VS Code users can open the repo in the Dev Container (`.devcontainer/`), which uses the same `toolbox` image.
+
+### Git hooks
+
+Run `just hooks` once per clone (or `git config core.hooksPath .githooks`). The hooks run `scripts/check.sh` in Docker, the same checks as [CI](.github/workflows/ci.yml), but only for the areas your change touches:
+
+| Hook | Checks |
+|---|---|
+| `pre-commit` (staged files) | Docs and test vector bookkeeping, shellcheck, Compose files, rustfmt, clippy with every feature, ESLint, tsc, Prettier, and the deploy assembly (every workspace member present) |
+| `pre-push` (pushed commits) | Those, plus the Rust tests (all features, then the server without `dev-auth`), `cargo audit`, the web tests, build and `pnpm audit`, the `vercel.json` schema, the release server image, and the homelab images and their boot checks |
+
+- The checks read the working tree, so unstaged changes count too.
+- Locally the homelab images build only for your machine's architecture. `just ci` builds both, as CI does.
+- Skip the hooks once with `git commit --no-verify` or `git push --no-verify`. CI still runs everything.
+- When you change a CI check, change `scripts/check.sh` too. The homelab boot checks and the deploy assembly are shared scripts in `scripts/ci/`, so CI and the hooks can't drift apart there.
 
 ### Claude Code skills
 

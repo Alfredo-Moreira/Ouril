@@ -118,8 +118,18 @@ fmt:
 # Lint: rustfmt check, clippy (warnings are errors), ESLint, Prettier check, tsc
 lint:
     {{tb}} cargo fmt --all -- --check
-    {{tb}} cargo clippy --workspace --all-targets -- -D warnings
+    {{tb}} cargo clippy --workspace --all-targets --all-features -- -D warnings
     {{web}} sh -c "pnpm install --frozen-lockfile && pnpm --filter web lint && pnpm --filter web format:check && pnpm --filter web typecheck"
+
+# Turn on the git hooks in .githooks: CI's checks before each commit (fast) and push (tests,
+# audits, images), for the areas that changed. Skip once with --no-verify.
+hooks:
+    git config core.hooksPath .githooks
+    @echo "git hooks on: pre-commit and pre-push run scripts/check.sh (skip once with --no-verify)"
+
+# Run every CI check locally, as CI does (scripts/check.sh all)
+ci:
+    scripts/check.sh all
 
 # Build the production server image (never includes dev-auth)
 build-server-image:
