@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Fast CI checks for the staged files' areas (scripts/check.sh). Turn on with `just hooks`;
+# skip once with `git commit --no-verify`.
+exec "$(git rev-parse --show-toplevel)/scripts/check.sh" pre-commit

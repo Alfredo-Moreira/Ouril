@@ -58,6 +58,8 @@ captures/
 
 # --- Docker / local data ------------------------------------------------------
 docker-data/
+# scripts/check.sh scratch space (the assembled deploy workspace)
+/.check/
 
 # --- Logs -------------------------------------------------------------------
 *.log
