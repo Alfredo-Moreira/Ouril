@@ -85,6 +85,7 @@ Every non-2xx response has the body `ApiError`:
 | `GET` | `/v1/opponents` | Bearer | — | `200 OpponentList` |
 | `GET` | `/v1/ratings/me` | Bearer | — | `200 MyRatings` |
 | `GET` | `/v1/players/{id}` | Bearer | — | `200 PlayerProfile` (by user ID or `@handle`) · `404` unknown or deleted |
+| `GET` | `/v1/points?season=YYYY-MM&scope=world\|country[&country=C]` | Bearer | query | `200 PointsBoard` · `400` bad season or country |
 | `GET` | `/v1/leaderboard?pool=P&scope=world\|country[&country=C]` | Bearer | query | `200 Leaderboard` · `400` unknown pool, bad country, or a country board with no country |
 
 ### `GET /v1/meta`
@@ -251,6 +252,7 @@ Glicko-2 ratings for games against other players ([ADR 0034](../../docs/decision
 - **`GET /v1/ratings/me`:** every pool you've played rated games in, overall first. `deviation` is grown for the time since your last rated game; `provisional` when it's above 110.
 - **`GET /v1/leaderboard`:** the top 100 eligible players in `pool`, ranked by rating, plus `you` when you're eligible. `scope=country` uses `country` (ISO 3166-1 alpha-2, any case) or your profile's. **Eligible:** at least `LEADERBOARD_MIN_GAMES` (10) rated games in the pool, one in the last `LEADERBOARD_ACTIVE_DAYS` (60), a deviation (grown for time) of at most 110, and not deleted.
 - **Movement:** `movement_since` is the latest daily snapshot before today (written by the `leaderboard-snapshot` job); each entry's `change` is places gained since then (negative: lost), absent for players new to the board. Both are absent until the job has run. `your_best_rank` is your best rank ever on that board.
+- **Points board:** `GET /v1/points` (season defaults to the current month, UTC): the top 100 players with points, plus `you`, and `seasons` with points, newest first. Points come from online games that counted for ratings (`POINTS_ONLINE`: win 10, draw 4, loss 1) and from new wins against the computer pushed by sync (`POINTS_AI_WIN`: easy 1, medium 3, hard 5; at most `POINTS_AI_DAILY_CAP`, 20, a day), credited to the season in which the server receives them.
 - **Profiles:** `GET /v1/players/{id}` (a user ID or `@handle`, any case; signed-in players only): display name, handle, country, `member_since`, `you`, every pool's rating, rating history per pool (the latest `PROFILE_HISTORY_POINTS` (200) points of the last `PROFILE_HISTORY_DAYS` (180), oldest first), badges (best ranks in the top `BADGE_MAX_RANK` (10), best first) and, on someone else's profile, `head_to_head` (your wins, draws and losses against them in finished online games). Deleted accounts are 404.
 - **Scheduled jobs:** `POST /v1/internal/jobs/{leaderboard-snapshot|prune}`, called by `ouril-jobs` on the homelab with `Authorization: Bearer <JOBS_TOKEN>` ([backend](../../docs/architecture/backend.md#scheduled-jobs)). `JOBS_TOKEN` is optional (at least 32 bytes).
 

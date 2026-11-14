@@ -889,6 +889,48 @@ pub struct PlayerProfile {
     pub head_to_head: Option<HeadToHead>,
 }
 
+/// Points for an online game that counted for ratings (ADR 0034): a win, a draw, a loss.
+pub const POINTS_ONLINE: [i32; 3] = [10, 4, 1];
+/// Points for a win against the computer, by level: easy, medium, hard.
+pub const POINTS_AI_WIN: [i32; 3] = [1, 3, 5];
+/// At most this many points a day from games against the computer (played on the device).
+pub const POINTS_AI_DAILY_CAP: i32 = 20;
+
+/// One row of a points board.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(TS), ts(export))]
+pub struct PointsEntry {
+    pub rank: u32,
+    pub player: PlayerSummary,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub country: Option<String>,
+    pub points: u32,
+    pub online_games: u32,
+    pub ai_wins: u32,
+}
+
+/// `GET /v1/points?season=YYYY-MM&scope=world|country[&country=cv]`: a season's points board.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(TS), ts(export))]
+pub struct PointsBoard {
+    /// `YYYY-MM` (UTC).
+    pub season: String,
+    /// Whether `season` is the one being played now.
+    pub current: bool,
+    pub scope: LeaderboardScope,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub country: Option<String>,
+    /// The top `LEADERBOARD_SIZE`.
+    pub entries: Vec<PointsEntry>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub you: Option<PointsEntry>,
+    /// Seasons with points, newest first (the current one always included).
+    pub seasons: Vec<String>,
+}
+
 /// A leaderboard's scope.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "ts", derive(TS), ts(export))]

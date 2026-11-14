@@ -2200,7 +2200,7 @@
     "description": "Settings, profile"
   },
   "privacy.account.6": {
-    "message": "Rated games against other players give you a rating, which we keep with your results. Other signed-in players can see your profile: your display name, handle, country, when you started playing, your ratings and their history, your best leaderboard placements, and their own record against you. If you have played enough rated games recently, you also appear on the leaderboards.",
+    "message": "Rated games against other players give you a rating, which we keep with your results. Other signed-in players can see your profile: your display name, handle, country, when you started playing, your ratings and their history, your best leaderboard placements, and their own record against you. If you have played enough rated games recently, you also appear on the leaderboards. Your points for the month (from online games and wins against the computer) appear on the season's points board.",
     "description": "Privacy policy, account section"
   },
   "online.status.aborted": {
@@ -2382,5 +2382,37 @@
   "online.play_now.dismiss": {
     "message": "Later",
     "description": "Play online: draw offers, open challenges and waiting"
+  },
+  "leaderboard.kind": {
+    "message": "Board",
+    "description": "Leaderboard page: the seasonal points board"
+  },
+  "leaderboard.kind.ratings": {
+    "message": "Ratings",
+    "description": "Leaderboard page: the seasonal points board"
+  },
+  "leaderboard.kind.points": {
+    "message": "Points this season",
+    "description": "Leaderboard page: the seasonal points board"
+  },
+  "leaderboard.points.how": {
+    "message": "Each month is a new season. Online games that count for ratings earn {win} points for a win, {draw} for a draw and {loss} for a loss. Wins against the computer earn {easy}, {medium} or {hard} by level, up to {cap} points a day.",
+    "description": "Leaderboard page: the seasonal points board"
+  },
+  "leaderboard.points.season": {
+    "message": "Season",
+    "description": "Leaderboard page: the seasonal points board"
+  },
+  "leaderboard.points.empty": {
+    "message": "No points yet this season. Play a rated online game, or beat the computer, to be the first.",
+    "description": "Leaderboard page: the seasonal points board"
+  },
+  "leaderboard.points.caption": {
+    "message": "Points, {season}",
+    "description": "Leaderboard page: the seasonal points board"
+  },
+  "leaderboard.col.points": {
+    "message": "Points",
+    "description": "Leaderboard page: the seasonal points board"
   }
 }

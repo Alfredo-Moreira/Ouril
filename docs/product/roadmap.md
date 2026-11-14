@@ -72,7 +72,7 @@ Native apps (SwiftUI, then Jetpack Compose; [ADR 0008](../decisions/0008-native-
 - **Skill rating** (Glicko-2) from rated online games: an overall rating plus one per variant and mode, on world and country boards, stored in Postgres ([ADR 0034](../decisions/0034-ratings-and-leaderboards-in-postgres.md)). Built before live games, on turn-by-turn games.
 - **Points board** from activity and wins. Wins against the computer are played on the device and can't be verified, so they count for little or nothing.
 - **Scopes:** global, country, region/state, and city.
-- Seasons with periodic resets of the points board.
+- ✅ Seasons: a monthly points board for casual players (online games that counted for ratings, and capped wins against the computer), with past seasons kept ([leaderboards](features/leaderboards.md#points-board-seasons)).
 - ✅ Rank movement (▲/▼ since the last daily snapshot) and best ranks, from snapshots taken by `ouril-jobs` on the homelab ([ADR 0032](../decisions/0032-small-services-on-the-homelab.md)).
 - ✅ Player profiles: ratings with their history, top-placement badges, your record against them, and Challenge ([leaderboards](features/leaderboards.md#player-profiles)).
 - See [leaderboards.md](features/leaderboards.md).

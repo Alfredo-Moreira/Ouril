@@ -29,6 +29,7 @@ import type {
   OnlineGame,
   OpponentList,
   PlayerProfile,
+  PointsBoard,
   DevSignInRequest,
   GoogleSignInRequest,
   Me,
@@ -211,6 +212,14 @@ export class ApiClient {
 
   opponents(): Promise<OpponentList> {
     return this.request<OpponentList>('GET', '/v1/opponents');
+  }
+
+  /** A season's points board (default: the current season). */
+  points(scope: LeaderboardScope, season?: string, country?: string): Promise<PointsBoard> {
+    const q = new URLSearchParams({ scope });
+    if (season) q.set('season', season);
+    if (country) q.set('country', country);
+    return this.request<PointsBoard>('GET', `/v1/points?${q.toString()}`);
   }
 
   /** A player's profile, by user ID or `@handle`. */
