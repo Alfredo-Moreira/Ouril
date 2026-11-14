@@ -2,7 +2,7 @@
  * Small inline SVG icons (no icon font, no network). Decorative: always `aria-hidden`; the
  * accessible name comes from the visible text next to them.
  */
-import type { SVGProps } from 'react';
+import type { CSSProperties, SVGProps } from 'react';
 
 type IconProps = SVGProps<SVGSVGElement>;
 
@@ -14,7 +14,7 @@ function Svg(props: IconProps) {
       height="20"
       fill="none"
       stroke="currentColor"
-      strokeWidth={1.8}
+      strokeWidth={2}
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
@@ -24,15 +24,61 @@ function Svg(props: IconProps) {
   );
 }
 
-/** The Ouril mark: a pit with three seeds. */
-export function LogoMark(props: IconProps) {
+/** Ten seeds around a centre: the first (top) one is drawn in star yellow by the stylesheet. */
+function ringSeeds(cx: number, cy: number, radius: number, rx: number, ry: number) {
+  return Array.from({ length: 10 }, (_, i) => {
+    const angle = -90 + i * 36;
+    const a = (angle * Math.PI) / 180;
+    const x = cx + radius * Math.cos(a);
+    const y = cy + radius * Math.sin(a);
+    // Each seed lies along the ring; the rotation sits on a group, so the seed itself can
+    // still be animated (scale) around its own centre.
+    return (
+      <g key={i} transform={`rotate(${angle + 90} ${x} ${y})`}>
+        <ellipse
+          className={i === 0 ? 'seed-ring__seed seed-ring__seed--star' : 'seed-ring__seed'}
+          cx={x}
+          cy={y}
+          rx={rx}
+          ry={ry}
+          fill="currentColor"
+          style={{ '--i': i } as CSSProperties}
+        />
+      </g>
+    );
+  });
+}
+
+/**
+ * The Ouril mark: ten ouri seeds in a ring, one of them star yellow. It reads as an O, as a pit
+ * seen from above, and as the flag's ring of ten islands, made of the game's own seeds.
+ */
+export function SeedRing(props: IconProps) {
   return (
-    <svg viewBox="0 0 32 32" width="28" height="28" aria-hidden="true" focusable="false" {...props}>
-      <circle cx="16" cy="16" r="15" fill="currentColor" opacity="0.14" />
-      <circle cx="16" cy="16" r="11" fill="none" stroke="currentColor" strokeWidth="2" />
-      <ellipse cx="12.4" cy="17.4" rx="3.1" ry="2.5" fill="currentColor" />
-      <ellipse cx="19" cy="18.6" rx="3.1" ry="2.5" fill="currentColor" opacity="0.85" />
-      <ellipse cx="16.4" cy="12.2" rx="3.1" ry="2.5" fill="currentColor" opacity="0.7" />
+    <svg viewBox="0 0 64 64" width="28" height="28" aria-hidden="true" focusable="false" {...props}>
+      {ringSeeds(32, 32, 21, 6.2, 4.4)}
+    </svg>
+  );
+}
+
+export const LogoMark = SeedRing;
+
+/** "uril" in Bricolage Grotesque ExtraBold (optical size 96), as outlines, in font units. */
+const URIL =
+  'M861 14Q775 14 733.5 -46Q692 -106 692 -230V-528H854V-232Q854 -174 870.5 -151Q887 -128 918 -128Q940 -128 958.5 -139.5Q977 -151 991 -174.5Q1005 -198 1012.5 -235Q1020 -272 1020 -324V-528H1182V0H1044V-206H1037Q1031 -129 1010 -80.5Q989 -32 952 -9Q915 14 861 14Z' +
+  'M1254 0V-528H1394V-318H1402Q1408 -402 1425.5 -450.5Q1443 -499 1469.5 -519.5Q1496 -540 1529 -540Q1547 -540 1566.5 -535Q1586 -530 1605 -519L1597 -339Q1575 -352 1554 -358.5Q1533 -365 1514 -365Q1482 -365 1460 -347Q1438 -329 1426.5 -294Q1415 -259 1415 -209V0Z' +
+  'M1654 0V-528H1816V0ZM1734 -566Q1688 -566 1663.5 -585.5Q1639 -605 1639 -642Q1639 -680 1663.5 -699.5Q1688 -719 1734 -719Q1781 -719 1805.5 -699Q1830 -679 1830 -642Q1830 -606 1805.5 -586Q1781 -566 1734 -566Z' +
+  'M1888 0V-700H2050V0Z';
+
+/**
+ * The wordmark: "Ouril" with the seed ring as its O. Decorative; the page names it with
+ * `t('app.title')` next to it (the hero's heading).
+ */
+export function Wordmark(props: IconProps) {
+  return (
+    <svg viewBox="0 -730 2070 754" aria-hidden="true" focusable="false" {...props}>
+      {ringSeeds(330, -330, 284, 84, 60)}
+      <path d={URIL} fill="currentColor" />
     </svg>
   );
 }

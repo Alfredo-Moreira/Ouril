@@ -1407,6 +1407,10 @@
     "message": "In 2026 the world met Cape Verde: on their World Cup debut, the Blue Sharks went unbeaten through their group, held Spain to a draw and took Argentina to extra time in the knockout round. Now it’s time to show the world more of our culture, starting with Ouril.",
     "description": "Landing page heritage paragraph about Cape Verde's 2026 FIFA World Cup debut (facts checked July 2026: group draws with Spain 0-0, Uruguay 2-2, Saudi Arabia 0-0; lost 3-2 to Argentina after extra time in the round of 32)"
   },
+  "home.heritage.cloth": {
+    "message": "The cloth pattern in Ouril comes from panu di terra, the strip cloth woven in Cape Verde since the 1400s. Enslaved weavers brought the craft from the African coast and the cloth was traded in the slave trade; since independence in 1975 it has stood for Cape Verdean identity.",
+    "description": "Landing page heritage paragraph about the panu di terra cloth the app's pattern comes from (source: buala.org, 'Designing national identity through cloth: the pánu di téra of Cape Verde')"
+  },
   "variant.cv.across.short": {
     "message": "Capture across",
     "description": "Rules option: capture across"

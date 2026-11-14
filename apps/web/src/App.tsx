@@ -95,6 +95,7 @@ function Layout({ animationSpeed }: { animationSpeed?: number }) {
   const { auth, user, update, consent } = useApp();
   const statsVisible = useStatsVisible();
   const onlineVisible = useOnlineVisible();
+  const crowded = onlineVisible || statsVisible;
   // A guest who opens a signed-in page (Stats, replays, online games) is asked to sign in.
   const signInGate = <Navigate to={FEATURES.accounts ? '/sign-in' : '/'} replace />;
   const { pathname } = useLocation();
@@ -146,7 +147,9 @@ function Layout({ animationSpeed }: { animationSpeed?: number }) {
                 <LearnIcon />
                 <span>{t('menu.tutorial')}</span>
               </NavLink>
-              <NavLink to="/rules" className="app-nav__secondary">
+              {/* Phones get five tabs at most: Rules and About step out of the tab bar when the
+                  signed-in links appear (they stay on Home's tiles). */}
+              <NavLink to="/rules" className={crowded ? 'app-nav__secondary' : undefined}>
                 <RulesIcon />
                 <span>{t('menu.rules')}</span>
               </NavLink>
@@ -166,13 +169,14 @@ function Layout({ animationSpeed }: { animationSpeed?: number }) {
                 <SettingsIcon />
                 <span>{t('menu.settings')}</span>
               </NavLink>
-              <NavLink to="/about">
+              <NavLink to="/about" className={crowded ? 'app-nav__secondary' : undefined}>
                 <InfoIcon />
                 <span>{t('menu.about')}</span>
               </NavLink>
             </nav>
+            {/* A quiet link on wide screens only; phones and tablets find the boards on Home. */}
             {hasBoardLinks() && (
-              <Link to="/about#buy" className="account-link shop-link">
+              <Link to="/about#buy" className="shop-link">
                 <BagIcon />
                 <span>{t('menu.shop')}</span>
               </Link>

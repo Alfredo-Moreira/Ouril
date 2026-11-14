@@ -8,4 +8,6 @@ import '../i18n';
 
 afterEach(() => {
   cleanup();
+  // Remembered choices (the last new game) must not leak from one test into the next.
+  localStorage.clear();
 });

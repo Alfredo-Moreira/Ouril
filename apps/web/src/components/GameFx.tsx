@@ -44,11 +44,11 @@ export function ScoreValue({ value }: { value: number }) {
 // --- Win celebration ----------------------------------------------------------------------------
 
 /**
- * A one-off burst in the colours of the Cape Verdean flag, led by ten yellow stars (the flag's
- * ten islands), with a few grey ouris among them. Plays once, for about two seconds, behind the
- * result dialog; nothing with reduced motion.
+ * A one-off burst in the Panu colours (indigo, cotton, red, star yellow, sea), led by ten
+ * star-yellow seeds (the seed ring, the ten islands), with a few grey ouris among them. Plays
+ * once, for about two seconds, behind the result dialog; nothing with reduced motion.
  */
-const COLORS = ['#003893', '#ffffff', '#cf2027', '#f7d116', '#0f6b75'];
+const COLORS = ['#1f2d78', '#f5f1e8', '#c8202a', '#f7d116', '#0c7580'];
 
 export function Celebration() {
   const ref = useRef<HTMLDivElement>(null);

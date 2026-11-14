@@ -13,7 +13,7 @@ import { useBoardPace } from '../board3d/pace';
 import { BoardView } from '../components/BoardView';
 import { Dialog } from '../components/Dialog';
 import { MusicControls } from '../components/MusicControls';
-import { Celebration, FinalScore, ScoreValue } from '../components/GameFx';
+import { Celebration, FinalScore } from '../components/GameFx';
 import {
   ExitFullscreenIcon,
   FlagIcon,
@@ -21,10 +21,10 @@ import {
   HomeIcon,
   InfoIcon,
   PauseIcon,
-  SeedIcon,
-  StarIcon,
+  SeedRing,
 } from '../components/Icons';
 import { MoveAnnouncer } from '../components/MoveAnnouncer';
+import { Nameplate } from '../components/Nameplate';
 import { RulesView } from '../components/RulesView';
 import { useFullscreen } from '../components/useFullscreen';
 import { useCore } from '../engine/CoreContext';
@@ -213,7 +213,7 @@ function Invitation({
           <>
             <button
               type="button"
-              className="button button--primary"
+              className="button button--play"
               disabled={busy}
               onClick={() =>
                 void act(
@@ -395,7 +395,7 @@ function OnlineGameView({
   return (
     <section className="game" ref={root}>
       <h1 className="visually-hidden">{t('online.game.title', { name: opponentName })}</h1>
-      <div className="game__bar">
+      <div className="game__top">
         <button
           type="button"
           className="icon-button"
@@ -405,29 +405,15 @@ function OnlineGameView({
         >
           <PauseIcon />
         </button>
-        <div className="scoreboard" aria-label={t('game.score.label')}>
-          <div className={`score score--ai${playing && !myTurn ? ' score--turn' : ''}`}>
-            <span className="score__avatar" aria-hidden="true">
-              {Array.from(opponentName)[0]}
-            </span>
-            <span className="score__name">{opponentName}</span>
-            <ScoreValue value={shown.stores[1]} />
-            {game.clocks && (
-              <LiveClock game={game} side="them" offset={offset} onOut={onClockOut} />
-            )}
-          </div>
-          <p className="game-status" role="status">
-            {status}
-          </p>
-          <div className={`score score--you${myTurn ? ' score--turn' : ''}`}>
-            <span className="score__avatar" aria-hidden="true">
-              {Array.from(t('online.you'))[0]}
-            </span>
-            <span className="score__name">{t('online.you')}</span>
-            <ScoreValue value={shown.stores[0]} />
-            {game.clocks && <LiveClock game={game} side="you" offset={offset} onOut={onClockOut} />}
-          </div>
-        </div>
+        <Nameplate
+          side="them"
+          name={opponentName}
+          score={shown.stores[1]}
+          turn={playing && !myTurn}
+          clock={
+            game.clocks && <LiveClock game={game} side="them" offset={offset} onOut={onClockOut} />
+          }
+        />
         <div className="game__tools">
           <MusicControls />
           <button
@@ -452,6 +438,9 @@ function OnlineGameView({
           ) : null}
         </div>
       </div>
+      <p className="game-status" role="status">
+        {status}
+      </p>
 
       <div className="stage stage--game">
         <BoardView
@@ -502,34 +491,45 @@ function OnlineGameView({
         </p>
       )}
 
-      <div className="game-actions">
-        {finished ? (
-          <>
-            {game.opponent && (
-              <button
-                type="button"
-                className="button button--primary"
-                onClick={rematch}
-                disabled={busy}
-              >
-                {t('online.over.rematch')}
-              </button>
-            )}
-            <Link className="button button--ghost" to="/game?tab=online">
-              {t('online.menu.back')}
-            </Link>
-          </>
-        ) : (
-          <button
-            type="button"
-            className="button button--ghost"
-            onClick={() => setMenu('menu')}
-            aria-haspopup="dialog"
-          >
-            <PauseIcon />
-            {t('game.leave')}
-          </button>
-        )}
+      <div className="game__bottom">
+        <Nameplate
+          side="you"
+          name={t('online.you')}
+          score={shown.stores[0]}
+          turn={myTurn}
+          clock={
+            game.clocks && <LiveClock game={game} side="you" offset={offset} onOut={onClockOut} />
+          }
+        />
+        <div className="game-actions">
+          {finished ? (
+            <>
+              {game.opponent && (
+                <button
+                  type="button"
+                  className="button button--play"
+                  onClick={rematch}
+                  disabled={busy}
+                >
+                  {t('online.over.rematch')}
+                </button>
+              )}
+              <Link className="button button--ghost" to="/game?tab=online">
+                {t('online.menu.back')}
+              </Link>
+            </>
+          ) : (
+            <button
+              type="button"
+              className="button button--ghost"
+              onClick={() => setMenu('menu')}
+              aria-haspopup="dialog"
+            >
+              <PauseIcon />
+              <span className="button__label">{t('game.leave')}</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {rulesOpen && (
@@ -557,11 +557,7 @@ function OnlineGameView({
         <Dialog title={t('game.menu.title')} onDismiss={() => setMenu('closed')}>
           <p>{t('online.menu.body')}</p>
           <div className="dialog__actions dialog__actions--stack">
-            <button
-              type="button"
-              className="button button--primary"
-              onClick={() => setMenu('closed')}
-            >
+            <button type="button" className="button button--play" onClick={() => setMenu('closed')}>
               {t('game.menu.resume')}
             </button>
             <Link className="button" to="/game?tab=online">
@@ -639,7 +635,7 @@ function OnlineGameView({
               className={`result result--${outcome}`}
               header={
                 <span className="result__emblem" aria-hidden="true">
-                  {outcome === 'win' ? <StarIcon /> : <SeedIcon />}
+                  <SeedRing />
                 </span>
               }
             >
@@ -665,7 +661,7 @@ function OnlineGameView({
                 {game.opponent && (
                   <button
                     type="button"
-                    className="button button--primary"
+                    className="button button--play"
                     onClick={rematch}
                     disabled={busy}
                   >

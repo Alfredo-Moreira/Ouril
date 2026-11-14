@@ -1,12 +1,4 @@
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type CSSProperties,
-  type ReactNode,
-  type RefObject,
-} from 'react';
+import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 
@@ -15,19 +7,21 @@ import { BoardView } from '../components/BoardView';
 import { BuyBoards } from '../components/BuyBoards';
 import { Dialog } from '../components/Dialog';
 import { NewGameForm } from '../components/NewGameForm';
+import { lastNewGame } from '../game/lastNewGame';
 import { PlayModeTabs } from '../components/PlayModeTabs';
 import {
-  ArrowIcon,
   FlagIcon,
   InfoIcon,
   LearnIcon,
   PlayIcon,
   RulesIcon,
   SeedIcon,
+  SeedRing,
   SettingsIcon,
   SparkleIcon,
   StatsIcon,
   UserIcon,
+  Wordmark,
 } from '../components/Icons';
 import { comingSoon } from '../content/comingSoon';
 import { useCore } from '../engine/CoreContext';
@@ -44,10 +38,11 @@ import { OnlinePanel } from './GameHub';
 export type { NewGameRequest } from '../components/NewGameForm';
 
 /**
- * The landing page: a vibrant hero with a live board (the computer playing itself, with the
- * hand), quick start (against the computer, or online when accounts are on), how to play, the game's heritage, and links to the rest of the app.
- * Motion follows docs/architecture/web-design.md: the hero reveal plays once per session,
- * sections reveal once as they scroll in, and nothing moves with reduced motion.
+ * The landing page: a night hero with the wordmark and a live board (the computer playing
+ * itself, with the hand), quick start (against the computer, or online when accounts are on),
+ * how to play, the game's heritage, and links to the rest of the app.
+ * Motion follows docs/architecture/web-design.md: the hero reveal plays once per session, the
+ * sections below are simply there, and nothing moves with reduced motion.
  */
 export function Home() {
   const { t } = useTranslation();
@@ -95,25 +90,31 @@ export function Home() {
   return (
     <div className={`landing${intro ? ' landing--intro' : ''}`}>
       <section className="hero">
-        <div className="hero__backdrop" aria-hidden="true">
-          <IslandStars />
-        </div>
         <div className="hero__inner">
           <div className="hero__copy">
             <p className="hero__kicker">{t('home.tagline')}</p>
-            <h1 className="hero__title">{t('app.title')}</h1>
+            <h1 className="hero__title">
+              <span className="visually-hidden">{t('app.title')}</span>
+              <Wordmark className="hero__wordmark" />
+            </h1>
             <p className="hero__lede">{t('home.hero.lede')}</p>
             <div className="hero__ctas">
+              {/* The page's one star-yellow action: continue the game, or start one at once
+                  with the last choices (the form below changes them). */}
               {resumable ? (
-                <Link className="button button--primary button--large button--glow" to="/play">
+                <Link className="button button--play button--large" to="/play">
                   <PlayIcon />
                   {t('home.cta.resume')}
                 </Link>
               ) : (
-                <a className="button button--primary button--large button--glow" href="#play">
+                <Link
+                  className="button button--play button--large"
+                  to="/play"
+                  state={{ newGame: lastNewGame() }}
+                >
                   <PlayIcon />
                   {t('home.cta.play')}
-                </a>
+                </Link>
               )}
               <Link className="button button--large button--on-dark" to="/tutorial">
                 <LearnIcon />
@@ -152,7 +153,6 @@ export function Home() {
                     <div className="resume__actions">
                       <Link className="button button--primary" to="/play">
                         {t('home.resume')}
-                        <ArrowIcon />
                       </Link>
                       <button
                         type="button"
@@ -200,13 +200,14 @@ export function Home() {
                 <NewGameForm
                   title={t('home.quick.title')}
                   replaceWarning={!!current && current.state.status === 'playing'}
+                  start="primary"
                 />
               </div>
             )}
           </PlayModeTabs>
         </div>
 
-        <Reveal as="section" className="steps" labelledBy="steps-title">
+        <section className="steps" aria-labelledby="steps-title">
           <h2 id="steps-title" className="section-title">
             {t('home.steps.title')}
           </h2>
@@ -221,11 +222,11 @@ export function Home() {
               </li>
             ))}
           </ol>
-        </Reveal>
+        </section>
 
-        <Reveal as="section" className="heritage" labelledBy="heritage-title">
+        <section className="heritage" aria-labelledby="heritage-title">
           <div className="heritage__stars" aria-hidden="true">
-            <IslandStars />
+            <SeedRing />
           </div>
           <div>
             <p className="heritage__kicker">{t('home.heritage.kicker')}</p>
@@ -234,11 +235,12 @@ export function Home() {
             </h2>
             <p className="heritage__body">{t('home.heritage.body')}</p>
             <p className="heritage__body heritage__body--next">{t('home.heritage.world_cup')}</p>
+            <p className="heritage__body heritage__body--next">{t('home.heritage.cloth')}</p>
           </div>
-        </Reveal>
+        </section>
 
         {(soon.length > 0 || import.meta.env.DEV) && (
-          <Reveal as="section" className="soon" labelledBy="soon-title">
+          <section className="soon" aria-labelledby="soon-title">
             <h2 id="soon-title" className="section-title">
               {t('home.soon.title')}
             </h2>
@@ -263,10 +265,10 @@ export function Home() {
                     </li>
                   ))}
             </ul>
-          </Reveal>
+          </section>
         )}
 
-        <Reveal as="section" className="features" labelledBy="features-title">
+        <section className="features" aria-labelledby="features-title">
           <h2 id="features-title" className="section-title">
             {t('home.features.title')}
           </h2>
@@ -281,11 +283,11 @@ export function Home() {
               </li>
             ))}
           </ul>
-        </Reveal>
+        </section>
 
-        <Reveal as="div" className="home-buy">
+        <div className="home-buy">
           <BuyBoards id="home-buy" />
-        </Reveal>
+        </div>
 
         <nav className="tiles" aria-label={t('home.more')}>
           {TILES.filter((tile) => tile.key !== 'stats' || statsVisible).map(({ to, Icon, key }) => (
@@ -319,53 +321,9 @@ const TILES = [
   { to: '/about', Icon: InfoIcon, key: 'about' },
 ] as const;
 
-/** The flag's circle of ten yellow stars, one per island. */
-function IslandStars() {
-  return (
-    <svg className="island-stars" viewBox="-60 -60 120 120">
-      {Array.from({ length: 10 }, (_, i) => {
-        const a = (i / 10) * Math.PI * 2 - Math.PI / 2;
-        return (
-          <g key={i} transform={`translate(${Math.cos(a) * 44} ${Math.sin(a) * 44}) scale(0.42)`}>
-            <path
-              className="island-stars__star"
-              style={{ '--i': i } as CSSProperties}
-              d="m0-12 3.5 7.3 8 .9-5.9 5.5 1.6 7.9L0 5.7l-7.2 3.9 1.6-7.9-5.9-5.5 8-.9z"
-            />
-          </g>
-        );
-      })}
-    </svg>
-  );
-}
+// --- In view --------------------------------------------------------------------------------------
 
-// --- Reveal on scroll ---------------------------------------------------------------------------
-
-/** Fades and lifts its content in once, the first time it scrolls into view. */
-function Reveal({
-  as: Tag,
-  className,
-  labelledBy,
-  children,
-}: {
-  as: 'section' | 'div';
-  className: string;
-  labelledBy?: string;
-  children: ReactNode;
-}) {
-  const ref = useRef<HTMLElement>(null);
-  const seen = useInView(ref, { once: true, margin: '-12% 0px' });
-  return (
-    <Tag
-      ref={ref as RefObject<HTMLElement & HTMLDivElement>}
-      className={`${className} reveal${seen ? ' reveal--in' : ''}`}
-      aria-labelledby={labelledBy}
-    >
-      {children}
-    </Tag>
-  );
-}
-
+/** Whether the element is on screen (the live board plays only then). */
 function useInView(
   ref: RefObject<HTMLElement | null>,
   { once = false, margin = '0px' }: { once?: boolean; margin?: string } = {},

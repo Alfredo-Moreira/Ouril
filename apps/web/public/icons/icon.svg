@@ -1,12 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="96" fill="#7a4a22"/>
-  <rect x="56" y="136" width="400" height="240" rx="120" fill="#a8703d"/>
-  <g fill="#4a2a10">
-    <circle cx="176" cy="206" r="40"/><circle cx="336" cy="206" r="40"/>
-    <circle cx="176" cy="306" r="40"/><circle cx="336" cy="306" r="40"/>
-  </g>
-  <g fill="#f3e2c4">
-    <circle cx="166" cy="200" r="10"/><circle cx="188" cy="212" r="10"/>
-    <circle cx="326" cy="296" r="10"/><circle cx="346" cy="312" r="10"/><circle cx="330" cy="318" r="10"/>
+  <!-- The Ouril mark: ten ouri seeds in a ring, one star yellow, on indigo. -->
+  <rect width="512" height="512" rx="112" fill="#1f2d78"/>
+  <g>
+    <ellipse cx="256.0" cy="89.2" rx="49.2" ry="34.9" transform="rotate(0 256.0 89.2)" fill="#f7d116"/>
+    <ellipse cx="354.0" cy="121.1" rx="49.2" ry="34.9" transform="rotate(36 354.0 121.1)" fill="#f5f1e8"/>
+    <ellipse cx="414.6" cy="204.5" rx="49.2" ry="34.9" transform="rotate(72 414.6 204.5)" fill="#f5f1e8"/>
+    <ellipse cx="414.6" cy="307.5" rx="49.2" ry="34.9" transform="rotate(108 414.6 307.5)" fill="#f5f1e8"/>
+    <ellipse cx="354.0" cy="390.9" rx="49.2" ry="34.9" transform="rotate(144 354.0 390.9)" fill="#f5f1e8"/>
+    <ellipse cx="256.0" cy="422.8" rx="49.2" ry="34.9" transform="rotate(180 256.0 422.8)" fill="#f5f1e8"/>
+    <ellipse cx="158.0" cy="390.9" rx="49.2" ry="34.9" transform="rotate(216 158.0 390.9)" fill="#f5f1e8"/>
+    <ellipse cx="97.4" cy="307.5" rx="49.2" ry="34.9" transform="rotate(252 97.4 307.5)" fill="#f5f1e8"/>
+    <ellipse cx="97.4" cy="204.5" rx="49.2" ry="34.9" transform="rotate(288 97.4 204.5)" fill="#f5f1e8"/>
+    <ellipse cx="158.0" cy="121.1" rx="49.2" ry="34.9" transform="rotate(324 158.0 121.1)" fill="#f5f1e8"/>
   </g>
 </svg>
