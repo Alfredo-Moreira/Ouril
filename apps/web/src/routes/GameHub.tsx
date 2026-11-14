@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import { Link, useSearchParams } from 'react-router';
 
 import { rememberReturnTo } from '../auth/returnTo';
-import { ArrowIcon } from '../components/Icons';
 import { NewGameForm } from '../components/NewGameForm';
 import { PlayModeTabs } from '../components/PlayModeTabs';
 import { PLAY_MODES, type PlayMode } from '../game/playModes';
@@ -62,14 +61,18 @@ function VsComputer() {
             <p>{t('home.resume.body', { level: t(`game.level.${current.level}`) })}</p>
           </div>
           <div className="resume__actions">
-            <Link className="button button--primary" to="/play">
+            <Link className="button button--play" to="/play">
               {t('home.resume')}
-              <ArrowIcon />
             </Link>
           </div>
         </div>
       )}
-      <NewGameForm title={t('game.new')} replaceWarning={inProgress} />
+      {/* One yellow action: Continue while a game is in progress, otherwise Start game. */}
+      <NewGameForm
+        title={t('game.new')}
+        replaceWarning={inProgress}
+        start={inProgress ? 'primary' : 'play'}
+      />
     </>
   );
 }

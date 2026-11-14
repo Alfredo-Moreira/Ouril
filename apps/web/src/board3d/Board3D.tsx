@@ -1,7 +1,7 @@
 /**
- * The 3D board (ADR 0021): a carved wooden board with glossy seeds, rendered with React Three
- * Fiber. Everything is procedural (geometry and textures built in code), so nothing is
- * downloaded and the board works offline. Lazy-loaded: a loading widget shows until this chunk
+ * The 3D board (ADR 0021): a carved wooden board with glossy seeds, lying on a panu cloth,
+ * rendered with React Three Fiber. Everything is procedural (geometry and textures built in
+ * code), so nothing is downloaded and the board works offline. Lazy-loaded: a loading widget shows until this chunk
  * has drawn (`BoardView`).
  *
  * Game rules never live here. The board receives counts, legal pits and the highlight
@@ -54,7 +54,7 @@ import {
 } from './geometry';
 import { layoutFor, type Layout } from './seeds';
 import { Sowing } from './Sowing';
-import { woodTexture } from './textures';
+import { clothTexture, woodTexture } from './textures';
 
 export interface Board3DProps {
   pits: number[];
@@ -82,13 +82,39 @@ function prefersReducedMotion(): boolean {
   );
 }
 
+/** Session memory: the cloth was too slow here once, so it stays off until the tab closes. */
+const CLOTH_OFF_KEY = 'ouril_cloth_off';
+
+/**
+ * Whether to lay the board on the cloth: not on devices that report 2 GB of memory or less
+ * (Chrome's `deviceMemory`; Safari doesn't report it), nor once it proved too slow this session.
+ */
+function clothAllowed(): boolean {
+  try {
+    if (sessionStorage.getItem(CLOTH_OFF_KEY)) return false;
+  } catch {
+    // Storage unavailable: decide from the device alone.
+  }
+  const memory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory;
+  return !(typeof memory === 'number' && memory <= 2);
+}
+
 export default function Board3D(input: Board3DProps) {
   const chips = useRef<(HTMLSpanElement | null)[]>([]);
   // With reduced motion (even when 3D was chosen explicitly) seeds snap into place and the
   // camera stays still; highlight fades (opacity only) remain.
   const [reduced] = useState(prefersReducedMotion);
+  const [cloth, setCloth] = useState(clothAllowed);
   const props = reduced ? { ...input, speed: 0 } : input;
   const counts = [...props.pits, props.stores[0], props.stores[1]];
+  const clothTooSlow = () => {
+    setCloth(false);
+    try {
+      sessionStorage.setItem(CLOTH_OFF_KEY, '1');
+    } catch {
+      // Storage unavailable: off for this board only.
+    }
+  };
   return (
     <div className="board3d__view">
       <Canvas
@@ -100,9 +126,10 @@ export default function Board3D(input: Board3DProps) {
         camera={{ fov: 30, near: 0.1, far: 100, position: [0, 9, 9] }}
         aria-hidden="true"
       >
-        <Scene {...props} chips={chips} />
+        <Scene {...props} chips={chips} cloth={cloth} onClothTooSlow={clothTooSlow} />
       </Canvas>
-      {/* Seed counts: plain DOM chips placed over the canvas by projecting each pit's position. */}
+      {/* Seed counts: plain DOM chips placed over the canvas by projecting each pit's position.
+          The stores' chips take their owners' colours (South is you). */}
       <div className="board3d__chips" aria-hidden="true">
         {counts.map((count, i) => (
           <span
@@ -110,7 +137,13 @@ export default function Board3D(input: Board3DProps) {
             ref={(el) => {
               chips.current[i] = el;
             }}
-            className={`board3d__chip${i >= props.pits.length ? ' board3d__chip--store' : ''}`}
+            className={`board3d__chip${
+              i === props.pits.length
+                ? ' board3d__chip--store board3d__chip--south'
+                : i > props.pits.length
+                  ? ' board3d__chip--store board3d__chip--north'
+                  : ''
+            }`}
           >
             {/* Store counts pop when they change (the outer chip is positioned each frame). */}
             {i >= props.pits.length ? (
@@ -127,7 +160,13 @@ export default function Board3D(input: Board3DProps) {
   );
 }
 
-function Scene(props: Board3DProps & { chips: RefObject<(HTMLSpanElement | null)[]> }) {
+function Scene(
+  props: Board3DProps & {
+    chips: RefObject<(HTMLSpanElement | null)[]>;
+    cloth: boolean;
+    onClothTooSlow: () => void;
+  },
+) {
   // Seeds on the board. During a move some are in the hand (not on the board), so the total is
   // kept from the last frame with no move playing; it can change between positions (tutorial).
   const onBoard = props.pits.reduce((a, b) => a + b, 0) + props.stores[0] + props.stores[1];
@@ -144,8 +183,14 @@ function Scene(props: Board3DProps & { chips: RefObject<(HTMLSpanElement | null)
         highlightKind={props.highlight?.kind}
         speed={props.speed ?? 1}
       />
+      {props.cloth && (
+        <>
+          <Cloth />
+          <FrameBudget active={moving} onSlow={props.onClothTooSlow} />
+        </>
+      )}
       <ambientLight intensity={0.35} />
-      <hemisphereLight args={['#fff3e0', '#3b2a1e', 0.55]} />
+      <hemisphereLight args={['#fff3e0', '#1b2a6e', 0.55]} />
       <directionalLight
         position={[-4, 9, 6]}
         intensity={2.1}
@@ -196,10 +241,50 @@ function Scene(props: Board3DProps & { chips: RefObject<(HTMLSpanElement | null)
         blur={2.6}
         far={1.6}
         frames={1}
-        color="#1a0f08"
+        color="#050816"
       />
     </>
   );
+}
+
+/**
+ * The panu cloth the board lies on: one unlit, mipmapped plane (no lighting, no shadow map; the
+ * contact shadow above already lands on it), so it costs a texture read per pixel.
+ */
+function Cloth() {
+  const map = useMemo(() => {
+    const tex = clothTexture();
+    // One texture tile is 5 world units square: four strips of 1.25, the pits' spacing.
+    tex.repeat.set(60 / 5, 40 / 5);
+    return tex;
+  }, []);
+  useEffect(() => () => map.dispose(), [map]);
+  return (
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -THICK - 0.02, 0]}>
+      <planeGeometry args={[60, 40]} />
+      <meshBasicMaterial map={map} toneMapped={false} />
+    </mesh>
+  );
+}
+
+/**
+ * Watches the first move's frames: when they average over 20 ms (under 50 fps), the cloth is
+ * too much for this device and goes, leaving the flat night stage behind the canvas.
+ */
+function FrameBudget({ active, onSlow }: { active: boolean; onSlow: () => void }) {
+  const samples = useRef({ n: 0, sum: 0, done: false });
+  useFrame((_, delta) => {
+    const s = samples.current;
+    // Skip idle gaps (frameloop="demand" draws only while something moves).
+    if (s.done || !active || delta > 0.25) return;
+    s.n += 1;
+    s.sum += delta;
+    if (s.n >= 45) {
+      s.done = true;
+      if (s.sum / s.n > 0.02) onSlow();
+    }
+  });
+  return null;
 }
 
 /**
@@ -419,19 +504,23 @@ function PitRings({
   const invalidate = useThree((s) => s.invalidate);
   const rings = useRef<(Mesh | null)[]>([]);
 
-  // Target glow per pit: colour + strength. Captures flash red, then fade.
+  // Target glow per pit: colour + strength. Star yellow means "you can play this" (and the
+  // sowing pulse); a capture flashes in the capturer's light tint (a pit on the North row is
+  // taken by South, you); focus is cotton white; the hint is sea. Every ring keeps 3:1 or more
+  // against the wood, the resting playable ring included.
   const targets = useMemo(() => {
     return Array.from({ length: layout.n * 2 }, (_, i) => {
       const isLegal = legal.includes(i);
-      if (highlight?.pit === i && highlight.kind === 'capture') return { color: '#ff5a36', a: 1 };
+      if (highlight?.pit === i && highlight.kind === 'capture')
+        return { color: i >= layout.n ? '#b4beff' : '#ffb4b4', a: 1 };
       if (highlight?.pit === i && (highlight.kind === 'sow' || highlight.kind === 'pickup'))
-        return { color: '#ffc861', a: 0.85 };
-      if (highlight?.pit === i && highlight.kind === 'skip') return { color: '#5fc4e8', a: 0.8 };
-      if (focusPit === i) return { color: '#7fd1ff', a: 1 };
-      if (hintPit === i) return { color: '#5fc4e8', a: 0.95 };
-      if (isLegal && hover === i) return { color: '#ffd27a', a: 1 };
-      if (isLegal) return { color: '#ffc861', a: 0.42 };
-      return { color: '#ffc861', a: 0 };
+        return { color: '#f7d116', a: 0.85 };
+      if (highlight?.pit === i && highlight.kind === 'skip') return { color: '#4fd1dc', a: 0.8 };
+      if (focusPit === i) return { color: '#f3efe6', a: 1 };
+      if (hintPit === i) return { color: '#4fd1dc', a: 0.95 };
+      if (isLegal && hover === i) return { color: '#ffe45c', a: 1 };
+      if (isLegal) return { color: '#f7d116', a: 0.75 };
+      return { color: '#f7d116', a: 0 };
     });
   }, [layout.n, legal, highlight, hintPit, focusPit, hover]);
 

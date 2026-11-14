@@ -86,7 +86,7 @@ function ProfileScreen({ id }: { id: string }) {
         {!profile.you && (
           <button
             type="button"
-            className="button button--primary"
+            className="button button--play"
             onClick={() => void challenge()}
             disabled={busy}
           >

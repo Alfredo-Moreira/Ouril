@@ -497,8 +497,9 @@ function poseHand(rig: HandRig, h: HandState, shown: boolean) {
 
 const noRaycast = () => null;
 
-/** Sleeve colours from the flag: blue for South (you), red for North (the computer). */
-const SLEEVE = { south: '#1f4f8f', north: '#c4252b' } as const;
+/** Sleeves in the players' colours: a bright indigo for South (you, so it shows on the cloth),
+ *  red for North (the opponent). */
+const SLEEVE = { south: '#3f56d6', north: '#c8202a' } as const;
 
 function HandModel({ hand }: { hand: RefObject<HandState> }) {
   const rig = useRef<HandRig>({ root: null, knuckles: [], tips: [], thumb: null });

@@ -7,8 +7,9 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 
 import { LEVELS, type Level } from '../engine/types';
+import { lastNewGame, rememberNewGame, STARTERS } from '../game/lastNewGame';
 import { PLAYABLE_VARIANTS, type PlayableVariant, type Starter } from '../game/session';
-import { ArrowIcon } from './Icons';
+import { PlayIcon } from './Icons';
 
 export interface NewGameRequest {
   level: Level;
@@ -17,30 +18,36 @@ export interface NewGameRequest {
   variant?: PlayableVariant;
 }
 
-const STARTERS: Starter[] = ['me', 'ai', 'random'];
-
 export function NewGameForm({
   title,
   intro,
   replaceWarning = false,
   headingLevel = 2,
+  start: startStyle = 'play',
 }: {
   title: string;
   intro?: string;
   /** A game is in progress and starting will replace it. */
   replaceWarning?: boolean;
   headingLevel?: 1 | 2;
+  /**
+   * The start button: the screen's one star-yellow action ('play'), or indigo ('primary') where
+   * another button on screen already starts or continues a game.
+   */
+  start?: 'play' | 'primary';
 }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [level, setLevel] = useState<Level>('easy');
-  const [starter, setStarter] = useState<Starter>('random');
-  const [variant, setVariant] = useState<PlayableVariant>('cv.standard');
+  const [initial] = useState(lastNewGame);
+  const [level, setLevel] = useState<Level>(initial.level);
+  const [starter, setStarter] = useState<Starter>(initial.starter);
+  const [variant, setVariant] = useState<PlayableVariant>(initial.variant ?? 'cv.standard');
   const Heading = headingLevel === 1 ? 'h1' : 'h2';
 
   const start = (e: FormEvent) => {
     e.preventDefault();
     const request: NewGameRequest = { level, starter, variant };
+    rememberNewGame(request);
     navigate('/play', { state: { newGame: request } });
   };
 
@@ -101,9 +108,9 @@ export function NewGameForm({
         <p className="note">{t(`variant.${variant}.about`)}</p>
       </fieldset>
       {replaceWarning && <p className="note">{t('home.replace_warning')}</p>}
-      <button type="submit" className="button button--primary button--large">
+      <button type="submit" className={`button button--${startStyle} button--large`}>
+        <PlayIcon />
         {t('home.start')}
-        <ArrowIcon />
       </button>
     </form>
   );

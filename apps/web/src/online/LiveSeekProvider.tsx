@@ -124,7 +124,7 @@ export function SeekToast() {
     return (
       <div className="seek-toast" role="status">
         <span>{t('online.play_now.found')}</span>
-        <button type="button" className="button button--primary" onClick={seek.openFound}>
+        <button type="button" className="button button--play" onClick={seek.openFound}>
           {t('online.play_now.open')}
         </button>
         <button type="button" className="button button--ghost" onClick={seek.dismissFound}>

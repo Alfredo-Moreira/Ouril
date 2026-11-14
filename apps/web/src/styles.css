@@ -1,54 +1,87 @@
 /*
- * Ouril web design system ("Mesa"): warm sand, volcanic basalt ink, terracotta and ocean teal.
- * docs/architecture/web-design.md describes the tokens and the motion rules.
+ * Ouril web design system ("Panu"): the board on a Cape Verdean cloth. Cotton white and indigo
+ * from panu di terra, star yellow and red from the flag, basalt ink. Light is cotton; dark is an
+ * indigo night. docs/architecture/web-design.md describes the tokens and the motion rules, and
+ * styles.contrast.test.ts checks every text pair below.
  *
  * Motion rules (from the emil-design-eng / emilkowalski-motion / review-animations skills):
  * - movement uses only transform and opacity (colours may cross-fade); never `transition: all`
  * - UI motion stays under 300 ms, entering/exiting uses the strong ease-out below
- * - pressable elements scale to 0.97 on :active; hover motion only on fine pointers
- * - nothing animates on frequent navigation; reduced motion keeps fades, drops movement
+ * - buttons sink when pressed (2 px with a lip, 1 px without); icon buttons and chips scale to 0.97
+ * - hover effects only on fine pointers; nothing animates on frequent navigation
+ * - reduced motion keeps fades and drops movement
  */
 
 /* --- Tokens ------------------------------------------------------------------------------- */
 
 :root {
-  --font-display: 'Fraunces Variable', 'Iowan Old Style', Georgia, serif;
-  --font-ui: 'Manrope Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Bricolage Grotesque Variable', 'Arial Black', system-ui, sans-serif;
+  --font-ui: 'Figtree Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 
-  --bg: #f4ede2;
-  --bg-deep: #ebe1d2;
-  --surface: #fffcf7;
-  --surface-2: #f8f2e8;
-  --ink: #1f1915;
-  --ink-2: #4b4038;
-  --muted: #7c6f63;
-  --line: rgb(31 25 21 / 0.1);
-  --line-strong: rgb(31 25 21 / 0.18);
+  /* Cotton (light). */
+  --bg: #f5f1e8;
+  --bg-deep: #ebe5d8;
+  --surface: #fffdf8;
+  --surface-2: #f8f4ec;
+  --surface-3: #efe9dd;
+  --ink: #14171f;
+  --ink-2: #3b4152;
+  --muted: #5f6678;
+  --line: rgb(20 23 31 / 0.1);
+  --line-strong: rgb(20 23 31 / 0.2);
 
-  --brand: #b9532a; /* terracotta */
-  --brand-strong: #9c4120;
-  --brand-ink: #fffaf3;
-  --brand-soft: rgb(185 83 42 / 0.12);
-  --sea: #0f6b75; /* Atlantic teal */
-  --sea-soft: rgb(15 107 117 / 0.12);
-  --gold: #e6a63a;
-  --danger: #b3261e;
-  --win: #2f7d4f;
-  --focus: #1f6fe5;
+  /* Indigo: the brand, links, selected states and "you". */
+  --indigo: #1f2d78;
+  --indigo-fill: #1f2d78;
+  --indigo-strong: #121b52;
+  --indigo-soft: rgb(31 45 120 / 0.1);
+  --on-indigo: #fffdf8;
+  --selected-bg: #1f2d78;
+  --selected-ink: #fffdf8;
 
-  /* The board's table (game stage). */
-  --table-1: #3a271c;
-  --table-2: #1d130d;
+  /* Star yellow: the one action that starts or continues a game, and what you can play now. */
+  --star: #f7d116;
+  --star-hover: #ffdc3d;
+  --star-edge: #8f6b00;
+  --star-soft: rgb(247 209 22 / 0.24);
+  --on-star: #14171f;
+
+  /* Red: captures, the opponent, danger. Green: rating up, success. Sea: hints and info. */
+  --red: #c8202a;
+  --red-soft: rgb(200 32 42 / 0.1);
+  --on-red: #fffdf8;
+  --green: #1a774a;
+  --sea: #0c7580;
+  --focus: #2346d6;
+
+  /* The players. */
+  --you: var(--indigo);
+  --you-fill: #1f2d78;
+  --on-you: #fffdf8;
+  --them: var(--red);
+  --them-fill: #c8202a;
+  --on-them: #fffdf8;
+
+  /* The night stage behind the board and on the hero (the same in both themes). */
+  --night: #0b1024;
+  --night-2: #141e4d;
+  --night-ink: #f3efe6;
+  --night-muted: #b9bdd6;
+
+  /* The panu strip: stitched seams, white lozenges and a star-yellow centre, on indigo. */
+  --panu-strip: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='24' viewBox='0 0 48 24'%3E%3Cpath d='M0 1.5h48M0 22.5h48' stroke='%23f5f1e8' stroke-opacity='.5' stroke-dasharray='3 3'/%3E%3Cpath d='M12 5.5 18.5 12 12 18.5 5.5 12zM36 5.5 42.5 12 36 18.5 29.5 12z' fill='none' stroke='%23f5f1e8' stroke-opacity='.9' stroke-width='1.6'/%3E%3Cpath d='M24 9.6 26.4 12 24 14.4 21.6 12z' fill='%23f7d116'/%3E%3C/svg%3E");
 
   --radius-s: 10px;
   --radius: 16px;
-  --radius-l: 24px;
-  --shadow-1: 0 1px 2px rgb(31 25 21 / 0.06), 0 1px 1px rgb(31 25 21 / 0.04);
-  --shadow-2: 0 1px 2px rgb(31 25 21 / 0.06), 0 12px 32px -14px rgb(31 25 21 / 0.25);
-  --shadow-3: 0 2px 6px rgb(31 25 21 / 0.08), 0 30px 60px -20px rgb(31 25 21 / 0.45);
+  --radius-l: 22px;
+  --radius-btn: 14px;
+  --shadow-1: 0 1px 2px rgb(20 23 31 / 0.06), 0 1px 1px rgb(20 23 31 / 0.04);
+  --shadow-2: 0 1px 2px rgb(20 23 31 / 0.06), 0 12px 28px -14px rgb(20 23 31 / 0.28);
+  --shadow-3: 0 2px 6px rgb(20 23 31 / 0.08), 0 28px 56px -20px rgb(20 23 31 / 0.45);
 
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --dur-tap: 100ms;
   --dur-press: 160ms;
   --dur-fast: 180ms;
   --dur-base: 240ms;
@@ -68,23 +101,41 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #15100d;
-    --bg-deep: #0f0b09;
-    --surface: #1f1814;
-    --surface-2: #261e19;
-    --ink: #f4ebe0;
-    --ink-2: #d6c8b8;
-    --muted: #a8998a;
-    --line: rgb(244 235 224 / 0.1);
-    --line-strong: rgb(244 235 224 / 0.18);
-    --brand: #e07a4c;
-    --brand-strong: #ec8f63;
-    --brand-ink: #1b120d;
-    --brand-soft: rgb(224 122 76 / 0.16);
-    --sea: #5bbac4;
-    --sea-soft: rgb(91 186 196 / 0.16);
-    --focus: #8ab4f8;
-    --win: #6fc28e;
+    /* Indigo night. */
+    --bg: #0b1024;
+    --bg-deep: #080c1b;
+    --surface: #121a38;
+    --surface-2: #18214a;
+    --surface-3: #1f2958;
+    --ink: #f3efe6;
+    --ink-2: #c9cbe0;
+    --muted: #9097b8;
+    --line: rgb(243 239 230 / 0.1);
+    --line-strong: rgb(243 239 230 / 0.2);
+
+    --indigo: #9aa8ff;
+    --indigo-fill: #3346b8;
+    --indigo-strong: #22308a;
+    --indigo-soft: rgb(154 168 255 / 0.14);
+    --on-indigo: #fffdf8;
+    --selected-bg: #9aa8ff;
+    --selected-ink: #0b1024;
+
+    --star-edge: #8f6b00;
+    --star-soft: rgb(247 209 22 / 0.16);
+
+    --red: #ff6b6b;
+    --red-soft: rgb(255 107 107 / 0.14);
+    --on-red: #0b1024;
+    --green: #4cc38a;
+    --sea: #4fd1dc;
+    --focus: #f3efe6;
+
+    --you-fill: #3346b8;
+    --on-you: #fffdf8;
+    --them-fill: #ff6b6b;
+    --on-them: #0b1024;
+
     --shadow-1: 0 1px 2px rgb(0 0 0 / 0.4);
     --shadow-2: 0 1px 2px rgb(0 0 0 / 0.35), 0 14px 34px -16px rgb(0 0 0 / 0.7);
     --shadow-3: 0 2px 6px rgb(0 0 0 / 0.4), 0 30px 60px -20px rgb(0 0 0 / 0.8);
@@ -106,35 +157,33 @@ html {
 body {
   margin: 0;
   min-height: 100dvh;
-  background:
-    radial-gradient(1200px 600px at 85% -10%, var(--brand-soft), transparent 60%),
-    radial-gradient(900px 500px at -10% 20%, var(--sea-soft), transparent 60%), var(--bg);
-  background-attachment: fixed;
+  background: var(--bg);
 }
 
 h1,
 h2,
 h3 {
   font-family: var(--font-display);
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  line-height: 1.15;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
   color: var(--ink);
-  font-variation-settings: 'opsz' 72;
 }
 
 h1 {
-  font-size: clamp(2rem, 4vw, 2.75rem);
+  font-size: clamp(2.25rem, 5vw, 3.25rem);
   margin: 0.5rem 0 1rem;
 }
 
 h2 {
-  font-size: 1.4rem;
-  margin: 1.5rem 0 0.75rem;
+  font-size: 1.5rem;
+  margin: 1.75rem 0 0.75rem;
 }
 
 h3 {
-  font-size: 1.1rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
   margin: 1rem 0 0.5rem;
 }
 
@@ -143,9 +192,14 @@ p {
 }
 
 a {
-  color: var(--brand);
+  color: var(--indigo);
+  font-weight: 600;
   text-underline-offset: 3px;
-  text-decoration-thickness: 1px;
+  text-decoration-thickness: 1.5px;
+}
+
+code {
+  font-size: 0.92em;
 }
 
 :focus-visible {
@@ -155,7 +209,7 @@ a {
 }
 
 ::selection {
-  background: var(--brand-soft);
+  background: var(--star-soft);
 }
 
 .visually-hidden {
@@ -179,18 +233,19 @@ a {
   border-radius: var(--radius-s);
   box-shadow: var(--shadow-2);
 }
+
 .skip-link:focus {
   top: 0.75rem;
 }
 
-/* --- Layout -------------------------------------------------------------------------------- */
+/* --- Layout: the app shell ------------------------------------------------------------------ */
 
 .app-header {
   position: sticky;
   top: 0;
   z-index: 30;
   padding-top: env(safe-area-inset-top);
-  background: color-mix(in srgb, var(--bg) 78%, transparent);
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
   backdrop-filter: saturate(160%) blur(14px);
   -webkit-backdrop-filter: saturate(160%) blur(14px);
   border-bottom: 1px solid var(--line);
@@ -200,7 +255,7 @@ a {
   display: flex;
   align-items: center;
   gap: 1rem;
-  max-width: 1120px;
+  max-width: 1180px;
   height: var(--header-h);
   margin: 0 auto;
   padding: 0 clamp(1rem, 3vw, 2rem);
@@ -213,22 +268,25 @@ a {
   color: var(--ink);
   text-decoration: none;
   margin-right: auto;
+  border-radius: 12px;
 }
 
 .brand__mark {
-  color: var(--brand);
+  width: 32px;
+  height: 32px;
+  color: var(--indigo);
 }
 
 .brand__name {
   font-family: var(--font-display);
-  font-weight: 650;
-  font-size: 1.45rem;
-  letter-spacing: -0.02em;
+  font-weight: 800;
+  font-size: 1.5rem;
+  letter-spacing: -0.03em;
 }
 
 .app-nav {
   display: flex;
-  gap: 0.25rem;
+  gap: 0.2rem;
 }
 
 .app-nav a,
@@ -237,8 +295,8 @@ a {
   align-items: center;
   gap: 0.45rem;
   min-height: 40px;
-  padding: 0.4rem 0.8rem;
-  border-radius: 999px;
+  padding: 0.4rem 0.75rem;
+  border-radius: 12px;
   color: var(--ink-2);
   font-weight: 600;
   font-size: 0.95rem;
@@ -248,30 +306,63 @@ a {
     color var(--dur-fast) ease;
 }
 
-.app-nav a svg {
-  opacity: 0.8;
-}
-
 .app-nav a.active {
-  background: var(--surface);
-  color: var(--ink);
-  box-shadow: var(--shadow-1);
+  background: var(--indigo-soft);
+  color: var(--indigo);
 }
 
 .account-link {
-  border: 1px solid var(--line-strong);
+  border: 1.5px solid var(--line-strong);
+}
+
+/* Buy a board: a quiet link, on wide screens only (Home shows the boards everywhere). */
+.shop-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 40px;
+  padding: 0.4rem 0.5rem;
+  border-radius: 12px;
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .shop-link:hover {
+    color: var(--ink);
+    background: var(--surface-3);
+  }
+}
+
+@media (max-width: 1140px) {
+  .shop-link {
+    display: none;
+  }
+}
+
+.account-link span {
+  max-width: 10rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 @media (hover: hover) and (pointer: fine) {
   .app-nav a:hover,
   .account-link:hover {
-    background: color-mix(in srgb, var(--surface) 70%, transparent);
+    background: var(--surface-3);
     color: var(--ink);
+  }
+  .app-nav a.active:hover {
+    background: var(--indigo-soft);
+    color: var(--indigo);
   }
 }
 
 main {
-  max-width: 1120px;
+  max-width: 1180px;
   margin: 0 auto;
   padding: clamp(1rem, 3vw, 2rem);
   padding-bottom: calc(clamp(1.5rem, 4vw, 3rem) + var(--tabbar-h));
@@ -281,18 +372,27 @@ main:focus {
   outline: none;
 }
 
-/* Phones: the same nav becomes a bottom tab bar (one set of links in the DOM). */
+/* Phones: the same nav becomes a bottom tab bar (one set of links in the DOM, five at most). */
 @media (max-width: 760px) {
   :root {
     --header-h: 56px;
-    --tabbar-h: calc(68px + env(safe-area-inset-bottom));
+    --tabbar-h: calc(66px + env(safe-area-inset-bottom));
   }
 
   /* A backdrop-filter on the header would make it the containing block of the fixed tab bar. */
   .app-header {
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
-    background: color-mix(in srgb, var(--bg) 94%, transparent);
+    background: var(--bg);
+  }
+
+  .brand__mark {
+    width: 28px;
+    height: 28px;
+  }
+
+  .brand__name {
+    font-size: 1.35rem;
   }
 
   .app-nav {
@@ -304,20 +404,28 @@ main:focus {
     justify-content: space-around;
     gap: 0;
     padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
-    background: color-mix(in srgb, var(--surface) 88%, transparent);
-    backdrop-filter: saturate(160%) blur(16px);
-    -webkit-backdrop-filter: saturate(160%) blur(16px);
+    background: var(--surface);
     border-top: 1px solid var(--line);
+    box-shadow: 0 -6px 20px -14px rgb(20 23 31 / 0.35);
   }
 
   .app-nav a {
     flex: 1 1 0;
+    min-width: 0;
     flex-direction: column;
-    gap: 2px;
+    gap: 3px;
     min-height: 54px;
     padding: 6px 2px;
     border-radius: 14px;
     font-size: 0.72rem;
+    font-weight: 650;
+  }
+
+  .app-nav a span {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .app-nav a svg {
@@ -326,20 +434,28 @@ main:focus {
   }
 
   .app-nav a.active {
-    box-shadow: none;
-    background: var(--brand-soft);
-    color: var(--brand);
+    background: transparent;
+    color: var(--indigo);
+  }
+
+  /* The active tab: its icon sits on a soft indigo seed. */
+  .app-nav a.active svg {
+    padding: 0;
+    border-radius: 999px;
+    box-shadow: 0 0 0 6px var(--indigo-soft);
+    background: var(--indigo-soft);
   }
 
   .app-nav__secondary {
     display: none !important;
   }
 
+  .account-link {
+    padding: 0.35rem 0.6rem;
+  }
+
   .account-link span {
-    max-width: 9rem;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    max-width: 7rem;
   }
 }
 
@@ -348,35 +464,46 @@ main:focus {
 .card {
   background: var(--surface);
   border-radius: var(--radius-l);
-  padding: clamp(1rem, 2.5vw, 1.5rem);
+  padding: clamp(1.1rem, 2.5vw, 1.6rem);
   margin: 1rem 0;
   border: 1px solid var(--line);
-  box-shadow: var(--shadow-2);
+  box-shadow: var(--shadow-1);
 }
 
 .card__title {
   margin-top: 0;
+  font-size: 1.3rem;
 }
 
+/* A featured card: the panu strip along its top edge. */
 .card--accent {
-  background: linear-gradient(135deg, var(--sea-soft), transparent 60%), var(--surface);
-  border-color: color-mix(in srgb, var(--sea) 30%, transparent);
+  position: relative;
+  overflow: hidden;
+  padding-top: calc(clamp(1.1rem, 2.5vw, 1.6rem) + 14px);
+}
+
+.card--accent::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 14px;
+  background:
+    var(--panu-strip) left center / auto 14px repeat-x,
+    var(--indigo-fill);
 }
 
 fieldset {
   border: none;
   padding: 0;
-  margin: 0 0 1.1rem;
+  margin: 0 0 1.25rem;
   min-width: 0;
 }
 
 fieldset legend {
   font-weight: 700;
-  font-size: 0.85rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+  color: var(--ink-2);
+  margin-bottom: 0.55rem;
   padding: 0;
 }
 
@@ -384,6 +511,11 @@ fieldset.card legend {
   float: left;
   width: 100%;
   margin-bottom: 0.75rem;
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--ink);
 }
 
 fieldset.card legend + * {
@@ -392,24 +524,12 @@ fieldset.card legend + * {
 
 .note {
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: 0.92rem;
 }
 
 .error {
-  color: var(--danger);
-  font-weight: 600;
-}
-
-.badge {
-  display: inline-block;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  padding: 0.15rem 0.55rem;
-  border-radius: 999px;
-  background: var(--brand-soft);
-  color: var(--brand);
+  color: var(--red);
+  font-weight: 650;
 }
 
 .row,
@@ -428,97 +548,266 @@ fieldset.card legend + * {
   max-width: 24rem;
 }
 
+.badges {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* A medallion: a small seed ring and the placement ("#1 in Cape Verde · Overall"). */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0.8rem 0.35rem 0.45rem;
+  border-radius: 999px;
+  background: var(--star-soft);
+  border: 1px solid color-mix(in srgb, var(--star-edge) 45%, transparent);
+  color: var(--ink);
+  font-weight: 700;
+  font-size: 0.88rem;
+}
+
+.badge::before {
+  content: '';
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 3px dotted var(--star-edge);
+  background: var(--star);
+}
+
 /* --- Controls ------------------------------------------------------------------------------ */
 
+/*
+ * Tactile buttons: a 1 px edge and a darker lip under them, so they read as pieces you can
+ * press. Pressed, they sink (2 px with a lip, 1 px without); disabled is flat and neutral.
+ */
 .button {
+  --btn-bg: var(--surface);
+  --btn-ink: var(--ink);
+  --btn-edge: var(--line-strong);
+  --btn-lip: 2px;
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  min-height: 44px;
-  padding: 0.55rem 1.15rem;
-  border-radius: 999px;
-  border: 1px solid var(--line-strong);
-  background: var(--surface);
-  color: var(--ink);
+  min-height: 48px;
+  padding: 0.55rem 1.15rem calc(0.55rem + var(--btn-lip) / 2);
+  border: 0;
+  border-radius: var(--radius-btn);
+  background: var(--btn-bg);
+  color: var(--btn-ink);
+  box-shadow:
+    inset 0 0 0 1px var(--btn-edge),
+    inset 0 calc(var(--btn-lip) * -1) 0 var(--btn-edge);
   font: inherit;
   font-weight: 650;
-  font-size: 0.95rem;
+  font-size: 1rem;
+  line-height: 1.2;
   text-decoration: none;
   cursor: pointer;
-  box-shadow: var(--shadow-1);
   transition:
-    transform var(--dur-press) var(--ease-out),
+    transform var(--dur-tap) var(--ease-out),
     background-color var(--dur-fast) ease,
-    border-color var(--dur-fast) ease,
-    box-shadow var(--dur-fast) ease;
+    box-shadow var(--dur-fast) ease,
+    color var(--dur-fast) ease;
   -webkit-tap-highlight-color: transparent;
 }
 
-.button:active:not(:disabled) {
-  transform: scale(0.97);
+.button svg {
+  flex: none;
 }
 
-.button--primary {
-  background: var(--brand);
-  border-color: transparent;
-  color: var(--brand-ink);
+.button:active:not(:disabled) {
+  transform: translateY(1px);
   box-shadow:
-    0 1px 0 rgb(255 255 255 / 0.2) inset,
-    0 8px 20px -10px color-mix(in srgb, var(--brand) 80%, transparent);
+    inset 0 0 0 1px var(--btn-edge),
+    inset 0 -1px 0 var(--btn-edge);
+}
+
+/* The main action: start or continue a game. One per view. */
+.button--play {
+  --btn-bg: var(--star);
+  --btn-ink: var(--on-star);
+  --btn-edge: var(--star-edge);
+  --btn-lip: 3px;
+  font-weight: 750;
+}
+
+.button--play:active:not(:disabled) {
+  transform: translateY(2px);
+}
+
+/* Every other primary action. */
+.button--primary {
+  --btn-bg: var(--indigo-fill);
+  --btn-ink: var(--on-indigo);
+  --btn-edge: var(--indigo-strong);
+  --btn-lip: 3px;
+}
+
+.button--primary:active:not(:disabled) {
+  transform: translateY(2px);
 }
 
 .button--large {
-  min-height: 52px;
-  padding: 0.7rem 1.5rem;
-  font-size: 1.05rem;
+  min-height: 56px;
+  padding-inline: 1.5rem;
+  font-size: 1.08rem;
+  border-radius: 16px;
 }
 
 .button--ghost {
-  background: transparent;
-  box-shadow: none;
+  --btn-bg: transparent;
+  --btn-lip: 0px;
 }
 
 .button--danger {
-  border-color: color-mix(in srgb, var(--danger) 45%, transparent);
-  color: var(--danger);
+  --btn-bg: var(--red);
+  --btn-ink: var(--on-red);
+  --btn-edge: color-mix(in srgb, var(--red) 60%, black);
+  --btn-lip: 3px;
+}
+
+.button--danger:active:not(:disabled) {
+  transform: translateY(2px);
+}
+
+.button--danger-text {
+  --btn-ink: var(--red);
+}
+
+/* On the night stage and the hero. */
+.button--on-dark {
+  --btn-bg: rgb(243 239 230 / 0.08);
+  --btn-ink: var(--night-ink);
+  --btn-edge: rgb(243 239 230 / 0.4);
+  --btn-lip: 0px;
 }
 
 .button:disabled {
-  opacity: 0.45;
+  --btn-bg: var(--surface-3);
+  --btn-ink: var(--muted);
+  --btn-edge: transparent;
+  --btn-lip: 0px;
   cursor: not-allowed;
-  box-shadow: none;
 }
 
 @media (hover: hover) and (pointer: fine) {
   .button:hover:not(:disabled) {
-    border-color: color-mix(in srgb, var(--ink) 30%, transparent);
+    --btn-bg: var(--surface-2);
+  }
+  .button--ghost:hover:not(:disabled) {
+    --btn-bg: var(--surface-3);
+  }
+  .button--play:hover:not(:disabled) {
+    --btn-bg: var(--star-hover);
   }
   .button--primary:hover:not(:disabled) {
-    background: var(--brand-strong);
+    --btn-bg: color-mix(in srgb, var(--indigo-fill) 88%, white);
+  }
+  .button--danger:hover:not(:disabled) {
+    --btn-bg: color-mix(in srgb, var(--red) 90%, white);
+  }
+  .button--on-dark:hover:not(:disabled) {
+    --btn-bg: rgb(243 239 230 / 0.16);
   }
 }
 
-/* Segmented choices (radio inputs stay real inputs for accessibility). */
-.choice-row {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  padding: 4px;
-  border-radius: 999px;
-  background: var(--surface-2);
+.icon-button {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 14px;
+  color: var(--ink);
+  background: var(--surface);
   border: 1px solid var(--line);
+  box-shadow: var(--shadow-1);
+  cursor: pointer;
+  transition:
+    transform var(--dur-press) var(--ease-out),
+    background-color var(--dur-fast) ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.icon-button:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .icon-button:hover {
+    background: var(--surface-3);
+  }
+}
+
+/* Buttons joined into one group (the game screen's music controls). */
+.button-group {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+  overflow: hidden;
+}
+
+.button-group > .icon-button {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.button-group > .icon-button + .icon-button {
+  border-left: 1px solid var(--line);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .button-group > .icon-button:hover {
+    background: var(--surface-3);
+  }
+}
+
+/* Keep the focus ring inside the group (it clips its children). */
+.button-group > .icon-button:focus-visible {
+  outline-offset: -3px;
+}
+
+.link-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--indigo);
+  font: inherit;
+  font-weight: 650;
+  text-decoration: underline;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+/* Choices (difficulty, who starts, rules): chips in a row. Radio inputs stay real inputs. */
+.choice-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .choice-row--stack {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
-  border-radius: var(--radius);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12.5rem), 1fr));
 }
 
 .choice-row--stack .choice {
   justify-content: flex-start;
-  border-radius: calc(var(--radius) - 4px);
+  border-radius: var(--radius-btn);
 }
 
 .choice {
@@ -526,17 +815,23 @@ fieldset.card legend + * {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 40px;
-  padding: 0 1rem;
+  min-height: 44px;
+  padding: 0 1.1rem;
   border-radius: 999px;
-  font-weight: 650;
-  font-size: 0.95rem;
+  background: var(--surface-3);
   color: var(--ink-2);
+  font-weight: 650;
+  font-size: 0.97rem;
   cursor: pointer;
   transition:
+    transform var(--dur-press) var(--ease-out),
     background-color var(--dur-fast) ease,
-    color var(--dur-fast) ease,
-    box-shadow var(--dur-fast) ease;
+    color var(--dur-fast) ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.choice:active {
+  transform: scale(0.97);
 }
 
 .choice input {
@@ -548,11 +843,8 @@ fieldset.card legend + * {
 }
 
 .choice:has(input:checked) {
-  background: var(--surface);
-  color: var(--ink);
-  box-shadow:
-    var(--shadow-1),
-    0 0 0 1px var(--line);
+  background: var(--selected-bg);
+  color: var(--selected-ink);
 }
 
 .choice:has(input:focus-visible) {
@@ -560,50 +852,158 @@ fieldset.card legend + * {
   outline-offset: 2px;
 }
 
-.toggle {
-  display: flex;
-  gap: 0.75rem;
-  align-items: center;
-  min-height: 44px;
-  padding: 0.35rem 0;
-  cursor: pointer;
-  font-weight: 550;
+@media (hover: hover) and (pointer: fine) {
+  .choice:hover:not(:has(input:checked)) {
+    background: color-mix(in srgb, var(--surface-3) 70%, var(--line-strong));
+    color: var(--ink);
+  }
 }
 
-.toggle input {
-  width: 1.2rem;
-  height: 1.2rem;
-  accent-color: var(--brand);
+/* Settings switches: still checkboxes, drawn as switches. */
+.toggle {
+  display: flex;
+  gap: 0.85rem;
+  align-items: center;
+  min-height: 48px;
+  padding: 0.35rem 0;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.toggle input[type='checkbox'] {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  flex: none;
+  width: 46px;
+  height: 28px;
+  margin: 0;
+  border-radius: 999px;
+  background: var(--surface-3);
+  box-shadow: inset 0 0 0 1.5px var(--muted);
+  cursor: pointer;
+  transition:
+    background-color var(--dur-fast) ease,
+    box-shadow var(--dur-fast) ease;
+}
+
+.toggle input[type='checkbox']::before {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--muted);
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) ease;
+}
+
+.toggle input[type='checkbox']:checked {
+  background: var(--selected-bg);
+  box-shadow: inset 0 0 0 1.5px var(--selected-bg);
+}
+
+.toggle input[type='checkbox']:checked::before {
+  transform: translateX(18px);
+  background: var(--selected-ink);
+}
+
+.toggle input[type='checkbox']:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .field {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
-  max-width: 20rem;
+  gap: 0.4rem;
+  max-width: 22rem;
   margin: 0.5rem 0;
-  font-weight: 600;
+  font-weight: 650;
 }
 
 .field select,
-.profile input {
-  min-height: 44px;
+.profile input,
+input[type='text'],
+input[type='search'],
+input:not([type]) {
+  min-height: 48px;
   font: inherit;
   font-weight: 500;
   color: var(--ink);
-  background: var(--surface-2);
-  border: 1px solid var(--line-strong);
-  border-radius: var(--radius-s);
-  padding: 0.5rem 0.75rem;
+  background: var(--surface);
+  border: 1.5px solid var(--line-strong);
+  border-radius: 12px;
+  padding: 0.5rem 0.8rem;
+}
+
+.field select:focus-visible,
+.profile input:focus-visible,
+input[type='text']:focus-visible,
+input[type='search']:focus-visible,
+input:not([type]):focus-visible {
+  border-color: var(--focus);
+}
+
+/* Sliders: an indigo track and a star thumb, instead of the browser's default blue. */
+input[type='range'] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  height: 28px;
+  margin: 0.25rem 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+input[type='range']::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--indigo-soft);
+  box-shadow: inset 0 0 0 1px var(--indigo);
+}
+
+input[type='range']::-moz-range-track {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--indigo-soft);
+  box-shadow: inset 0 0 0 1px var(--indigo);
+}
+
+input[type='range']::-moz-range-progress {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--indigo);
+}
+
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 24px;
+  height: 24px;
+  margin-top: -8px;
+  border-radius: 50%;
+  background: var(--star);
+  border: 2px solid var(--star-edge);
+  box-shadow: var(--shadow-1);
+}
+
+input[type='range']::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--star);
+  border: 2px solid var(--star-edge);
 }
 
 /* --- Landing (Home) ------------------------------------------------------------------------ */
 
 /*
- * A vibrant, full-bleed hero in the colours of the islands: Atlantic blues, a sunset glow and
- * the flag's ring of ten yellow stars. Motion: the hero reveal plays once per session
- * (.landing--intro); sections reveal once as they scroll in (.reveal); nothing moves with
- * reduced motion.
+ * A night hero: the wordmark (its O is the seed ring), the main action in star yellow, and the
+ * live board on its cloth, with the panu strip along the bottom edge. Motion: the hero reveal
+ * plays once per session (.landing--intro); the sections below are simply there.
  */
 main.main--wide {
   max-width: none;
@@ -611,64 +1011,34 @@ main.main--wide {
 }
 
 .landing__body {
-  max-width: 1120px;
+  max-width: 1180px;
   margin: 0 auto;
   padding: clamp(1.25rem, 3vw, 2rem);
   display: flex;
   flex-direction: column;
-  gap: clamp(2.75rem, 7vw, 5.5rem);
+  gap: clamp(2.75rem, 7vw, 5rem);
 }
 
 .hero {
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  color: #fff;
-  padding: clamp(2rem, 6vw, 5rem) clamp(1rem, 4vw, 3rem) clamp(2.5rem, 6vw, 4.5rem);
-}
-
-.hero__backdrop {
-  position: absolute;
-  inset: 0;
-  z-index: -1;
+  color: var(--night-ink);
   background:
-    radial-gradient(55% 75% at 88% 12%, rgb(242 153 74 / 0.55), transparent 62%),
-    radial-gradient(45% 60% at 8% 95%, rgb(15 139 141 / 0.65), transparent 70%),
-    radial-gradient(35% 45% at 55% 110%, rgb(207 32 39 / 0.35), transparent 70%),
-    linear-gradient(160deg, #04224d 0%, #0a3f86 42%, #0b5f8a 72%, #0f7c80 100%);
+    radial-gradient(60% 80% at 85% 20%, rgb(51 70 184 / 0.55), transparent 65%),
+    radial-gradient(45% 60% at 0% 100%, rgb(12 117 128 / 0.35), transparent 70%),
+    linear-gradient(170deg, var(--night) 0%, var(--night-2) 100%);
+  padding: clamp(2rem, 6vw, 4.5rem) clamp(1rem, 4vw, 3rem) calc(clamp(2.5rem, 6vw, 4.5rem) + 22px);
 }
 
-.hero__backdrop::after {
-  /* A soft fade into the page below. */
+.hero::after {
   content: '';
   position: absolute;
   inset: auto 0 0;
-  height: 18%;
-  background: linear-gradient(transparent, rgb(4 34 77 / 0.35));
-}
-
-.island-stars {
-  position: absolute;
-  right: -8%;
-  top: -18%;
-  width: min(70vw, 680px);
-  fill: #f7d116;
-  opacity: 0.85;
-  filter: drop-shadow(0 0 12px rgb(247 209 22 / 0.35));
-}
-
-.island-stars__star {
-  transform-box: fill-box;
-  transform-origin: center;
-}
-
-@media (max-width: 640px) {
-  .island-stars {
-    top: -6%;
-    right: -38%;
-    width: 120vw;
-    opacity: 0.4;
-  }
+  height: 22px;
+  background:
+    var(--panu-strip) left center / auto 22px repeat-x,
+    #1f2d78;
 }
 
 .hero__inner {
@@ -681,45 +1051,45 @@ main.main--wide {
 
 @media (min-width: 980px) {
   .hero__inner {
-    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.3fr);
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.25fr);
   }
 }
 
 .hero__kicker {
-  display: inline-block;
-  margin: 0 0 1rem;
-  padding: 0.35rem 0.85rem;
-  border-radius: 999px;
-  font-size: 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 1.1rem;
+  font-size: 0.95rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #ffe9b8;
-  background: rgb(255 255 255 / 0.1);
-  border: 1px solid rgb(255 255 255 / 0.2);
+  color: var(--star);
+}
+
+.hero__kicker::before {
+  content: '';
+  width: 10px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--star);
 }
 
 .hero__title {
   margin: 0;
-  font-size: clamp(4.2rem, 13vw, 8.75rem);
-  font-weight: 700;
-  letter-spacing: -0.045em;
-  line-height: 0.88;
-  font-variation-settings:
-    'opsz' 144,
-    'SOFT' 60;
-  background: linear-gradient(180deg, #ffffff 30%, #ffd9a0 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  filter: drop-shadow(0 10px 30px rgb(0 0 0 / 0.25));
+  line-height: 1;
+}
+
+.hero__wordmark {
+  display: block;
+  width: auto;
+  height: clamp(4.5rem, 13vw, 8.25rem);
+  color: var(--night-ink);
 }
 
 .hero__lede {
   max-width: 34rem;
-  margin: 1.1rem 0 0;
+  margin: 1.25rem 0 0;
   font-size: clamp(1.05rem, 1.7vw, 1.22rem);
-  color: rgb(255 255 255 / 0.86);
+  color: var(--night-muted);
 }
 
 .hero__ctas {
@@ -729,31 +1099,13 @@ main.main--wide {
   margin: 1.75rem 0 1.1rem;
 }
 
-.button--glow {
-  border-color: transparent;
-  background: linear-gradient(135deg, #ee8146, #c8462a);
-  box-shadow: 0 12px 30px -10px rgb(238 129 70 / 0.85);
-}
-
-.button--on-dark {
-  color: #fff;
-  background: rgb(255 255 255 / 0.1);
-  border-color: rgb(255 255 255 / 0.3);
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .button--on-dark:hover {
-    background: rgb(255 255 255 / 0.18);
-  }
-}
-
 .hero__account {
   display: flex;
   align-items: center;
   gap: 0.4rem;
   margin: 0;
-  font-size: 0.88rem;
-  color: rgb(255 255 255 / 0.7);
+  font-size: 0.9rem;
+  color: var(--night-muted);
 }
 
 .hero__account svg {
@@ -764,12 +1116,11 @@ main.main--wide {
 .hero__stage {
   margin: 0;
   box-shadow:
-    0 50px 90px -40px rgb(0 0 0 / 0.75),
-    inset 0 1px 0 rgb(255 255 255 / 0.08);
+    0 40px 80px -36px rgb(0 0 0 / 0.8),
+    inset 0 0 0 1px rgb(243 239 230 / 0.08);
 }
 
-/* The once-per-session reveal: copy rises in a short stagger, the stars appear one by one
-   around the ring, then the board settles in. */
+/* The once-per-session reveal: copy rises in a short stagger, then the board settles in. */
 @media (prefers-reduced-motion: no-preference) {
   .landing--intro .hero__copy > * {
     animation: rise 520ms var(--ease-out) both;
@@ -789,9 +1140,9 @@ main.main--wide {
   .landing--intro .hero__stage {
     animation: rise-far 700ms var(--ease-out) 200ms both;
   }
-  .landing--intro .island-stars__star {
-    animation: star-in 600ms var(--ease-out) both;
-    animation-delay: calc(250ms + var(--i) * 70ms);
+  .landing--intro .hero__wordmark .seed-ring__seed {
+    animation: seed-in 420ms var(--ease-out) both;
+    animation-delay: calc(240ms + var(--i) * 45ms);
   }
 }
 
@@ -809,18 +1160,28 @@ main.main--wide {
   }
 }
 
-@keyframes star-in {
+@keyframes seed-in {
   from {
     opacity: 0;
-    transform: scale(0.5) rotate(-40deg);
+    transform: scale(0.6);
   }
 }
 
 .section-title {
   margin: 0 0 1.25rem;
-  font-size: clamp(1.9rem, 4.2vw, 2.8rem);
-  letter-spacing: -0.025em;
+  font-size: clamp(1.9rem, 4.2vw, 2.75rem);
+  letter-spacing: -0.03em;
   line-height: 1.05;
+}
+
+/* The seed ring (the mark): ten ouri seeds, one star yellow. */
+.seed-ring__seed {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.seed-ring__seed--star {
+  fill: var(--star);
 }
 
 /* How to play */
@@ -837,48 +1198,43 @@ main.main--wide {
   grid-template-columns: repeat(auto-fit, minmax(13.5rem, 1fr));
 }
 
-.step,
-.feature {
+.step {
   position: relative;
-  overflow: hidden;
   padding: 1.4rem 1.4rem 1.5rem;
   border-radius: var(--radius-l);
   background: var(--surface);
   border: 1px solid var(--line);
-  box-shadow: var(--shadow-2);
+  box-shadow: var(--shadow-1);
 }
 
-.step::before {
-  /* A colour bar per step: the islands' palette. */
-  content: '';
-  position: absolute;
-  inset: 0 0 auto;
-  height: 4px;
-  background: var(--step-color, var(--brand));
-}
-
-.step:nth-child(2) {
-  --step-color: #0a4fa8;
-}
-.step:nth-child(3) {
-  --step-color: #cf2027;
-}
-.step:nth-child(4) {
-  --step-color: #e6a63a;
+/* Features are plain columns, not more cards: the steps above are the cards on this page. */
+.feature {
+  padding: 0.25rem 0;
 }
 
 .step__num {
-  display: block;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 44px;
+  border-radius: 50%;
   font-family: var(--font-display);
-  font-size: 3.4rem;
-  font-weight: 700;
+  font-size: 1.6rem;
+  font-weight: 800;
   line-height: 1;
-  color: var(--step-color, var(--brand));
+  color: var(--on-indigo);
+  background: var(--indigo-fill);
+  transform: rotate(-8deg);
+}
+
+.step:first-child .step__num {
+  color: var(--on-star);
+  background: var(--star);
 }
 
 .step__title,
 .feature__title {
-  margin: 0.6rem 0 0.35rem;
+  margin: 0.9rem 0 0.35rem;
   font-size: 1.2rem;
 }
 
@@ -888,7 +1244,7 @@ main.main--wide {
   color: var(--ink-2);
 }
 
-/* Heritage: the flag's blue, ten stars and the white-red-white band. */
+/* Heritage: the night, the seed ring for the ten islands, and the panu strip. */
 .heritage {
   position: relative;
   overflow: hidden;
@@ -896,66 +1252,64 @@ main.main--wide {
   gap: clamp(1.5rem, 4vw, 3rem);
   align-items: center;
   padding: clamp(1.75rem, 5vw, 3.5rem);
-  padding-bottom: calc(clamp(1.75rem, 5vw, 3.5rem) + 28px);
-  border-radius: clamp(24px, 4vw, 36px);
-  color: #fff;
+  padding-bottom: calc(clamp(1.75rem, 5vw, 3.5rem) + 22px);
+  border-radius: clamp(22px, 4vw, 32px);
+  color: var(--night-ink);
   background:
-    radial-gradient(60% 80% at 100% 0%, rgb(15 107 117 / 0.6), transparent 70%),
-    linear-gradient(135deg, #002a6e, #003893 55%, #0a4fa8);
+    radial-gradient(60% 80% at 100% 0%, rgb(51 70 184 / 0.5), transparent 70%),
+    linear-gradient(150deg, var(--night), var(--night-2));
   box-shadow: var(--shadow-3);
 }
 
 .heritage::after {
   content: '';
   position: absolute;
-  inset: auto 0 12px;
-  height: 16px;
-  background: linear-gradient(#fff 0 33%, #cf2027 33% 67%, #fff 67%);
-  opacity: 0.9;
+  inset: auto 0 0;
+  height: 22px;
+  background:
+    var(--panu-strip) left center / auto 22px repeat-x,
+    #1f2d78;
 }
 
 @media (min-width: 760px) {
   .heritage {
-    grid-template-columns: minmax(10rem, 15rem) 1fr;
+    grid-template-columns: minmax(10rem, 14rem) 1fr;
   }
 }
 
 .heritage__stars {
-  position: relative;
-  aspect-ratio: 1;
-  max-width: 15rem;
+  max-width: 14rem;
   width: 100%;
   margin: 0 auto;
+  color: var(--night-ink);
 }
 
-.heritage__stars .island-stars {
-  position: static;
+.heritage__stars svg {
+  display: block;
   width: 100%;
-  opacity: 1;
+  height: auto;
 }
 
 .heritage__kicker {
   margin: 0 0 0.4rem;
-  font-size: 0.8rem;
+  font-size: 0.95rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #f7d116;
+  color: var(--star);
 }
 
 .heritage .section-title {
-  color: #fff;
-}
-
-.heritage__body.heritage__body--next {
-  margin-top: 0.85rem;
+  color: var(--night-ink);
 }
 
 .heritage__body {
   max-width: 40rem;
   margin: 0;
   font-size: 1.08rem;
-  color: rgb(255 255 255 / 0.88);
+  color: var(--night-muted);
+}
+
+.heritage__body.heritage__body--next {
+  margin-top: 0.85rem;
 }
 
 /* Features */
@@ -963,55 +1317,16 @@ main.main--wide {
   grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
 }
 
-.feature__icon {
+.feature__icon,
+.tile__icon,
+.soon__icon {
   display: grid;
   place-items: center;
   width: 48px;
   height: 48px;
   border-radius: 14px;
-  color: #fff;
-  background: linear-gradient(135deg, #ee8146, #c8462a);
-  box-shadow: 0 8px 18px -8px rgb(200 70 42 / 0.7);
-}
-
-.feature:nth-child(2) .feature__icon {
-  background: linear-gradient(135deg, #1b6fd1, #003893);
-  box-shadow: 0 8px 18px -8px rgb(0 56 147 / 0.7);
-}
-
-.feature:nth-child(3) .feature__icon {
-  background: linear-gradient(135deg, #1aa0a3, #0f6b75);
-  box-shadow: 0 8px 18px -8px rgb(15 107 117 / 0.7);
-}
-
-/* Reveal on scroll: once, children in a short stagger. */
-@media (prefers-reduced-motion: no-preference) {
-  .reveal > *,
-  .reveal .step,
-  .reveal .feature {
-    opacity: 0;
-    transform: translateY(18px);
-    transition:
-      opacity 600ms var(--ease-out),
-      transform 600ms var(--ease-out);
-  }
-  .reveal--in > *,
-  .reveal--in .step,
-  .reveal--in .feature {
-    opacity: 1;
-    transform: none;
-  }
-  .reveal--in .step:nth-child(2),
-  .reveal--in .feature:nth-child(2) {
-    transition-delay: 70ms;
-  }
-  .reveal--in .step:nth-child(3),
-  .reveal--in .feature:nth-child(3) {
-    transition-delay: 140ms;
-  }
-  .reveal--in .step:nth-child(4) {
-    transition-delay: 210ms;
-  }
+  color: var(--indigo);
+  background: var(--indigo-soft);
 }
 
 .home__grid {
@@ -1022,6 +1337,12 @@ main.main--wide {
 
 .home__grid > .card {
   margin: 0;
+}
+
+@media (min-width: 900px) {
+  .home__grid:has(.resume) {
+    grid-template-columns: 1fr 1.6fr;
+  }
 }
 
 .resume {
@@ -1047,14 +1368,18 @@ main.main--wide {
 }
 
 .new-game fieldset {
-  margin-bottom: 1.25rem;
+  margin-bottom: 1.35rem;
+}
+
+#play {
+  scroll-margin-top: calc(var(--header-h) + 1rem);
 }
 
 .tiles {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
   gap: 1rem;
-  margin: 1.5rem 0 0;
+  margin: 0;
 }
 
 .tile {
@@ -1077,26 +1402,23 @@ main.main--wide {
 }
 
 .tile:active {
-  transform: scale(0.98);
+  transform: scale(0.97);
 }
 
 .tile__icon {
   grid-row: span 2;
-  display: grid;
-  place-items: center;
   width: 44px;
   height: 44px;
   border-radius: 12px;
-  color: var(--brand);
-  background: var(--brand-soft);
 }
 
 .tile__title {
-  font-weight: 700;
+  font-weight: 750;
 }
 
 .tile__desc {
-  font-size: 0.88rem;
+  font-size: 0.9rem;
+  font-weight: 500;
   color: var(--muted);
 }
 
@@ -1107,118 +1429,116 @@ main.main--wide {
   }
 }
 
-@media (min-width: 900px) {
-  .home__grid:has(.resume) {
-    grid-template-columns: 1fr 1.6fr;
-  }
+/* Coming soon (landing). */
+.soon__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 1rem;
 }
 
-/* --- Stage (the table the board sits on) --------------------------------------------------- */
+.soon__item {
+  padding: 1.4rem;
+  border-radius: var(--radius-l);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+}
 
+.soon__icon {
+  color: var(--on-star);
+  background: var(--star);
+}
+
+.soon__title {
+  margin: 0.8rem 0 0.35rem;
+  font-size: 1.15rem;
+}
+
+.soon__body {
+  margin: 0;
+  color: var(--ink-2);
+}
+
+.social--placeholder,
+.pay--placeholder,
+.soon__item--placeholder {
+  border-style: dashed;
+  opacity: 0.6;
+}
+
+/* --- Stage (the night the board's cloth lies in) -------------------------------------------- */
+
+/* No padding: the cloth runs to the stage's edges (the camera keeps the board clear of them). */
 .stage {
   position: relative;
-  border-radius: clamp(18px, 3vw, 32px);
-  padding: clamp(0.5rem, 2vw, 1.25rem);
+  border-radius: clamp(18px, 3vw, 28px);
+  padding: 0;
   background:
-    radial-gradient(120% 90% at 50% 0%, rgb(255 214 160 / 0.14), transparent 60%),
-    radial-gradient(80% 60% at 50% 100%, rgb(0 0 0 / 0.35), transparent 70%),
-    linear-gradient(180deg, var(--table-1), var(--table-2));
-  box-shadow:
-    var(--shadow-3),
-    inset 0 1px 0 rgb(255 255 255 / 0.06);
+    radial-gradient(100% 80% at 50% 0%, rgb(51 70 184 / 0.45), transparent 65%),
+    linear-gradient(180deg, var(--night-2), var(--night));
+  box-shadow: var(--shadow-3);
   overflow: hidden;
-}
-
-.stage::after {
-  /* Subtle vignette */
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  border-radius: inherit;
-  box-shadow: inset 0 0 80px rgb(0 0 0 / 0.35);
 }
 
 /* --- Game ---------------------------------------------------------------------------------- */
 
+/*
+ * The opponent's nameplate above the board, yours below it, as in chess apps. One status line
+ * between the top row and the board (the only live region for whose turn it is).
+ */
 .game {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.6rem;
 }
 
-.scoreboard {
+.game__top {
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.6rem;
 }
 
-.score {
+.game__top > .plate {
+  justify-self: center;
+  width: min(100%, 26rem);
+}
+
+.game__tools {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.game__bottom {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 26rem) minmax(0, 1fr);
   align-items: center;
-  gap: 0.7rem;
-  padding: 0.6rem 0.9rem;
-  border-radius: var(--radius);
-  background: var(--surface);
-  border: 1px solid var(--line);
-  box-shadow: var(--shadow-1);
-  transition:
-    border-color var(--dur-base) var(--ease-out),
-    box-shadow var(--dur-base) var(--ease-out);
+  gap: 0.6rem;
 }
 
-.score--turn {
-  border-color: color-mix(in srgb, var(--gold) 70%, transparent);
-  box-shadow:
-    var(--shadow-2),
-    0 0 0 3px color-mix(in srgb, var(--gold) 22%, transparent);
+.game__bottom > .plate {
+  grid-column: 2;
 }
 
-.score__avatar {
-  display: grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  font-family: var(--font-display);
-  font-weight: 700;
-  color: var(--brand-ink);
-  background: var(--brand);
-}
-
-.score--ai .score__avatar {
-  background: var(--sea);
-}
-
-.score__name {
-  font-weight: 650;
-  font-size: 0.92rem;
-  color: var(--ink-2);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.score__value {
-  font-family: var(--font-display);
-  font-size: 1.9rem;
-  font-weight: 650;
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
+.game__bottom > .game-actions {
+  grid-column: 3;
+  justify-self: end;
+  justify-content: flex-end;
 }
 
 .game-status {
+  align-self: center;
   margin: 0;
-  padding: 0.45rem 0.9rem;
+  padding: 0.3rem 0.9rem;
   border-radius: 999px;
-  background: var(--surface-2);
+  background: var(--surface);
   border: 1px solid var(--line);
   font-weight: 700;
-  font-size: 0.9rem;
+  font-size: 0.92rem;
   text-align: center;
-  white-space: nowrap;
 }
 
 .announcer {
@@ -1238,25 +1558,314 @@ main.main--wide {
   margin: 0;
 }
 
+.game__note {
+  font-size: 0.82rem;
+}
+
+/* A nameplate: seed-shaped avatar, the name, the score (and the clock in live games). */
+.plate {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  grid-template-areas: 'avatar name clock score';
+  align-items: center;
+  column-gap: 0.7rem;
+  min-height: 56px;
+  padding: 6px 14px 6px 8px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-1);
+  transition:
+    transform var(--dur-base) var(--ease-out),
+    box-shadow var(--dur-base) var(--ease-out),
+    border-color var(--dur-base) ease;
+}
+
+.plate--turn {
+  border-color: var(--plate-color);
+  box-shadow:
+    var(--shadow-2),
+    0 0 0 1px var(--plate-color);
+  transform: translateY(-2px);
+}
+
+.plate--you {
+  --plate-color: var(--you);
+}
+
+.plate--them {
+  --plate-color: var(--them);
+}
+
+.plate__avatar {
+  grid-area: avatar;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 36px;
+  border-radius: 50%;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.1rem;
+  transform: rotate(-10deg);
+}
+
+.plate--you .plate__avatar {
+  background: var(--you-fill);
+  color: var(--on-you);
+}
+
+.plate--them .plate__avatar {
+  background: var(--them-fill);
+  color: var(--on-them);
+}
+
+.plate__name {
+  grid-area: name;
+  font-weight: 700;
+  font-size: 0.98rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.plate .score__value {
+  grid-area: score;
+}
+
+.plate .score__clock {
+  grid-area: clock;
+}
+
+/* Score: a pop and a rising "+N" when seeds are captured (short, readable feedback). */
+.score__value {
+  position: relative;
+  display: inline-grid;
+  justify-items: center;
+  min-width: 1.6ch;
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.score__num {
+  display: inline-block;
+}
+
+.score__num--pop {
+  animation: score-pop 280ms var(--ease-out);
+}
+
+.score__gain {
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--green);
+  white-space: nowrap;
+  pointer-events: none;
+  animation: gain-rise 900ms var(--ease-out) both;
+}
+
+@keyframes score-pop {
+  35% {
+    transform: scale(1.3);
+  }
+}
+
+@keyframes gain-rise {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px) scale(0.8);
+  }
+  25% {
+    opacity: 1;
+    transform: translate(-50%, -2px) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -18px);
+  }
+}
+
+/* A live game's clock: dark while it runs, red under 20 s. */
+.score__clock {
+  padding: 0.15rem 0.55rem;
+  border-radius: var(--radius-s);
+  background: var(--surface-3);
+  color: var(--ink-2);
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: 1.05rem;
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+
+.score__clock--running {
+  background: var(--ink);
+  color: var(--surface);
+}
+
+.score__clock--low.score__clock--running {
+  background: var(--red);
+  color: var(--on-red);
+}
+
+/* Phones: the tools on the top row, the opponent's plate under them, yours above the actions. */
 @media (max-width: 640px) {
-  .scoreboard {
-    grid-template-columns: 1fr 1fr;
+  .game__top {
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+      'menu tools'
+      'plate plate';
   }
-  .game-status {
-    grid-column: 1 / -1;
-    grid-row: 2;
-    justify-self: center;
+  .game__top > .icon-button {
+    grid-area: menu;
   }
-  .score {
-    padding: 0.5rem 0.65rem;
-    gap: 0.5rem;
+  .game__top > .plate {
+    grid-area: plate;
+    width: 100%;
   }
-  .score__avatar {
-    width: 30px;
-    height: 30px;
+  .game__tools {
+    grid-area: tools;
+    justify-self: end;
+  }
+  .game__bottom {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .game__bottom > .plate,
+  .game__bottom > .game-actions {
+    grid-column: 1;
+    justify-self: stretch;
+    justify-content: center;
+  }
+  .plate {
+    min-height: 52px;
   }
   .score__value {
-    font-size: 1.5rem;
+    font-size: 1.75rem;
+  }
+}
+
+/* --- Game: full screen ---------------------------------------------------------------------- */
+
+/* The game owns the whole viewport (no header or tab bar). Where the Fullscreen API works, the
+   button in the bar also hides the browser's own chrome. */
+main.main--immersive {
+  /* (set by App while a game is on screen: state/immersive.ts) */
+  max-width: none;
+  min-height: 100dvh;
+  padding: max(env(safe-area-inset-top), 0.6rem) max(env(safe-area-inset-right), 0.75rem)
+    max(env(safe-area-inset-bottom), 0.6rem) max(env(safe-area-inset-left), 0.75rem);
+  display: flex;
+}
+
+.main--immersive .game {
+  flex: 1;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  min-height: 0;
+}
+
+.game:fullscreen {
+  padding: max(env(safe-area-inset-top), 0.75rem) 1rem max(env(safe-area-inset-bottom), 0.75rem);
+  background: var(--bg);
+}
+
+.main--immersive .stage--game {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  min-height: 0;
+}
+
+.main--immersive .stage--game > .board3d {
+  aspect-ratio: auto;
+  height: 100%;
+  max-height: none;
+  min-height: 220px;
+}
+
+/* Phones: the board runs edge to edge, for the biggest pits the width allows. */
+@media (max-width: 640px) {
+  .main--immersive .stage--game {
+    margin-inline: calc(-1 * max(env(safe-area-inset-left), 0.75rem));
+    border-radius: 0;
+    padding-inline: 0;
+  }
+}
+
+/* Portrait phones: the wide board can't use the height, so the stage keeps the board's shape
+   and the plates, board and actions sit together in the middle of the screen. */
+@media (max-width: 640px) and (orientation: portrait) {
+  .main--immersive .game {
+    justify-content: center;
+  }
+  .main--immersive .stage--game {
+    flex: 0 0 auto;
+  }
+  .main--immersive .stage--game > .board3d {
+    height: auto;
+    aspect-ratio: 16 / 11;
+    min-height: 0;
+  }
+}
+
+/* Short screens (a phone on its side): the plates and actions in a column beside the board. */
+@media (max-height: 500px) and (min-aspect-ratio: 1/1) {
+  .main--immersive .game {
+    display: grid;
+    grid-template-columns: minmax(15rem, 34%) minmax(0, 1fr);
+    grid-template-rows: repeat(5, auto) minmax(0, 1fr);
+    column-gap: 0.75rem;
+    row-gap: 0.4rem;
+    align-content: start;
+  }
+  .main--immersive .game > :not(.stage--game) {
+    grid-column: 1;
+  }
+  .main--immersive .game > .stage--game {
+    grid-column: 2;
+    grid-row: 1 / -1;
+    margin: 0;
+    border-radius: 18px;
+  }
+  .main--immersive .game__top {
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+      'menu tools'
+      'plate plate';
+  }
+  .main--immersive .game__top > .icon-button {
+    grid-area: menu;
+  }
+  .main--immersive .game__top > .plate {
+    grid-area: plate;
+    width: 100%;
+  }
+  .main--immersive .game__tools {
+    grid-area: tools;
+    justify-self: end;
+  }
+  .main--immersive .game__bottom {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .main--immersive .game__bottom > .plate,
+  .main--immersive .game__bottom > .game-actions {
+    grid-column: 1;
+    justify-self: stretch;
+    justify-content: flex-start;
+  }
+  .main--immersive .game > .note,
+  .main--immersive .announcer {
+    display: none;
   }
 }
 
@@ -1298,6 +1907,7 @@ main.main--wide {
   overflow: hidden;
 }
 
+/* Seed counts: basalt chips on the pits; the stores in their owners' colours. */
 .board3d__chip {
   position: absolute;
   left: 0;
@@ -1305,24 +1915,37 @@ main.main--wide {
   will-change: transform;
   display: inline-grid;
   place-items: center;
-  min-width: 1.7em;
-  height: 1.7em;
+  min-width: 1.75em;
+  height: 1.75em;
   padding: 0 0.4em;
   border-radius: 999px;
-  font-size: clamp(0.68rem, 1.4vw, 0.85rem);
+  font-family: var(--font-display);
+  font-size: clamp(0.7rem, 1.4vw, 0.88rem);
   font-weight: 800;
   font-variant-numeric: tabular-nums;
-  color: #fffaf0;
-  background: rgb(20 12 7 / 0.8);
+  color: #f3efe6;
+  background: rgb(11 16 36 / 0.84);
   box-shadow: 0 2px 6px rgb(0 0 0 / 0.35);
-  border: 1px solid rgb(255 236 210 / 0.2);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  border: 1px solid rgb(243 239 230 / 0.22);
 }
 
 .board3d__chip--store {
-  font-size: clamp(0.8rem, 1.6vw, 1rem);
-  background: rgb(185 83 42 / 0.85);
+  font-size: clamp(0.85rem, 1.7vw, 1.08rem);
+  border-color: rgb(243 239 230 / 0.4);
+}
+
+.board3d__chip--south {
+  background: #3346b8;
+}
+
+.board3d__chip--north {
+  background: #c8202a;
+}
+
+/* Store counts pop when seeds arrive. */
+.board3d__chip-num {
+  display: inline-block;
+  animation: score-pop 280ms var(--ease-out);
 }
 
 @media (max-width: 640px) {
@@ -1330,569 +1953,6 @@ main.main--wide {
     aspect-ratio: 16 / 8.6;
     min-height: 0;
   }
-}
-
-/* --- Dialog -------------------------------------------------------------------------------- */
-
-.dialog-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 50;
-  display: grid;
-  place-items: center;
-  padding: 1rem;
-  background: rgb(15 10 7 / 0.5);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  transition: opacity 200ms var(--ease-out);
-  @starting-style {
-    opacity: 0;
-  }
-}
-
-.dialog {
-  width: min(32rem, 100%);
-  max-height: 90dvh;
-  overflow: auto;
-  padding: clamp(1.25rem, 3vw, 1.75rem);
-  border-radius: var(--radius-l);
-  background: var(--surface);
-  color: var(--ink);
-  border: 1px solid var(--line);
-  box-shadow: var(--shadow-3);
-  transform-origin: center; /* modals stay centered (they aren't anchored to a trigger) */
-  transition:
-    opacity 220ms var(--ease-out),
-    transform 220ms var(--ease-out);
-  @starting-style {
-    opacity: 0;
-    transform: scale(0.96);
-  }
-}
-
-.dialog h2 {
-  margin-top: 0;
-  font-size: 1.6rem;
-}
-
-.dialog__actions {
-  margin-top: 1rem;
-}
-
-.dialog__actions--stack {
-  flex-direction: column;
-  align-items: stretch;
-}
-
-.button--danger-text {
-  color: var(--danger);
-}
-
-.dialog__actions--equal .button {
-  flex: 1 1 0;
-}
-
-/* --- Stats --------------------------------------------------------------------------------- */
-
-.stats__section + .stats__section {
-  margin-top: 2.5rem;
-}
-
-.stat-tiles {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
-  gap: 0.75rem;
-  margin: 1rem 0;
-  padding: 0;
-}
-
-.stat-tile {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: 0.9rem 1rem;
-  box-shadow: var(--shadow-1);
-}
-
-.stat-tile dt {
-  color: var(--muted);
-  font-size: 0.82rem;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-}
-
-.stat-tile dd {
-  margin: 0.2rem 0 0;
-  font-family: var(--font-display);
-  font-size: 2.1rem;
-  font-weight: 650;
-  font-variant-numeric: tabular-nums;
-  line-height: 1.1;
-}
-
-.table-wrap {
-  overflow-x: auto;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-1);
-}
-
-table {
-  border-collapse: collapse;
-  width: 100%;
-  min-width: 24rem;
-}
-
-th,
-td {
-  text-align: left;
-  padding: 0.65rem 0.9rem;
-  border-bottom: 1px solid var(--line);
-  font-variant-numeric: tabular-nums;
-}
-
-th {
-  font-size: 0.8rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-
-tr:last-child td {
-  border-bottom: none;
-}
-
-.history {
-  list-style: none;
-  padding: 0;
-  margin: 0.5rem 0;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-1);
-  overflow: hidden;
-}
-
-.history__item {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.25rem 1rem;
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid var(--line);
-}
-
-.history__item:last-child {
-  border-bottom: none;
-}
-
-.history__result {
-  font-weight: 800;
-  min-width: 3.5rem;
-}
-
-.history__item--win .history__result {
-  color: var(--win);
-}
-
-.history__item--loss .history__result {
-  color: var(--danger);
-}
-
-.history__replay {
-  margin-left: auto;
-  font-weight: 700;
-  text-decoration: none;
-}
-
-/* --- Rules / tutorial / replay ------------------------------------------------------------- */
-
-.prose {
-  max-width: 44rem;
-}
-
-.prose p,
-.prose li {
-  color: var(--ink-2);
-}
-
-.tutorial__text {
-  min-height: 3em;
-  font-size: 1.08rem;
-}
-
-.tutorial h2:focus {
-  outline: none;
-}
-
-.replay__events {
-  min-height: 1.6em;
-  text-align: center;
-  font-weight: 600;
-}
-
-/* --- Banner, profile ----------------------------------------------------------------------- */
-
-.banner {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem 1rem;
-  max-width: 1120px;
-  margin: 0.75rem auto 0;
-  padding: 0.75rem 1rem;
-  border-radius: var(--radius);
-  background: var(--surface);
-  border: 1px solid color-mix(in srgb, var(--brand) 35%, transparent);
-  box-shadow: var(--shadow-2);
-}
-
-.banner p {
-  margin: 0;
-  flex: 1 1 16rem;
-}
-
-.banner--warning {
-  border-color: var(--danger);
-}
-
-.profile {
-  display: grid;
-  gap: 0.6rem;
-  margin: 1rem 0;
-  max-width: 28rem;
-}
-
-.profile label {
-  display: grid;
-  gap: 0.3rem;
-  font-weight: 600;
-}
-
-/* The empty game screen ("New game"): a centred card in the usual layout. */
-.new-game-screen {
-  max-width: 36rem;
-  margin: clamp(1rem, 6vh, 4rem) auto 0;
-}
-
-/* --- Game: full screen ---------------------------------------------------------------------- */
-
-/* The game owns the whole viewport (no header or tab bar). Where the Fullscreen API works, the
-   button in the bar also hides the browser's own chrome. */
-main.main--immersive {
-  /* (set by App while a game is on screen: state/immersive.ts) */
-  max-width: none;
-  min-height: 100dvh;
-  padding: max(env(safe-area-inset-top), 0.6rem) max(env(safe-area-inset-right), 0.75rem)
-    max(env(safe-area-inset-bottom), 0.6rem) max(env(safe-area-inset-left), 0.75rem);
-  display: flex;
-}
-
-.main--immersive .game {
-  flex: 1;
-  width: 100%;
-  max-width: 1400px;
-  margin: 0 auto;
-  min-height: 0;
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto auto auto;
-  gap: 0.6rem;
-}
-
-.game:fullscreen {
-  padding: max(env(safe-area-inset-top), 0.75rem) 1rem max(env(safe-area-inset-bottom), 0.75rem);
-  background:
-    radial-gradient(1200px 600px at 85% -10%, var(--brand-soft), transparent 60%),
-    radial-gradient(900px 500px at -10% 20%, var(--sea-soft), transparent 60%), var(--bg);
-}
-
-.game__bar {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 0.6rem;
-}
-
-.icon-button {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  color: var(--ink);
-  background: var(--surface);
-  border: 1px solid var(--line);
-  box-shadow: var(--shadow-1);
-  cursor: pointer;
-  transition:
-    transform var(--dur-press) var(--ease-out),
-    background-color var(--dur-fast) ease;
-}
-
-.icon-button:active {
-  transform: scale(0.94);
-}
-
-.icon-button--spacer {
-  visibility: hidden;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .icon-button:hover {
-    background: var(--surface-2);
-  }
-}
-
-.main--immersive .stage--game {
-  display: flex;
-  align-items: center;
-  min-height: 0;
-}
-
-.main--immersive .stage--game > .board3d {
-  aspect-ratio: auto;
-  height: 100%;
-  max-height: none;
-  min-height: 240px;
-}
-
-/* Narrow screens: the avatars identify the players; names stay for screen readers. */
-@media (max-width: 420px) {
-  .main--immersive .score__name {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
-  .main--immersive .score {
-    grid-template-columns: auto 1fr;
-  }
-  .main--immersive .score__value {
-    justify-self: end;
-  }
-}
-
-.game__note {
-  font-size: 0.8rem;
-}
-
-.game__tools {
-  display: flex;
-  gap: 0.4rem;
-}
-
-/* Score: a pop and a rising "+N" when seeds are captured (short, readable feedback). */
-.score__value {
-  position: relative;
-  display: inline-grid;
-  justify-items: center;
-}
-
-.score__num {
-  display: inline-block;
-}
-
-.score__num--pop {
-  animation: score-pop 280ms var(--ease-out);
-}
-
-.score__gain {
-  position: absolute;
-  left: 50%;
-  bottom: 100%;
-  font-family: var(--font-ui);
-  font-size: 0.85rem;
-  font-weight: 800;
-  color: var(--win);
-  white-space: nowrap;
-  pointer-events: none;
-  animation: gain-rise 900ms var(--ease-out) both;
-}
-
-@keyframes score-pop {
-  35% {
-    transform: scale(1.3);
-    color: var(--gold);
-  }
-}
-
-@keyframes gain-rise {
-  from {
-    opacity: 0;
-    transform: translate(-50%, 8px) scale(0.8);
-  }
-  25% {
-    opacity: 1;
-    transform: translate(-50%, -2px) scale(1);
-  }
-  to {
-    opacity: 0;
-    transform: translate(-50%, -18px);
-  }
-}
-
-/* --- Result (end of game) -------------------------------------------------------------------- */
-
-/* A win celebrates (warm band, gold star, confetti); a loss is calm and darker; a draw is teal. */
-.dialog.result {
-  position: relative;
-  text-align: center;
-  padding-top: 0;
-  overflow: hidden;
-}
-
-.result::before {
-  content: '';
-  position: absolute;
-  inset: 0 0 auto;
-  height: 92px;
-  background: var(--result-band);
-}
-
-.result--win {
-  --result-band: linear-gradient(135deg, #003893, #0f6b75 55%, #e6a63a);
-  --result-accent: #f7d116;
-}
-.result--loss {
-  --result-band: linear-gradient(135deg, #2a221d, #4b4038);
-  --result-accent: #a8998a;
-}
-.result--draw {
-  --result-band: linear-gradient(135deg, #0f6b75, #4f8f8a);
-  --result-accent: #9ad1cf;
-}
-
-.result__emblem {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: 84px;
-  height: 84px;
-  margin: 46px auto 0.5rem;
-  border-radius: 50%;
-  color: var(--result-accent);
-  background: var(--surface);
-  box-shadow:
-    0 10px 30px -10px rgb(0 0 0 / 0.45),
-    0 0 0 6px var(--surface);
-}
-
-.result__emblem svg {
-  width: 46px;
-  height: 46px;
-}
-
-.result--win .result__emblem {
-  animation: emblem-in 600ms cubic-bezier(0.34, 1.56, 0.64, 1) 120ms both;
-}
-
-.result--win .result__emblem svg {
-  filter: drop-shadow(0 2px 6px rgb(230 166 58 / 0.6));
-}
-
-@keyframes emblem-in {
-  from {
-    opacity: 0;
-    transform: scale(0.6) rotate(-25deg);
-  }
-}
-
-.dialog.result h2 {
-  margin: 0.25rem 0 0.25rem;
-  font-size: clamp(1.9rem, 5vw, 2.4rem);
-}
-
-.result__tagline {
-  margin: 0 0 1rem;
-  color: var(--ink-2);
-}
-
-.result__score {
-  display: flex;
-  justify-content: center;
-  align-items: flex-end;
-  gap: 1.25rem;
-  margin: 0.5rem 0 0.75rem;
-  font-family: var(--font-display);
-}
-
-.result__side {
-  display: grid;
-  justify-items: center;
-}
-
-.result__num {
-  font-size: clamp(2.8rem, 9vw, 3.6rem);
-  font-weight: 700;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-}
-
-.result__label {
-  font-family: var(--font-ui);
-  font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-
-.result__dash {
-  font-size: 2rem;
-  color: var(--muted);
-  padding-bottom: 1.4rem;
-}
-
-.result .dialog__actions {
-  justify-content: center;
-}
-
-.celebration {
-  position: fixed;
-  inset: 0;
-  z-index: 55;
-  pointer-events: none;
-  overflow: hidden;
-}
-
-.confetti {
-  position: absolute;
-  left: 50%;
-  top: 36%;
-  width: 10px;
-  height: 6px;
-  border-radius: 2px;
-  will-change: transform, opacity;
-}
-
-.confetti--star {
-  width: 20px;
-  height: 20px;
-  border-radius: 0;
-  background: #f7d116;
-  clip-path: polygon(
-    50% 0%,
-    61% 35%,
-    98% 35%,
-    68% 57%,
-    79% 91%,
-    50% 70%,
-    21% 91%,
-    32% 57%,
-    2% 35%,
-    39% 35%
-  );
-}
-
-.confetti--seed {
-  width: 13px;
-  height: 10px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #d9d6c8, #8b8d84 60%, #5e6259);
 }
 
 /* --- Board loader (while the 3D board loads) ------------------------------------------------- */
@@ -1973,9 +2033,9 @@ main.main--immersive {
 
 .board-loader__label {
   margin: 0;
-  font-size: 0.9rem;
+  font-size: 0.92rem;
   font-weight: 600;
-  color: rgb(255 246 232 / 0.75);
+  color: var(--night-muted);
 }
 
 /* Once the 3D board has drawn, the loader fades out over it. */
@@ -1997,17 +2057,7 @@ main.main--immersive {
   gap: 0.75rem;
   padding: 1rem;
   text-align: center;
-  color: #fffaf0;
-}
-
-/* Store count chips pop when seeds arrive. */
-.board3d__chip-num {
-  display: inline-block;
-  animation: score-pop 280ms var(--ease-out);
-}
-
-#play {
-  scroll-margin-top: calc(var(--header-h) + 1rem);
+  color: var(--night-ink);
 }
 
 /* A screen that crashed (components/ErrorBoundary.tsx). */
@@ -2016,7 +2066,370 @@ main.main--immersive {
   margin: clamp(1rem, 6vh, 4rem) auto 0;
 }
 
-/* --- Rules (page tabs, collapsible sections, in-game dialog) -------------------------------- */
+/* --- Dialog -------------------------------------------------------------------------------- */
+
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgb(11 16 36 / 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  transition: opacity 200ms var(--ease-out);
+  @starting-style {
+    opacity: 0;
+  }
+}
+
+.dialog {
+  width: min(32rem, 100%);
+  max-height: 90dvh;
+  overflow: auto;
+  padding: clamp(1.25rem, 3vw, 1.75rem);
+  border-radius: 24px;
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-3);
+  transform-origin: center; /* modals stay centered (they aren't anchored to a trigger) */
+  transition:
+    opacity 220ms var(--ease-out),
+    transform 220ms var(--ease-out);
+  @starting-style {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
+.dialog h2 {
+  margin-top: 0;
+  font-size: 1.65rem;
+}
+
+.dialog__actions {
+  margin-top: 1.1rem;
+}
+
+.dialog__actions--stack {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.dialog__actions--equal .button {
+  flex: 1 1 0;
+}
+
+.dialog.dialog--rules {
+  width: min(40rem, 100%);
+}
+
+/* Phones: dialogs rise from the bottom as sheets, within reach of a thumb. */
+@media (max-width: 640px) {
+  .dialog-backdrop {
+    place-items: end stretch;
+    padding: 0;
+  }
+  .dialog {
+    width: 100%;
+    max-height: 88dvh;
+    border-radius: 24px 24px 0 0;
+    padding-bottom: calc(clamp(1.25rem, 3vw, 1.75rem) + env(safe-area-inset-bottom));
+    @starting-style {
+      opacity: 0;
+      transform: translateY(24px);
+    }
+  }
+}
+
+/* --- Result (end of game) -------------------------------------------------------------------- */
+
+/* A win fills the seed ring on a night band; a loss is calm basalt; a draw is sea. */
+.dialog.result {
+  position: relative;
+  text-align: center;
+  padding-top: 0;
+  overflow: hidden;
+}
+
+.result::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 96px;
+  background:
+    var(--panu-strip) left bottom / auto 18px repeat-x,
+    var(--result-band);
+}
+
+.result--win {
+  --result-band: linear-gradient(150deg, var(--night), #1f2d78);
+  --result-ring: #f3efe6;
+}
+
+.result--loss {
+  --result-band: linear-gradient(150deg, #1c1f29, #3b4152);
+  --result-ring: #9097b8;
+}
+
+.result--draw {
+  --result-band: linear-gradient(150deg, #0a4f57, #0c7580);
+  --result-ring: #4fd1dc;
+}
+
+.result__emblem {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 92px;
+  height: 92px;
+  margin: 46px auto 0.5rem;
+  border-radius: 50%;
+  color: var(--ink);
+  background: var(--surface);
+  box-shadow:
+    0 10px 30px -10px rgb(0 0 0 / 0.45),
+    0 0 0 6px var(--surface);
+}
+
+.result__emblem svg {
+  width: 64px;
+  height: 64px;
+}
+
+.result--loss .result__emblem,
+.result--draw .result__emblem {
+  color: var(--muted);
+}
+
+/* The win: the ring fills one seed at a time (ten seeds in about 900 ms). */
+@media (prefers-reduced-motion: no-preference) {
+  .result--win .seed-ring__seed {
+    animation: seed-in 300ms var(--ease-out) both;
+    animation-delay: calc(150ms + var(--i) * 75ms);
+  }
+}
+
+.dialog.result h2 {
+  margin: 0.25rem 0 0.25rem;
+  font-size: clamp(2rem, 5vw, 2.5rem);
+}
+
+.result__tagline {
+  margin: 0 0 1rem;
+  color: var(--ink-2);
+}
+
+.result__score {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 1.25rem;
+  margin: 0.5rem 0 0.75rem;
+  font-family: var(--font-display);
+}
+
+.result__side {
+  display: grid;
+  justify-items: center;
+}
+
+.result__num {
+  font-size: clamp(2.8rem, 9vw, 3.6rem);
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.result__label {
+  font-family: var(--font-ui);
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.result__dash {
+  font-size: 2rem;
+  color: var(--muted);
+  padding-bottom: 1.4rem;
+}
+
+.result .dialog__actions {
+  justify-content: center;
+}
+
+.celebration {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.confetti {
+  position: absolute;
+  left: 50%;
+  top: 36%;
+  width: 10px;
+  height: 6px;
+  border-radius: 2px;
+  will-change: transform, opacity;
+}
+
+/* The lead pieces: star-yellow seeds (no stars, so it never reads as another flag). */
+.confetti--star {
+  width: 16px;
+  height: 13px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff1a0, #f7d116 55%, #b89000);
+}
+
+.confetti--seed {
+  width: 13px;
+  height: 10px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #d9d6c8, #8b8d84 60%, #5e6259);
+}
+
+/* --- Stats --------------------------------------------------------------------------------- */
+
+.stats__section + .stats__section {
+  margin-top: 2.5rem;
+}
+
+.stat-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+  gap: 0.75rem;
+  margin: 1rem 0;
+  padding: 0;
+}
+
+.stat-tile {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 0.95rem 1.05rem;
+  box-shadow: var(--shadow-1);
+}
+
+.stat-tile dt {
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+
+.stat-tile dd {
+  margin: 0.2rem 0 0;
+  font-family: var(--font-display);
+  font-size: 2.2rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-1);
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 24rem;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 0.75rem 0.95rem;
+  border-bottom: 1px solid var(--line);
+  font-variant-numeric: tabular-nums;
+}
+
+th {
+  font-size: 0.85rem;
+  font-weight: 650;
+  color: var(--muted);
+}
+
+tr:last-child td {
+  border-bottom: none;
+}
+
+.history {
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-1);
+  overflow: hidden;
+}
+
+.history__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 1rem;
+  padding: 0.8rem 1rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.history__item:last-child {
+  border-bottom: none;
+}
+
+.history__result {
+  font-weight: 800;
+  min-width: 3.5rem;
+}
+
+.history__item--win .history__result {
+  color: var(--green);
+}
+
+.history__item--loss .history__result {
+  color: var(--red);
+}
+
+.history__replay {
+  margin-left: auto;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+/* --- Rules / tutorial / replay ------------------------------------------------------------- */
+
+.prose {
+  max-width: 44rem;
+}
+
+.prose p,
+.prose li {
+  color: var(--ink-2);
+}
+
+.tutorial__text {
+  min-height: 3em;
+  font-size: 1.08rem;
+}
+
+.tutorial h2:focus {
+  outline: none;
+}
+
+.replay__events {
+  min-height: 1.6em;
+  text-align: center;
+  font-weight: 600;
+}
 
 .rules__tabs {
   margin: 1rem 0 1.25rem;
@@ -2024,15 +2437,13 @@ main.main--immersive {
 
 .rules__tab {
   border: 0;
-  background: transparent;
   font: inherit;
-  cursor: pointer;
+  font-weight: 650;
 }
 
 .rules__tab[aria-selected='true'] {
-  background: var(--surface);
-  color: var(--ink);
-  box-shadow: var(--shadow-1);
+  background: var(--selected-bg);
+  color: var(--selected-ink);
 }
 
 .rules-view__intro {
@@ -2043,18 +2454,6 @@ main.main--immersive {
   display: flex;
   justify-content: flex-end;
   margin: 0.25rem 0 0.5rem;
-}
-
-.link-button {
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--brand);
-  font: inherit;
-  font-weight: 650;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  cursor: pointer;
 }
 
 .rule {
@@ -2070,7 +2469,8 @@ main.main--immersive {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 0.85rem 1rem;
+  min-height: 52px;
+  padding: 0.85rem 1.05rem;
   cursor: pointer;
   list-style: none;
 }
@@ -2094,6 +2494,10 @@ main.main--immersive {
   transform: rotate(-135deg) translateY(-2px);
 }
 
+.rule[open] > .rule__summary {
+  border-bottom: 1px solid var(--line);
+}
+
 @media (hover: hover) and (pointer: fine) {
   .rule__summary:hover {
     background: var(--surface-2);
@@ -2102,29 +2506,69 @@ main.main--immersive {
 
 .rule__title {
   margin: 0;
-  font-size: 1.08rem;
+  font-size: 1.1rem;
 }
 
 .rule__body {
-  padding: 0 1rem 0.75rem;
+  padding: 0.75rem 1.05rem 0.75rem;
 }
 
 .rule__body p {
   margin: 0 0 0.6rem;
 }
 
-.dialog.dialog--rules {
-  width: min(40rem, 100%);
+/* --- Banner, settings profile, the empty game screen ------------------------------------------ */
+
+.banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  max-width: 1180px;
+  margin: 0.75rem auto 0;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--indigo);
+  box-shadow: var(--shadow-2);
 }
 
-/* --- About the developer ---------------------------------------------------------------------- */
+.banner p {
+  margin: 0;
+  flex: 1 1 16rem;
+}
 
-/* The Game page (choose the computer or online) and online play (ADR 0031). */
+.banner--warning {
+  border-color: var(--red);
+}
+
+.profile {
+  display: grid;
+  gap: 0.6rem;
+  margin: 1rem 0;
+  max-width: 28rem;
+}
+
+.profile label {
+  display: grid;
+  gap: 0.3rem;
+  font-weight: 650;
+}
+
+/* The empty game screen ("New game"): a centred card in the usual layout. */
+.new-game-screen {
+  max-width: 38rem;
+  margin: clamp(1rem, 6vh, 4rem) auto 0;
+}
+
+/* --- Pages: game hub, online play, privacy, about ---------------------------------------------- */
+
 .game-hub,
 .online,
 .online-game,
-.leaderboard {
-  max-width: 52rem;
+.leaderboard,
+.profile-page {
+  max-width: 54rem;
   margin: 0 auto;
 }
 
@@ -2149,8 +2593,9 @@ main.main--immersive {
   justify-content: space-between;
   gap: 0.5rem 1rem;
   padding: 0.75rem 1rem;
-  border-radius: 0.75rem;
+  border-radius: var(--radius);
   background: var(--surface-2);
+  border: 1px solid var(--line);
 }
 
 .online__link {
@@ -2165,7 +2610,47 @@ main.main--immersive {
 }
 
 .online-game__status {
-  font-weight: 600;
+  font-weight: 650;
+}
+
+.play-now .row {
+  flex-wrap: wrap;
+}
+
+/* An open draw offer from the opponent. */
+.draw-offer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin: 0;
+  border-color: var(--indigo);
+}
+
+.draw-offer p {
+  margin: 0;
+  font-weight: 650;
+}
+
+/* Play now still searching, or an opponent found, over any screen. */
+.seek-toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(1rem + var(--tabbar-h));
+  transform: translateX(-50%);
+  z-index: 50;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  max-width: calc(100vw - 2rem);
+  padding: 0.6rem 0.9rem;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  box-shadow: var(--shadow-3);
+  font-weight: 650;
 }
 
 /* Privacy policy and account deletion: long text at a readable line length. */
@@ -2179,7 +2664,7 @@ main.main--immersive {
 }
 
 .about {
-  max-width: 52rem;
+  max-width: 54rem;
   margin: 0 auto;
   display: grid;
   gap: 1.25rem;
@@ -2190,16 +2675,29 @@ main.main--immersive {
 }
 
 .about__hero {
+  position: relative;
+  overflow: hidden;
   display: grid;
   gap: clamp(1.25rem, 4vw, 2.5rem);
   align-items: center;
   padding: clamp(1.25rem, 4vw, 2.25rem);
+  padding-bottom: calc(clamp(1.25rem, 4vw, 2.25rem) + 18px);
   border-radius: var(--radius-l);
-  color: #fff;
+  color: var(--night-ink);
   background:
-    radial-gradient(55% 80% at 90% 10%, rgb(242 153 74 / 0.45), transparent 65%),
-    linear-gradient(150deg, #04224d, #0a3f86 55%, #0f7c80);
+    radial-gradient(55% 80% at 90% 10%, rgb(51 70 184 / 0.5), transparent 65%),
+    linear-gradient(150deg, var(--night), var(--night-2));
   box-shadow: var(--shadow-3);
+}
+
+.about__hero::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0;
+  height: 18px;
+  background:
+    var(--panu-strip) left center / auto 18px repeat-x,
+    #1f2d78;
 }
 
 @media (min-width: 640px) {
@@ -2214,36 +2712,38 @@ main.main--immersive {
   aspect-ratio: 1;
   object-fit: cover;
   border-radius: 50%;
-  border: 4px solid rgb(255 255 255 / 0.85);
+  border: 4px solid var(--night-ink);
   box-shadow: 0 18px 40px -18px rgb(0 0 0 / 0.7);
   justify-self: center;
 }
 
 .about__kicker {
   margin: 0;
-  font-size: 0.8rem;
+  font-size: 0.95rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #ffe9b8;
+  color: var(--star);
 }
 
 .about__name {
   margin: 0.2rem 0 0.6rem;
   font-size: clamp(2.2rem, 6vw, 3.2rem);
-  color: #fff;
+  color: var(--night-ink);
 }
 
 .about__intro {
   margin: 0;
   font-size: 1.05rem;
-  color: rgb(255 255 255 / 0.88);
+  color: var(--night-ink);
 }
 
 .about__more {
   margin-top: 0.6rem;
   font-size: 0.98rem;
-  color: rgb(255 255 255 / 0.75);
+  color: var(--night-muted);
+}
+
+.about__hero a {
+  color: var(--star);
 }
 
 .about__section .card__title {
@@ -2265,9 +2765,10 @@ main.main--immersive {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.55rem 0.95rem;
+  min-height: 44px;
+  padding: 0.5rem 0.95rem;
   border-radius: 999px;
-  border: 1px solid var(--line-strong);
+  border: 1.5px solid var(--line-strong);
   background: var(--surface);
   color: var(--ink);
   font-weight: 650;
@@ -2285,15 +2786,8 @@ main.main--immersive {
 @media (hover: hover) and (pointer: fine) {
   a.social:hover {
     background: var(--surface-2);
-    border-color: var(--brand);
+    border-color: var(--indigo);
   }
-}
-
-.social--placeholder,
-.pay--placeholder,
-.soon__item--placeholder {
-  border-style: dashed;
-  opacity: 0.6;
 }
 
 .coffee__options {
@@ -2307,9 +2801,9 @@ main.main--immersive {
   display: grid;
   align-content: start;
   gap: 0.15rem;
-  padding: 0.85rem 1rem;
+  padding: 0.9rem 1rem;
   border-radius: var(--radius);
-  border: 1px solid var(--line-strong);
+  border: 1.5px solid var(--line-strong);
   background: var(--surface);
   color: var(--ink);
   text-decoration: none;
@@ -2319,12 +2813,12 @@ main.main--immersive {
 }
 
 a.pay:active {
-  transform: scale(0.98);
+  transform: scale(0.97);
 }
 
 @media (hover: hover) and (pointer: fine) {
   a.pay:hover {
-    border-color: var(--brand);
+    border-color: var(--indigo);
   }
 }
 
@@ -2340,8 +2834,8 @@ a.pay:active {
 
 .pay__amount {
   margin-top: 0.3rem;
-  font-weight: 700;
-  color: var(--brand);
+  font-weight: 750;
+  color: var(--indigo);
 }
 
 .pay__copy {
@@ -2382,13 +2876,11 @@ a.pay:active {
   border-radius: var(--radius-l);
   border: 1px solid var(--line);
   background: var(--surface);
-  box-shadow: var(--shadow-2);
+  box-shadow: var(--shadow-1);
 }
 
 .buy__item--premium {
-  border-color: color-mix(in srgb, var(--gold) 60%, transparent);
-  background:
-    radial-gradient(90% 70% at 100% 0%, rgb(230 166 58 / 0.14), transparent 70%), var(--surface);
+  border-color: var(--indigo);
 }
 
 .buy__art {
@@ -2416,7 +2908,7 @@ a.pay:active {
 
 .buy__trim {
   fill: none;
-  stroke: #e6a63a;
+  stroke: #f7d116;
   stroke-width: 3;
 }
 
@@ -2440,95 +2932,6 @@ a.pay:active {
   margin-top: 0.75rem;
 }
 
-/* --- Coming soon (landing) ------------------------------------------------------------------- */
-
-.soon__list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
-  gap: 1rem;
-}
-
-.soon__item {
-  padding: 1.4rem;
-  border-radius: var(--radius-l);
-  border: 1px solid var(--line);
-  background:
-    radial-gradient(80% 60% at 100% 0%, var(--brand-soft), transparent 70%), var(--surface);
-  box-shadow: var(--shadow-1);
-}
-
-.soon__icon {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  color: #b07a00;
-  background: rgb(247 209 22 / 0.18);
-}
-
-.soon__title {
-  margin: 0.6rem 0 0.35rem;
-  font-size: 1.15rem;
-}
-
-.soon__body {
-  margin: 0;
-  color: var(--ink-2);
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .reveal .soon__item {
-    opacity: 0;
-    transform: translateY(18px);
-    transition:
-      opacity 600ms var(--ease-out),
-      transform 600ms var(--ease-out);
-  }
-  .reveal--in .soon__item {
-    opacity: 1;
-    transform: none;
-  }
-  .reveal--in .soon__item:nth-child(2) {
-    transition-delay: 70ms;
-  }
-  .reveal--in .soon__item:nth-child(3) {
-    transition-delay: 140ms;
-  }
-}
-
-/* --- Reduced motion ------------------------------------------------------------------------ */
-
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 1ms !important;
-    animation-delay: 0ms !important;
-  }
-  .button,
-  .tile,
-  .dialog {
-    transition-property: opacity, background-color, border-color, color;
-  }
-  .button:active:not(:disabled),
-  .tile:active {
-    transform: none;
-  }
-  .dialog {
-    @starting-style {
-      transform: none;
-    }
-  }
-  .sow-loader__seed {
-    animation: none;
-    opacity: 0.9;
-  }
-}
-
 /* --- Ratings and leaderboards (ADR 0034) ------------------------------------------------------ */
 
 .rating-changes {
@@ -2547,11 +2950,11 @@ a.pay:active {
 }
 
 .rating-up {
-  color: var(--win);
+  color: var(--green);
 }
 
 .rating-down {
-  color: var(--danger);
+  color: var(--red);
 }
 
 .leaderboard__mine {
@@ -2566,6 +2969,13 @@ a.pay:active {
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 0 1rem;
+}
+
+.leaderboard__mine strong {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
 }
 
 .leaderboard__mine .note {
@@ -2589,7 +2999,8 @@ a.pay:active {
 
 .leaderboard__table th,
 .leaderboard__table td {
-  padding: 0.6rem 0.5rem;
+  height: 52px;
+  padding: 0.5rem 0.6rem;
   text-align: left;
   border-bottom: 1px solid var(--line);
 }
@@ -2602,10 +3013,42 @@ a.pay:active {
   white-space: nowrap;
 }
 
+.leaderboard__table td:first-child,
+.leaderboard__table td:nth-child(3) {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.05rem;
+}
+
+/* The top three get a seed medal behind their rank. */
+.leaderboard__table tbody tr:nth-child(-n + 3) td:first-child {
+  background-image: radial-gradient(
+    closest-side,
+    var(--medal) 0 calc(100% - 1px),
+    transparent 100%
+  );
+  background-repeat: no-repeat;
+  background-size: 2.1em 1.75em;
+  background-position: right 0.15em center;
+  color: var(--on-star);
+}
+
+.leaderboard__table tbody tr:nth-child(1) {
+  --medal: #f7d116;
+}
+
+.leaderboard__table tbody tr:nth-child(2) {
+  --medal: #cfd3dc;
+}
+
+.leaderboard__table tbody tr:nth-child(3) {
+  --medal: #e3a46b;
+}
+
 .leaderboard__table th {
   color: var(--muted);
-  font-weight: 600;
-  font-size: 0.85rem;
+  font-weight: 650;
+  font-size: 0.88rem;
 }
 
 .leaderboard__country {
@@ -2615,74 +3058,15 @@ a.pay:active {
 }
 
 .leaderboard__you td {
-  background: var(--brand-soft);
+  background-color: var(--star-soft);
 }
 
 .leaderboard__gap td {
   border-top: 2px dashed var(--line-strong);
 }
 
-/* --- Live games (ADR 0033) -------------------------------------------------------------------- */
-
-/* A clock sits on its own row under the name and score. */
-.score__clock {
-  grid-column: 1 / -1;
-  justify-self: end;
-  padding: 0.1rem 0.55rem;
-  border-radius: var(--radius-s);
-  background: var(--surface-2);
-  color: var(--ink-2);
-  font-variant-numeric: tabular-nums;
-  font-weight: 650;
-  font-size: 1rem;
-  transition:
-    background-color var(--dur-fast) var(--ease-out),
-    color var(--dur-fast) var(--ease-out);
-}
-
-.score__clock--running {
-  background: var(--ink);
-  color: var(--surface);
-}
-
-.score__clock--low.score__clock--running {
-  background: var(--danger);
-  color: #fff;
-}
-
-.play-now .row {
-  flex-wrap: wrap;
-}
-
-/* Buttons joined into one pill (the game screen's music controls). */
-.button-group {
-  display: inline-flex;
-  align-items: center;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--surface);
-  overflow: hidden;
-}
-
-.button-group > .icon-button {
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-}
-
-.button-group > .icon-button + .icon-button {
-  border-left: 1px solid var(--line);
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .button-group > .icon-button:hover {
-    background: var(--surface-2);
-  }
-}
-
-/* Keep the focus ring inside the pill (it clips its children). */
-.button-group > .icon-button:focus-visible {
-  outline-offset: -3px;
+.leaderboard__player {
+  color: inherit;
 }
 
 /* Rank movement since the last daily snapshot. */
@@ -2690,30 +3074,24 @@ a.pay:active {
   display: inline-flex;
   gap: 0.1rem;
   margin-left: 0.35rem;
-  font-size: 0.75rem;
-  font-weight: 650;
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  font-weight: 700;
 }
 
 .leaderboard__move--up {
-  color: var(--win);
+  color: var(--green);
 }
 
 .leaderboard__move--down {
-  color: var(--danger);
+  color: var(--red);
 }
 
 .leaderboard__move--new {
   color: var(--sea);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
 
 /* --- Player profiles ---------------------------------------------------------------------------- */
-
-.profile-page {
-  max-width: 52rem;
-  margin: 0 auto;
-}
 
 .profile-page__head {
   display: grid;
@@ -2730,29 +3108,9 @@ a.pay:active {
 
 .profile-page__rating strong {
   font-family: var(--font-display);
-  font-size: 1.6rem;
+  font-size: 1.75rem;
+  font-weight: 800;
   font-variant-numeric: tabular-nums;
-}
-
-.badges {
-  list-style: none;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.badge {
-  padding: 0.3rem 0.75rem;
-  border-radius: 999px;
-  background: var(--brand-soft);
-  color: var(--ink);
-  font-weight: 650;
-  font-size: 0.9rem;
-}
-
-.leaderboard__player {
-  color: inherit;
 }
 
 /* One rating line: recessive axis, 2 px series line, crosshair and tooltip on hover. */
@@ -2783,7 +3141,7 @@ a.pay:active {
 
 .rating-chart__line {
   fill: none;
-  stroke: var(--sea);
+  stroke: var(--indigo);
   stroke-width: 2;
   stroke-linejoin: round;
   stroke-linecap: round;
@@ -2796,7 +3154,7 @@ a.pay:active {
 }
 
 .rating-chart__dot {
-  fill: var(--sea);
+  fill: var(--indigo);
   stroke: var(--surface);
   stroke-width: 2;
   vector-effect: non-scaling-stroke;
@@ -2816,36 +3174,107 @@ a.pay:active {
   pointer-events: none;
 }
 
-/* An open draw offer from the opponent. */
-.draw-offer {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem 1rem;
-  margin: 0.5rem 0;
+/* --- Compact screens ---------------------------------------------------------------------------- */
+
+/* Tablets and small laptops: every nav link becomes an icon over a short label, so seven links
+   and the account fit without wrapping. */
+@media (min-width: 761px) and (max-width: 1140px) {
+  .app-header__inner {
+    gap: 0.5rem;
+  }
+  .app-nav a {
+    flex-direction: column;
+    gap: 2px;
+    min-width: 64px;
+    min-height: 52px;
+    padding: 4px 6px;
+    font-size: 0.74rem;
+    font-weight: 650;
+  }
+  .account-link span {
+    max-width: 6rem;
+  }
 }
 
-.draw-offer p {
-  margin: 0;
-  font-weight: 650;
+/* Game actions on phones: icons only (each keeps its name for screen readers and tests). */
+@media (max-width: 640px) {
+  .game__bottom {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .game__bottom > .plate {
+    grid-column: 1;
+  }
+  .game__bottom > .game-actions {
+    grid-column: 2;
+    flex-wrap: nowrap;
+    gap: 0.4rem;
+  }
+  .game-actions .button {
+    min-width: 48px;
+    padding-inline: 0.75rem;
+  }
+  /* Text buttons (after an online game: Rematch, Back) get their own row under the plate. */
+  .game__bottom:has(.game-actions > .button:not(:has(.button__label))) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .game__bottom:has(.game-actions > .button:not(:has(.button__label))) > .game-actions {
+    grid-column: 1;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .game-actions .button__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  /* In a live game the clock sits under the score. */
+  .plate:has(.score__clock) {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      'avatar name score'
+      'avatar name clock';
+    row-gap: 2px;
+  }
+  .plate .score__clock {
+    justify-self: end;
+    font-size: 0.92rem;
+  }
 }
 
-/* Play now still searching, or an opponent found, over any screen. */
-.seek-toast {
-  position: fixed;
-  left: 50%;
-  bottom: calc(1rem + var(--tabbar-h));
-  transform: translateX(-50%);
-  z-index: 50;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem 0.75rem;
-  max-width: calc(100vw - 2rem);
-  padding: 0.6rem 0.9rem;
-  border-radius: var(--radius);
-  background: var(--surface);
-  border: 1px solid var(--line-strong);
-  box-shadow: var(--shadow-3);
+/* --- Reduced motion ------------------------------------------------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+  }
+  .button,
+  .icon-button,
+  .choice,
+  .tile,
+  .plate,
+  .dialog {
+    transition-property: opacity, background-color, border-color, color, box-shadow;
+  }
+  .button:active:not(:disabled),
+  .icon-button:active,
+  .choice:active,
+  .tile:active,
+  .plate--turn {
+    transform: none;
+  }
+  .dialog {
+    @starting-style {
+      transform: none;
+    }
+  }
+  .sow-loader__seed {
+    animation: none;
+    opacity: 0.9;
+  }
 }

@@ -85,8 +85,8 @@ export default defineConfig({
         start_url: '/',
         scope: '/',
         display: 'standalone',
-        background_color: '#f6efe3',
-        theme_color: '#7a4a22',
+        background_color: '#0b1024',
+        theme_color: '#1f2d78',
         icons: [
           { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
@@ -95,8 +95,9 @@ export default defineConfig({
         ],
       },
       workbox: {
-        // App shell + the WASM core, so the game works offline after the first load.
-        globPatterns: ['**/*.{js,css,html,wasm,svg,png,avif,webmanifest}'],
+        // App shell + the WASM core, so the game works offline after the first load, and the
+        // fonts' latin and latin-ext files (`*-latin-*`), so the brand type works offline too.
+        globPatterns: ['**/*.{js,css,html,wasm,svg,png,avif,webmanifest}', '**/*-latin-*.woff2'],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         navigateFallback: '/index.html',
         // Never serve the app shell for API calls, and never cache API responses.

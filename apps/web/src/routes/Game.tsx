@@ -4,7 +4,7 @@ import { Link, useLocation, useNavigate } from 'react-router';
 
 import { useBoardPace } from '../board3d/pace';
 import { BoardView } from '../components/BoardView';
-import { Celebration, FinalScore, ScoreValue } from '../components/GameFx';
+import { Celebration, FinalScore } from '../components/GameFx';
 import {
   BulbIcon,
   ExitFullscreenIcon,
@@ -13,10 +13,10 @@ import {
   HomeIcon,
   InfoIcon,
   PauseIcon,
-  SeedIcon,
-  StarIcon,
+  SeedRing,
   UndoIcon,
 } from '../components/Icons';
+import { Nameplate } from '../components/Nameplate';
 import { useFullscreen } from '../components/useFullscreen';
 import { Dialog } from '../components/Dialog';
 import { MusicControls } from '../components/MusicControls';
@@ -161,7 +161,7 @@ function GameView({ initial, speed: baseSpeed }: { initial: CurrentGame; speed: 
   return (
     <section className="game" ref={root}>
       <h1 className="visually-hidden">{t('game.title')}</h1>
-      <div className="game__bar">
+      <div className="game__top">
         <button
           type="button"
           className="icon-button"
@@ -171,25 +171,7 @@ function GameView({ initial, speed: baseSpeed }: { initial: CurrentGame; speed: 
         >
           <PauseIcon />
         </button>
-        <div className="scoreboard" aria-label={t('game.score.label')}>
-          <div className={`score score--ai${aiTurn ? ' score--turn' : ''}`}>
-            <span className="score__avatar" aria-hidden="true">
-              {ai.slice(0, 1)}
-            </span>
-            <span className="score__name">{ai}</span>
-            <ScoreValue value={stores[1]} />
-          </div>
-          <p className="game-status" role="status">
-            {status}
-          </p>
-          <div className={`score score--you${youTurn ? ' score--turn' : ''}`}>
-            <span className="score__avatar" aria-hidden="true">
-              {you.slice(0, 1)}
-            </span>
-            <span className="score__name">{you}</span>
-            <ScoreValue value={stores[0]} />
-          </div>
-        </div>
+        <Nameplate side="them" name={ai} score={stores[1]} turn={aiTurn} />
         <div className="game__tools">
           <MusicControls />
           <button
@@ -214,6 +196,9 @@ function GameView({ initial, speed: baseSpeed }: { initial: CurrentGame; speed: 
           ) : null}
         </div>
       </div>
+      <p className="game-status" role="status">
+        {status}
+      </p>
 
       <div className="stage stage--game">
         <BoardView
@@ -240,26 +225,29 @@ function GameView({ initial, speed: baseSpeed }: { initial: CurrentGame; speed: 
         </p>
       )}
 
-      <div className="game-actions">
-        <button type="button" className="button" onClick={c.undo} disabled={!c.canUndo}>
-          <UndoIcon />
-          {t('game.undo')}
-        </button>
-        {settings.hints && (
-          <button type="button" className="button" onClick={c.requestHint} disabled={!c.canPlay}>
-            <BulbIcon />
-            {t('game.hint')}
+      <div className="game__bottom">
+        <Nameplate side="you" name={you} score={stores[0]} turn={youTurn} />
+        <div className="game-actions">
+          <button type="button" className="button" onClick={c.undo} disabled={!c.canUndo}>
+            <UndoIcon />
+            <span className="button__label">{t('game.undo')}</span>
           </button>
-        )}
-        <button
-          type="button"
-          className="button button--ghost"
-          onClick={() => setMenu('menu')}
-          aria-haspopup="dialog"
-        >
-          <PauseIcon />
-          {t('game.leave')}
-        </button>
+          {settings.hints && (
+            <button type="button" className="button" onClick={c.requestHint} disabled={!c.canPlay}>
+              <BulbIcon />
+              <span className="button__label">{t('game.hint')}</span>
+            </button>
+          )}
+          <button
+            type="button"
+            className="button button--ghost"
+            onClick={() => setMenu('menu')}
+            aria-haspopup="dialog"
+          >
+            <PauseIcon />
+            <span className="button__label">{t('game.leave')}</span>
+          </button>
+        </div>
       </div>
 
       {rulesOpen && (
@@ -287,11 +275,7 @@ function GameView({ initial, speed: baseSpeed }: { initial: CurrentGame; speed: 
         <Dialog title={t('game.menu.title')} onDismiss={() => setMenu('closed')}>
           <p>{t('game.menu.body')}</p>
           <div className="dialog__actions dialog__actions--stack">
-            <button
-              type="button"
-              className="button button--primary"
-              onClick={() => setMenu('closed')}
-            >
+            <button type="button" className="button button--play" onClick={() => setMenu('closed')}>
               {t('game.menu.resume')}
             </button>
             <Link className="button" to="/">
@@ -340,7 +324,7 @@ function GameView({ initial, speed: baseSpeed }: { initial: CurrentGame; speed: 
             className={`result result--${c.finished.outcome}`}
             header={
               <span className="result__emblem" aria-hidden="true">
-                {c.finished.outcome === 'win' ? <StarIcon /> : <SeedIcon />}
+                <SeedRing />
               </span>
             }
           >
@@ -360,7 +344,7 @@ function GameView({ initial, speed: baseSpeed }: { initial: CurrentGame; speed: 
             <div className="dialog__actions">
               <button
                 type="button"
-                className="button button--primary"
+                className="button button--play"
                 onClick={() =>
                   navigate('/play', {
                     state: {

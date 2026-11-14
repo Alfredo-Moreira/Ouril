@@ -74,3 +74,82 @@ export function woodTexture(opts: { base: string; dark: string; light: string; s
   tex.anisotropy = 8;
   return tex;
 }
+
+/**
+ * The cloth under the board, after panu di terra: indigo strips sewn edge to edge, stitched
+ * seams, and plain lozenges. Generic strips and figures, not a copied pano d'obra design. The
+ * motifs are large and low in contrast, so the seeds stay the clearest thing on screen and the
+ * pattern doesn't shimmer as the camera moves; `motifs: false` leaves plain strips.
+ */
+export function clothTexture({ motifs = true }: { motifs?: boolean } = {}) {
+  const size = 512;
+  const strips = 4;
+  const h = size / strips;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d')!;
+  const rand = rng(31);
+
+  for (let s = 0; s < strips; s++) {
+    const y = s * h;
+    // Each strip a slightly different indigo, as hand-dyed strips are.
+    const shade = s % 2 === 0 ? ['#1d2b70', '#17235e'] : ['#223280', '#1b296c'];
+    const band = ctx.createLinearGradient(0, y, 0, y + h);
+    band.addColorStop(0, shade[0]!);
+    band.addColorStop(1, shade[1]!);
+    ctx.fillStyle = band;
+    ctx.fillRect(0, y, size, h);
+
+    // A soft weave: faint lengthwise threads.
+    ctx.globalAlpha = 0.06;
+    ctx.strokeStyle = '#f5f1e8';
+    ctx.lineWidth = 1;
+    for (let i = 0; i < 10; i++) {
+      const ty = y + 8 + rand() * (h - 16);
+      ctx.beginPath();
+      ctx.moveTo(0, ty);
+      ctx.lineTo(size, ty);
+      ctx.stroke();
+    }
+
+    // Lozenges on every other strip, outlined in cotton.
+    if (motifs && s % 2 === 1) {
+      ctx.globalAlpha = 0.22;
+      ctx.lineWidth = 5;
+      const r = h * 0.3;
+      for (let x = h / 2; x < size; x += h) {
+        const cy = y + h / 2;
+        ctx.beginPath();
+        ctx.moveTo(x, cy - r);
+        ctx.lineTo(x + r, cy);
+        ctx.lineTo(x, cy + r);
+        ctx.lineTo(x - r, cy);
+        ctx.closePath();
+        ctx.stroke();
+      }
+    }
+
+    // The seam between strips: a darker line with cotton stitches across it.
+    ctx.globalAlpha = 0.5;
+    ctx.fillStyle = '#0d1640';
+    ctx.fillRect(0, y, size, 3);
+    ctx.globalAlpha = 0.3;
+    ctx.strokeStyle = '#f5f1e8';
+    ctx.lineWidth = 3;
+    for (let x = 6; x < size; x += 16) {
+      ctx.beginPath();
+      ctx.moveTo(x, y - 4);
+      ctx.lineTo(x + 6, y + 7);
+      ctx.stroke();
+    }
+  }
+  ctx.globalAlpha = 1;
+
+  const tex = new CanvasTexture(canvas);
+  tex.colorSpace = SRGBColorSpace;
+  tex.wrapS = RepeatWrapping;
+  tex.wrapT = RepeatWrapping;
+  tex.anisotropy = 8;
+  return tex;
+}
