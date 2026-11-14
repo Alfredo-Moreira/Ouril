@@ -4,7 +4,7 @@
 
 ## Why accounts before multiplayer
 
-> **Timing:** accounts were planned for the MVP; they're built but switched off, and ship after the web MVP ([ADR 0025](../../decisions/0025-web-first-static-mvp.md)). The design below is unchanged.
+> **Timing:** accounts were planned for the MVP and shipped after it ([ADR 0025](../../decisions/0025-web-first-static-mvp.md)). They're live in production with Google sign-in (for Google test users until the Google app is published); Apple sign-in waits for its keys. The design below is unchanged.
 
 The MVP is a single-player game, but online play (real-time and async against other people) is next. Shipping accounts before multiplayer means:
 
