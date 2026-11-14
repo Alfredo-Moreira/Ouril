@@ -1,6 +1,6 @@
 # Backend
 
-> Design of `apps/server` (Rust): accounts and sync first (built, switched off for the web MVP, [ADR 0025](../decisions/0025-web-first-static-mvp.md)), real-time and async multiplayer later. **Status:** Accepted (stack). Details are Draft.
+> Design of `apps/server` (Rust): accounts and sync first (built for the MVP and switched on after it, [ADR 0025](../decisions/0025-web-first-static-mvp.md)), then turn-by-turn and live games, ratings and leaderboards. **Status:** Accepted (stack). Details are Draft.
 
 ## Stack
 

@@ -24,13 +24,14 @@ flowchart LR
 - ✅ Variants by country with a default per country, plus the `variant-research` skill.
 - ✅ Cape Verde app decisions for points no source covers. ✅ Setup decisions: bindings, translations format, local-first development, build order (ADRs 0015–0018).
 
-## Phase 1: MVP on the web *(ready to launch)*
+## Phase 1: MVP on the web ✅ *(launched)*
 See [mvp.md](mvp.md) and [ADR 0025](../decisions/0025-web-first-static-mvp.md): the web app alone, as a static site with no server.
 - ✅ Local-first development ([ADR 0017](../decisions/0017-local-first-development.md)): `compose.yaml`, the `toolbox` image, `justfile`, Dev Container, and CI (`.github/workflows/`).
 - ✅ Rust core: engine, AI, stats (`core/sync`), API types (`core/protocol`) and WASM bindings ([API](../../core/wasm/API.md)). Four Cape Verdean rule sets with test vectors and property tests: `cv.standard`, `cv.continuous`, `cv.across`, `cv.across-continuous`.
 - ✅ **Web** (`apps/web`): play vs AI (3 levels), 3D board with a hand, tutorial, rules per variant, forfeit and resume, game music, landing and About pages, offline PWA, English with every string translatable.
-- ✅ Deploy pipeline to Vercel ([deployment](../architecture/deployment.md)). ⏳ Vercel project, secrets and domain.
-- Built but switched off for the MVP: sign-in, sync, Stats and replays, and the server (`apps/server`, [API](../../apps/server/API.md)) on Postgres. Google and Apple sign-in answer `501 not_configured` until keys exist.
+- ✅ Deploy pipeline to Vercel ([deployment](../architecture/deployment.md)), live at `ouril.vercel.app`. ⏳ A custom domain.
+- ✅ The "Panu" redesign: indigo and cotton from panu di terra, star yellow, Bricolage Grotesque and Figtree, the seed-ring mark, and the board on a cloth ([web design](../architecture/web-design.md)).
+- Sign-in, sync, Stats and replays, and the server (`apps/server`, [API](../../apps/server/API.md)) were built for the MVP and switched on in phase 2.
 
 Phases 2 to 7 ship in this order (agreed after the MVP; accounts and sync moved ahead of reach and replay on 2026-10-11). The three "coming soon" items on the home page are phases 2, 4 and 7.
 
@@ -62,7 +63,7 @@ Online play against real people, turn by turn. Requires sign-in.
 Native apps (SwiftUI, then Jetpack Compose; [ADR 0008](../decisions/0008-native-apps-per-platform.md)) with the same Rust core through UniFFI. They launch with everything above: play vs AI, accounts and sync, and games with friends, with native push notifications. Until then the installable web app covers phones.
 
 ## Phase 6: Live games
-- ✅ Live games over HTTP with server clocks computed from timestamps (3 + 2, 5 + 3, 10 + 5), a 30-second first move or the game is called off, **Play now** matchmaking near your rating, live invitations, and a Rust relay for the homelab with polling as the fallback ([ADR 0033](../decisions/0033-live-games-http-moves-and-relay.md)). ✅ Draw offers, a lobby of players waiting (join one directly), and playing the computer while you wait. ⏳ Deploy the relay to the homelab.
+- ✅ Live games over HTTP with server clocks computed from timestamps (3 + 2, 5 + 3, 10 + 5), a 30-second first move or the game is called off, **Play now** matchmaking near your rating, live invitations, and a Rust relay for the homelab with polling as the fallback ([ADR 0033](../decisions/0033-live-games-http-moves-and-relay.md)). ✅ Draw offers, a lobby of players waiting (join one directly), and playing the computer while you wait. ✅ The relay runs on the homelab at `ouril-live.moreiralabs.org` (since 2026-11-13), and the server uses it.
 - Real-time matches with server-owned clocks (for example 5 or 10 minutes): moves over HTTP, delivered through a realtime relay on the developer's homelab, with polling as the fallback ([ADR 0032](../decisions/0032-small-services-on-the-homelab.md), [ADR 0033](../decisions/0033-live-games-http-moves-and-relay.md), both Proposed).
 - **Matchmaking** by skill, plus direct challenges.
 - Reconnection handling, resign, draw offers, and rematch.

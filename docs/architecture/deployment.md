@@ -76,8 +76,8 @@ Small, optional services run on the developer's homelab: a UGREEN DH4300 Plus NA
 
 | Service | What it does | State |
 |---|---|---|
-| **Realtime relay** (`apps/relay`, `ouril-relay`, at `ouril-live.moreiralabs.org`) | Tells players over WebSocket when their game changed or a seek was matched. The server publishes to it; players subscribe with a token the server signs. Stores nothing ([ADR 0033](../decisions/0033-live-games-http-moves-and-relay.md), [relay API](../../apps/relay/API.md)) | ✅ Built |
-| **Scheduled jobs** (`apps/jobs`, `ouril-jobs`) | Every hour, calls the server's job endpoints (`POST /v1/internal/jobs/<name>` with `JOBS_TOKEN`): `leaderboard-snapshot` (rank movement and best ranks) and `prune`. No inbound route ([backend](backend.md#scheduled-jobs)) | ✅ Built |
+| **Realtime relay** (`apps/relay`, `ouril-relay`, at `ouril-live.moreiralabs.org`) | Tells players over WebSocket when their game changed or a seek was matched. The server publishes to it; players subscribe with a token the server signs. Stores nothing ([ADR 0033](../decisions/0033-live-games-http-moves-and-relay.md), [relay API](../../apps/relay/API.md)) | ✅ Running (0.2.0) |
+| **Scheduled jobs** (`apps/jobs`, `ouril-jobs`) | Every hour, calls the server's job endpoints (`POST /v1/internal/jobs/<name>` with `JOBS_TOKEN`): `leaderboard-snapshot` (rank movement and best ranks) and `prune`. No inbound route ([backend](backend.md#scheduled-jobs)) | ✅ Running (0.2.0) |
 
 ```mermaid
 flowchart LR
