@@ -1215,29 +1215,29 @@
     "message": "Add upcoming features in src/content/comingSoon.ts.",
     "description": "Development only: placeholder card text in Coming soon"
   },
-  "home.soon.accounts.title": {
-    "message": "Your own account",
-    "description": "Coming soon: account creation"
+  "home.soon.apps.title": {
+    "message": "Ouril on Android and iPhone",
+    "description": "Coming soon card title: the native phone apps (roadmap phase 5)"
   },
-  "home.soon.accounts.body": {
-    "message": "Create an account to keep your games and stats on every device.",
-    "description": "Coming soon: account creation"
+  "home.soon.apps.body": {
+    "message": "Native apps for your phone, with the same rules, your account and your games.",
+    "description": "Coming soon card body: the native phone apps"
   },
-  "home.soon.leaderboards.title": {
-    "message": "Leaderboards",
-    "description": "Coming soon: leaderboards"
+  "home.soon.pass_play.title": {
+    "message": "Two players, one phone",
+    "description": "Coming soon card title: pass-and-play on one device (roadmap phase 3)"
   },
-  "home.soon.leaderboards.body": {
-    "message": "See how you rank against players around the world and in your own country.",
-    "description": "Coming soon: leaderboards"
+  "home.soon.pass_play.body": {
+    "message": "Pass the phone across the table and play a friend face to face.",
+    "description": "Coming soon card body: pass-and-play on one device"
   },
-  "home.soon.online.title": {
-    "message": "Play with your friends",
-    "description": "Coming soon: online games"
+  "home.soon.languages.title": {
+    "message": "Portuguese and Kriolu",
+    "description": "Coming soon card title: the app in Portuguese and Cape Verdean Kriolu (roadmap, ongoing)"
   },
-  "home.soon.online.body": {
-    "message": "Challenge friends to online games, live or one move at a time.",
-    "description": "Coming soon: online games (real-time and turn-based)"
+  "home.soon.languages.body": {
+    "message": "Ouril in Portuguese and Cape Verdean Kriolu, each checked by native speakers before it ships.",
+    "description": "Coming soon card body: the translations"
   },
   "about.social.facebook": {
     "message": "Facebook",

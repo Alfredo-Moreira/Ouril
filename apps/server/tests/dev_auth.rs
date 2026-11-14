@@ -52,7 +52,7 @@ mod enabled {
         let r: SignInResponse = serde_json::from_value(res.json()).expect("SignInResponse");
         assert!(r.is_new_user);
         assert_eq!(r.user.display_name, "Alice");
-        assert_eq!(r.user.handle, None);
+        assert_generated_handle(r.user.handle.as_deref(), "alice");
         assert!(r.user.created_at.ends_with('Z'), "{}", r.user.created_at);
         assert_eq!(r.tokens.token_type, "Bearer");
         assert_eq!(r.tokens.expires_in, 900);

@@ -71,6 +71,9 @@
   /* The panu strip: stitched seams, white lozenges and a star-yellow centre, on indigo. */
   --panu-strip: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='24' viewBox='0 0 48 24'%3E%3Cpath d='M0 1.5h48M0 22.5h48' stroke='%23f5f1e8' stroke-opacity='.5' stroke-dasharray='3 3'/%3E%3Cpath d='M12 5.5 18.5 12 12 18.5 5.5 12zM36 5.5 42.5 12 36 18.5 29.5 12z' fill='none' stroke='%23f5f1e8' stroke-opacity='.9' stroke-width='1.6'/%3E%3Cpath d='M24 9.6 26.4 12 24 14.4 21.6 12z' fill='%23f7d116'/%3E%3C/svg%3E");
 
+  /* The select chevron, in --muted. */
+  --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cpath d='M3 5.5 7 9.5l4-4' fill='none' stroke='%235f6678' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+
   --radius-s: 10px;
   --radius: 16px;
   --radius-l: 22px;
@@ -135,6 +138,8 @@
     --on-you: #fffdf8;
     --them-fill: #ff6b6b;
     --on-them: #0b1024;
+
+    --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cpath d='M3 5.5 7 9.5l4-4' fill='none' stroke='%239097b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 
     --shadow-1: 0 1px 2px rgb(0 0 0 / 0.4);
     --shadow-2: 0 1px 2px rgb(0 0 0 / 0.35), 0 14px 34px -16px rgb(0 0 0 / 0.7);
@@ -925,7 +930,7 @@ fieldset.card legend + * {
   font-weight: 650;
 }
 
-.field select,
+select,
 .profile input,
 input[type='text'],
 input[type='search'],
@@ -934,13 +939,34 @@ input:not([type]) {
   font: inherit;
   font-weight: 500;
   color: var(--ink);
-  background: var(--surface);
+  background-color: var(--surface);
   border: 1.5px solid var(--line-strong);
   border-radius: 12px;
   padding: 0.5rem 0.8rem;
 }
 
-.field select:focus-visible,
+/* Selects (the country, the language, leaderboard pools): the same field, with our own chevron
+   instead of the browser's. Still native, so phones open their own picker. */
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  max-width: 100%;
+  padding-right: 2.6rem;
+  background-image: var(--chevron);
+  background-repeat: no-repeat;
+  background-position: right 0.9rem center;
+  background-size: 14px 14px;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  select:hover {
+    border-color: color-mix(in srgb, var(--ink) 35%, transparent);
+  }
+}
+
+select:focus-visible,
 .profile input:focus-visible,
 input[type='text']:focus-visible,
 input[type='search']:focus-visible,
