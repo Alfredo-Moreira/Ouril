@@ -17,7 +17,8 @@ async fn get_me_returns_the_profile(db: PgPool) {
     let me: Me = serde_json::from_value(res.json()).unwrap();
     assert_eq!(me.id, s.user_id.to_string());
     assert_eq!(me.display_name, "Player getme");
-    assert_eq!(me.handle, None);
+    // Every new account starts with a handle made from its name.
+    assert_generated_handle(me.handle.as_deref(), "player");
     assert!(time::OffsetDateTime::parse(
         &me.created_at,
         &time::format_description::well_known::Rfc3339
@@ -116,7 +117,7 @@ async fn patch_me_rejects_invalid_fields(db: PgPool) {
         serde_json::from_value(app.call(Req::get("/v1/me").bearer(&s.access)).await.json())
             .unwrap();
     assert_eq!(me.display_name, "Player invalid");
-    assert_eq!(me.handle, None);
+    assert_generated_handle(me.handle.as_deref(), "player");
 }
 
 #[sqlx::test]
@@ -371,4 +372,47 @@ async fn apple_tokens_are_read_for_revocation_and_removed_with_the_account(db: P
         .await
         .unwrap()
         .is_empty());
+}
+
+#[sqlx::test]
+async fn new_accounts_get_a_handle_from_their_name(db: PgPool) {
+    let identity = |subject: &str, name: &str| Identity {
+        provider: "dev",
+        subject: subject.to_string(),
+        email: None,
+        email_is_private_relay: false,
+        display_name: Some(name.to_string()),
+    };
+    let handle_of = |id: uuid::Uuid| {
+        let db = db.clone();
+        async move {
+            sqlx::query_scalar::<_, Option<String>>("SELECT handle FROM users WHERE id = $1")
+                .bind(id)
+                .fetch_one(&db)
+                .await
+                .unwrap()
+        }
+    };
+
+    // The first word of the name, accents folded, then six digits.
+    let (id, new) = session::find_or_create_user(&db, &identity("cesaria", "Cesária Évora"))
+        .await
+        .unwrap();
+    assert!(new);
+    let handle = handle_of(id).await;
+    assert_generated_handle(handle.as_deref(), "cesaria");
+
+    // Signing in again keeps it: handles are made once, when the account is created.
+    let (again, new) = session::find_or_create_user(&db, &identity("cesaria", "Other Name"))
+        .await
+        .unwrap();
+    assert!(!new);
+    assert_eq!(again, id);
+    assert_eq!(handle_of(id).await, handle);
+
+    // A name with nothing to keep in [a-z0-9] starts from "player".
+    let (li, _) = session::find_or_create_user(&db, &identity("li", "李小龙"))
+        .await
+        .unwrap();
+    assert_generated_handle(handle_of(li).await.as_deref(), "player");
 }

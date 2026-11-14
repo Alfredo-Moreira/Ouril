@@ -19,11 +19,8 @@ use axum::{
 };
 use http_body_util::BodyExt;
 use ouril_engine::{apply_move, legal_moves, new_game, variant_version, MoveEvent, Player, Status};
-use ouril_server::{
-    auth::session::{self, Identity},
-    config::Config,
-    AppState,
-};
+pub use ouril_server::auth::session::{self, Identity};
+use ouril_server::{config::Config, AppState};
 use ouril_sync::{GameMode, GameRecord, GameRecordResult, VariantRef, GAME_RECORD_FORMAT_RULES};
 use serde_json::{json, Value};
 use sqlx::PgPool;
@@ -273,6 +270,18 @@ impl TestResponse {
 
 /// A complete, legal cv.standard@1 game played with the engine (always the first legal move),
 /// with its result taken from the engine itself. Game rules come only from the engine.
+/// A handle generated at sign-up: `base` (the first word of the name, folded) and six digits.
+pub fn assert_generated_handle(handle: Option<&str>, base: &str) {
+    let handle = handle.unwrap_or_else(|| panic!("no handle; expected {base} and six digits"));
+    let digits = handle
+        .strip_prefix(base)
+        .unwrap_or_else(|| panic!("{handle} doesn't start with {base}"));
+    assert!(
+        digits.len() == 6 && digits.bytes().all(|b| b.is_ascii_digit()),
+        "{handle}: expected six digits after {base}"
+    );
+}
+
 pub fn played_record() -> GameRecord {
     let v = variant_version("cv.standard", 1).expect("cv.standard@1");
     let mut s = new_game(v, Player::South);

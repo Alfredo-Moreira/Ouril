@@ -1,11 +1,13 @@
 /**
- * The home page's "Coming soon" section. One id per upcoming feature, in display order; each
- * needs `home.soon.<id>.title` and `home.soon.<id>.body` in `shared/i18n/en.json`. While the
- * list is empty the section is hidden in production (development shows placeholders).
+ * The home page's "Coming soon" section: what's next on the roadmap (docs/product/roadmap.md),
+ * one id per upcoming feature, in display order. Each needs `home.soon.<id>.title` and
+ * `home.soon.<id>.body` in `shared/i18n/en.json`. Take an item off this list in the same change
+ * that ships it. While the list is empty the section is hidden in production (development shows
+ * placeholders).
  */
-export const COMING_SOON: readonly string[] = ['accounts', 'leaderboards', 'online'];
+export const COMING_SOON: readonly string[] = ['apps', 'pass_play', 'languages'];
 
-/** What's still coming in this build: a feature that is switched on (`features.ts`) is not. */
-export function comingSoon(features: { accounts: boolean }): readonly string[] {
-  return COMING_SOON.filter((id) => !(id === 'accounts' && features.accounts));
+/** What's still coming in this build. */
+export function comingSoon(): readonly string[] {
+  return COMING_SOON;
 }
