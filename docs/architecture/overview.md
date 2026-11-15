@@ -55,7 +55,7 @@ flowchart TB
   SYNC --> PG
 ```
 
-- **Built so far:** the Rust core, `apps/server`, the web app and the homelab services (the relay and the jobs), all in production. iOS and Android haven't started, and Apple sign-in is a placeholder ([roadmap](../product/roadmap.md)).
+- **Built so far:** the Rust core, `apps/server`, the web app and the homelab services (the relay and the jobs), all in production, and the Android app for guest play (`apps/android`, [ADR 0035](../decisions/0035-android-before-ios.md), Proposed). iOS hasn't started, and Apple sign-in is a placeholder ([roadmap](../product/roadmap.md)).
 - **Gameplay is entirely on-device and works offline.** The rules engine and AI run inside the app.
 - **Guests never use the network** (except opt-in telemetry, [ADR 0014](../decisions/0014-telemetry-consent.md)). Signed-in players work offline too. Changes queue locally and sync when the network is available ([data and sync](data-and-sync.md)).
 
@@ -103,7 +103,7 @@ flowchart TB
 | Offline | Single-player is fully on-device. Online features degrade gracefully. |
 | Responsive online play | Clients apply moves optimistically. The server and client run identical logic, so they agree. |
 | Variants | Data-driven config, so no per-variant forks |
-| Development | Local-first and Docker-first: `compose.yaml` runs Postgres, the server, the web dev server and the toolchains; only Xcode, the iOS Simulator and the Android Emulator run on the host; dev sign-in ([ADR 0017](../decisions/0017-local-first-development.md)). Build order core → web → iOS → Android, launch together ([ADR 0018](../decisions/0018-platform-build-order.md)). |
+| Development | Local-first and Docker-first: `compose.yaml` runs Postgres, the server, the web dev server and the toolchains; only Xcode, the iOS Simulator and the Android Emulator run on the host; dev sign-in ([ADR 0017](../decisions/0017-local-first-development.md)). Build order core → web → Android → iOS, each native app launching when it reaches parity with the web ([ADR 0025](../decisions/0025-web-first-static-mvp.md), [ADR 0035](../decisions/0035-android-before-ios.md), Proposed). |
 | Identity | Our own user IDs. Providers (Google, Apple; later X and Meta) are linked identities. |
 | Hosting | Web app and server in one **Vercel** project, the server as a container service in Frankfurt ([ADR 0030](../decisions/0030-server-on-vercel-container-service.md)), Postgres on **Neon**'s free plan ([ADR 0027](../decisions/0027-postgres-on-neon-free-plan.md)), production only; local Docker is the staging environment ([ADR 0028](../decisions/0028-production-only-local-staging.md)). Small, optional services (the live-game relay, scheduled jobs) on the developer's **homelab** ([ADR 0032](../decisions/0032-small-services-on-the-homelab.md), Proposed). |
 | Data | Postgres online (source of truth), SQLite / IndexedDB on device. Offline-first outbox + cursor sync ([ADR 0010](../decisions/0010-postgres-and-local-sqlite.md), [ADR 0011](../decisions/0011-offline-first-sync.md)). |

@@ -707,6 +707,10 @@
     "message": "You play the bottom row. Tap your pit 3 (4 seeds) to sow its seeds one by one, counter-clockwise.",
     "description": "Tutorial step instruction before the move"
   },
+  "tutorial.sowing.intro_upright": {
+    "message": "You play the left column. Tap your pit 3 (4 seeds) to sow its seeds one by one, counter-clockwise.",
+    "description": "The same instruction for a board standing upright on a phone, where the player's pits are the left column (Android)"
+  },
   "tutorial.sowing.done": {
     "message": "Each seed went into the next pit. The last one landed in the opponent’s pit 1, which now has 5, so nothing was captured.",
     "description": "Tutorial step explanation after the move"

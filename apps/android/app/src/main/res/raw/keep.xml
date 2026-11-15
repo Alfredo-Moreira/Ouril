@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Strings are also looked up by their shared key at run time (tutorial steps, rules): keep them
+     all when release builds shrink resources. -->
+<resources xmlns:tools="http://schemas.android.com/tools" tools:keep="@string/*" />

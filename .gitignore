@@ -52,6 +52,7 @@ build/
 .gradle/
 local.properties
 /apps/android/**/build/
+/apps/android/.kotlin/
 *.apk
 *.aab
 captures/

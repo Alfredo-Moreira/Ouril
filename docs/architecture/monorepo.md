@@ -12,12 +12,12 @@ ouril/
 │   ├── ai/                 # ouril-ai: computer opponent                                     ✅ built
 │   ├── protocol/           # ouril-protocol: API types (auth, me, sync); realtime later       ✅ built
 │   ├── sync/               # ouril-sync: GameRecord, mutation payloads, derive_stats           ✅ built
-│   ├── ffi/                # UniFFI bindings → Swift + Kotlin                                 (not started)
+│   ├── ffi/                # ouril-ffi: UniFFI bindings → Kotlin (Swift later); API.md       ✅ built
 │   ├── wasm/               # wasm-bindgen bindings → core/wasm/pkg (gitignored); API.md       ✅ built
 │   └── test-vectors/       # language-neutral JSON rule tests + schema/test-vector.schema.json
 ├── apps/
 │   ├── ios/                # SwiftUI app (Xcode); uses the core as an XCFramework via SPM     (not started)
-│   ├── android/            # Kotlin + Jetpack Compose (Gradle); core .so + Kotlin bindings     (not started)
+│   ├── android/            # Kotlin + Jetpack Compose (Gradle); core .so + Kotlin bindings     ✅ built (guest play)
 │   ├── web/                # TypeScript + React (Vite, PWA); uses core/wasm/pkg                ✅ built
 │   ├── relay/              # Rust (Axum): live-game WebSocket relay on the homelab (ADR 0032); API.md ✅ built
 │   ├── jobs/               # Rust: scheduled jobs on the homelab, calls /v1/internal/jobs/* hourly (ADR 0032) ✅ built
@@ -33,6 +33,7 @@ ouril/
 ├── docs/                   # this documentation
 ├── .github/workflows/ci.yml # CI: docs + vectors, Rust (fmt, clippy, tests, audit), WASM + web, release image
 ├── docker/                 # toolbox.Dockerfile (Rust, wasm-pack, binaryen/wasm-opt, sqlx, cargo-watch, just, Node + pnpm),
+│                           #   android.Dockerfile (JDK, Android SDK + NDK, Rust Android targets, cargo-ndk, just),
 │                           #   server.dev.Dockerfile, web.dev.Dockerfile, compose.lan.yaml (ADR 0017)
 ├── .devcontainer/          # Dev Container using the toolbox image
 ├── deploy/
@@ -54,12 +55,12 @@ ouril/
 | Rust | Cargo workspace, `clippy`, `rustfmt`, `cargo test`, `proptest` for property tests, `jsonschema` (test vectors), `ts-rs` (TypeScript types, `ts` feature) |
 | Bindings | **UniFFI** (Swift and Kotlin), `cargo-ndk` (Android ABIs), XCFramework packaging for iOS, **wasm-bindgen**/`wasm-pack` (web) |
 | iOS | Xcode, Swift Package Manager, SwiftUI, GRDB (SQLite), XCTest |
-| Android | Gradle, Kotlin, Jetpack Compose, Room (SQLite), WorkManager, JUnit |
+| Android | Gradle, Kotlin, Jetpack Compose, Room (SQLite), JUnit, Robolectric and Roborazzi (screen tests and screenshots); WorkManager with sync |
 | Web | pnpm, Vite, React, React Router, TypeScript (strict), Dexie (IndexedDB), i18next + ICU, vite-plugin-pwa, Vitest + Testing Library, ESLint, Prettier |
 | Server | Axum, Tokio, tower-http, sqlx (Postgres, `sqlx migrate`), jsonwebtoken, reqwest (provider key sets), tracing. Redis client later |
 | Local environment | **Docker Compose** (`compose.yaml`): `db`, `server`, `web`, `toolbox`. Only Xcode, the iOS Simulator and the Android Emulator run on the host ([ADR 0017](../decisions/0017-local-first-development.md)) |
 | Tasks | `just`: wraps `docker compose` and runs the same recipes locally and in CI. Inside the toolbox (`OURIL_IN_TOOLBOX=1`) the recipes run commands directly. Commands: [CLAUDE.md](../../CLAUDE.md#commands) and [CONTRIBUTING.md](../../CONTRIBUTING.md#local-setup-docker-first) |
-| CI | GitHub Actions, using the same `toolbox` image as local development: Rust tests and lints on Linux; iOS build on macOS runners; Android and web builds; test vectors on every platform |
+| CI | GitHub Actions, using the same images as local development (`toolbox`, `android`): Rust tests and lints on Linux; Android (bindings, unit tests, debug build) and web builds; iOS build on macOS runners later; test vectors on every platform |
 | Releases | fastlane (or Xcode Cloud) for App Store; Gradle Play Publisher for Google Play; Vercel for the web app and the server; `deploy/homelab/build-and-push.sh` plus the UGOS Docker UI for homelab services ([deployment](deployment.md#the-homelab)) |
 
 ## Dependency rules

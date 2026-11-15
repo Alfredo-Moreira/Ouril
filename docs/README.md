@@ -56,12 +56,14 @@ To research a new country or variant, run the `variant-research` skill (`/varian
 | [Backend](architecture/backend.md) | Rust server: accounts and sync (after the MVP), real-time and async multiplayer |
 | [Deployment](architecture/deployment.md) | The MVP as a static site on Vercel; what the server adds later |
 | [Web design](architecture/web-design.md) | Web design system, motion rules and the 3D board |
+| [Android app](../apps/android/README.md) | The Android app: what it does, building and testing, how it's put together |
 
 ### Contracts (next to the code)
 | Document | Purpose |
 |---|---|
 | [Server HTTP API](../apps/server/API.md) | `/v1` endpoints, auth and cookies, errors, sync push/pull: the contract for every client |
 | [Core WASM API](../core/wasm/API.md) | The Rust core as the web app sees it: functions, types, errors, game records and stats |
+| [Core native API](../core/ffi/API.md) | The Rust core for the native apps (UniFFI; Kotlin now, Swift later): functions, errors, building |
 
 ### Tooling
 | Document | Purpose |

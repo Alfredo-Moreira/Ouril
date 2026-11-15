@@ -2,7 +2,7 @@
 
 > The web app's visual design system ("Panu"), its motion rules and the 3D board. **Status:** Draft
 
-The source of truth is the code: tokens and components in `apps/web/src/styles.css`, the 3D board in `apps/web/src/board3d/`. This page explains the intent so changes stay consistent. The board technology is decided in [ADR 0021](../decisions/0021-3d-web-board.md).
+The source of truth is the code: tokens and components in `apps/web/src/styles.css`, the 3D board in `apps/web/src/board3d/`. The Android app carries the same tokens and components in Compose (`ui/theme/Theme.kt` and `ui/components/Panu.kt` in [apps/android](../../apps/android/README.md)). This page explains the intent so changes stay consistent. The board technology is decided in [ADR 0021](../decisions/0021-3d-web-board.md).
 
 ## Look and feel
 
@@ -188,11 +188,11 @@ The 3D board is a separate chunk, so it isn't there on the first paint. `BoardVi
 
 - Streaming music (for example Spotify) instead of, or alongside, the bundled game tracks.
 
-- A native look that matches the web 3D board on iOS and Android (SceneKit/RealityKit, Filament), or a simpler board there ([ADR 0008](../decisions/0008-native-apps-per-platform.md)).
+- The native boards: Android draws a 2D board on the same cloth (a Compose Canvas). Does it need the 3D board (Filament), and what does iOS use (SceneKit/RealityKit, or 2D)? ([ADR 0008](../decisions/0008-native-apps-per-platform.md))
 - Sound design for sowing and captures (off by default, respecting a mute setting).
 - A tap to fast-forward the rest of a long move (laps of 12+ seeds take about 5 s in 3D).
 - Alternative board skins (lighter wood, stone) and seed types (other seeds, pebbles).
-- An upright board on portrait phones: turning the camera a quarter turn makes the pits 1.3 to 1.6 times bigger but the far store smaller, and the hand would cross your own row. It needs a flagged prototype, measured pit sizes on four screens and ouril players trying both orientations.
+- An upright board on portrait phones: turning the camera a quarter turn makes the pits 1.3 to 1.6 times bigger but the far store smaller, and the hand would cross your own row. It needs a flagged prototype, measured pit sizes on four screens and ouril players trying both orientations. The Android app's 2D board already stands upright on portrait phones (your row is the left column), so players' reactions there can inform this.
 - A side rail instead of the top bar, once the signed-in links outgrow it.
 - The cloth's cost on a real low-end Android phone (frame times during a 12-seed lap, with and without it); today's guard is the 20 ms frame budget.
 - Reactions to the seed-ring mark and the cloth from Cape Verdeans on several islands and in the diaspora, before the mark is final; and a blur test (Home and the win dialog, blurred) to check the identity holds without the pattern.

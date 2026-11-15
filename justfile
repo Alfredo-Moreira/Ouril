@@ -5,9 +5,13 @@
 set shell := ["bash", "-euo", "pipefail", "-c"]
 
 in_toolbox := env_var_or_default("OURIL_IN_TOOLBOX", "")
+in_android := env_var_or_default("OURIL_IN_ANDROID", "")
 dc := "docker compose"
 tb := if in_toolbox == "1" { "" } else { "docker compose run --rm toolbox" }
 web := if in_toolbox == "1" { "" } else { "docker compose run --rm web" }
+# The Android image (amd64: the NDK and SDK build tools are x86_64). Inside it, recipes run directly.
+android := if in_android == "1" { "" } else { "docker compose --profile android run --rm android" }
+android_abis := env_var_or_default("OURIL_ANDROID_ABIS", "arm64-v8a armeabi-v7a x86_64")
 # Inside the toolbox the db must already be running (compose network host `db`).
 db_up := if in_toolbox == "1" { "true" } else { "docker compose up -d --wait db" }
 migrations := "apps/server/migrations"
@@ -61,13 +65,39 @@ build-homelab-images:
 test-web: bindings
     {{web}} sh -c "pnpm install --frozen-lockfile && pnpm --filter web test"
 
-# Generate all bindings (MVP: WASM only; iOS/Android come later, ADR 0018)
+# Generate the bindings the web app needs (WASM). Android: `just bindings-android`.
 bindings: bindings-wasm
 
 # Build core/wasm/pkg (gitignored build output, ADR 0015)
 bindings-wasm:
     {{tb}} wasm-pack build core/wasm --target web --out-dir pkg --out-name ouril_wasm --release
     {{tb}} wasm-opt -Oz --strip-debug core/wasm/pkg/ouril_wasm_bg.wasm -o core/wasm/pkg/ouril_wasm_bg.wasm
+
+# Build the core for Android (core/ffi/generated/jniLibs: one .so per ABI; the host library in
+# core/ffi/generated/host for the JVM unit tests) and its Kotlin bindings (core/ffi/generated/
+# kotlin). Build output, gitignored (ADR 0015). Limit the ABIs with OURIL_ANDROID_ABIS.
+bindings-android:
+    {{android}} sh -c 'set -e; \
+      rm -rf core/ffi/generated; \
+      cargo ndk $(for a in {{android_abis}}; do printf -- "-t %s " "$a"; done) -o core/ffi/generated/jniLibs build -p ouril-ffi --release; \
+      cargo build -p ouril-ffi --release; \
+      mkdir -p core/ffi/generated/host && cp "$CARGO_TARGET_DIR/release/libouril_ffi.so" core/ffi/generated/host/; \
+      cargo run -q -p ouril-ffi --features cli --bin uniffi-bindgen -- generate \
+        --library "$CARGO_TARGET_DIR/release/libouril_ffi.so" --language kotlin \
+        --out-dir core/ffi/generated/kotlin --no-format'
+
+# Build the Android app (debug APK in apps/android/app/build/outputs/apk/debug)
+android-build:
+    {{android}} sh -c "cd apps/android && ./gradlew --no-daemon --no-watch-fs assembleDebug"
+
+# Android unit tests on the JVM: every rule test vector through the Kotlin bindings, the game logic, the
+# strings, the database and a tour of the screens (Robolectric)
+android-test:
+    {{android}} sh -c "cd apps/android && ./gradlew --no-daemon --no-watch-fs testDebugUnitTest"
+
+# Android screenshots of every screen, light, dark and landscape (Roborazzi), in apps/android/app/build/outputs/roborazzi
+android-screenshots:
+    {{android}} sh -c "cd apps/android && ./gradlew --no-daemon --no-watch-fs recordRoborazziDebug"
 
 # Export TypeScript types for API/core types to apps/web/src/generated/protocol (gitignored)
 protocol-ts:
