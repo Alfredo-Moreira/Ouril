@@ -33,7 +33,7 @@ See [mvp.md](mvp.md) and [ADR 0025](../decisions/0025-web-first-static-mvp.md): 
 - ✅ The "Panu" redesign: indigo and cotton from panu di terra, star yellow, Bricolage Grotesque and Figtree, the seed-ring mark, and the board on a cloth ([web design](../architecture/web-design.md)).
 - Sign-in, sync, Stats and replays, and the server (`apps/server`, [API](../../apps/server/API.md)) were built for the MVP and switched on in phase 2.
 
-Phases 2 to 7 ship in this order (agreed after the MVP; accounts and sync moved ahead of reach and replay on 2026-10-11). The three "coming soon" items on the home page are phases 2, 4 and 7.
+Phases 2 to 7 ship in this order (agreed after the MVP; accounts and sync moved ahead of reach and replay on 2026-10-11). The home page's "coming soon" items are the phone apps (phase 5), pass-and-play (phase 3) and Portuguese and Kriolu (ongoing); each leaves the list in the change that ships it (`apps/web/src/content/comingSoon.ts`).
 
 ## Phase 2: Accounts and sync *(in progress)*
 Switch on what's already built ([accounts](features/accounts.md), [backend](../architecture/backend.md)): host the server and database ([ADR 0030](../decisions/0030-server-on-vercel-container-service.md), [ADR 0027](../decisions/0027-postgres-on-neon-free-plan.md)), set up Google and Apple client IDs, and publish a privacy policy. Moved ahead of "Reach and replay" so the server is live and proven before online play.

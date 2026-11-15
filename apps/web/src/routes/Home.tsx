@@ -46,7 +46,7 @@ export type { NewGameRequest } from '../components/NewGameForm';
  */
 export function Home() {
   const { t } = useTranslation();
-  const soon = comingSoon(FEATURES);
+  const soon = comingSoon();
   const { auth, user, dataVersion, notifyLocalChange } = useApp();
   const statsVisible = useStatsVisible();
   const [current, setCurrent] = useState<CurrentGame | null | undefined>(undefined);

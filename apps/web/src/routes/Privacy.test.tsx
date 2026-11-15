@@ -79,12 +79,14 @@ describe('privacy policy and account deletion pages', () => {
     );
   });
 
-  it('"Coming soon" drops accounts once they are switched on', async () => {
-    expect(comingSoon({ accounts: false })).toEqual(COMING_SOON);
-    expect(comingSoon({ accounts: true })).not.toContain('accounts');
-    // Tests run with accounts on.
+  it('"Coming soon" lists only what has not shipped', async () => {
+    expect(comingSoon()).toEqual(COMING_SOON);
     renderApp({ route: '/' });
     expect(await screen.findByRole('heading', { name: 'Coming soon' })).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: 'Your own account' })).toBeNull();
+    expect(screen.getByRole('heading', { name: 'Ouril on Android and iPhone' })).toBeVisible();
+    // Accounts, online play and leaderboards are live: none of them is "coming soon".
+    for (const shipped of ['Your own account', 'Play with your friends', 'Leaderboards']) {
+      expect(screen.queryByRole('heading', { name: shipped })).toBeNull();
+    }
   });
 });
