@@ -89,7 +89,7 @@ To try it locally, set `GOOGLE_CLIENT_ID` and `VITE_GOOGLE_CLIENT_ID` to the cli
 ## Profile
 
 - **Display name:** pre-filled from the provider, editable.
-- **Handle** (unique, for example `@mindelo_master`): chosen at sign-up, needed later for friend invites and challenges.
+- **Handle** (unique, for example `@mindelo_master`): generated when the account is created, from the first word of the display name and six random digits (`Alfredo` → `@alfredo934728`; [API](../../../apps/server/API.md)), and changeable in Settings → Profile. Used for friend invites, challenges, the leaderboards and profiles.
 - **Avatar:** from the provider or a default, changeable later.
 - **Locale and country:** suggested from the device. Country is optional and will be used later for leaderboards.
 

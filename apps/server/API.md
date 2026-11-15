@@ -127,7 +127,7 @@ Response (`SignInResponse`):
 {
   "tokens": { "access_token": "<jwt>", "token_type": "Bearer", "expires_in": 900 },
   "user": {
-    "id": "0192f1c2-…", "display_name": "Dev Player", "handle": null,
+    "id": "0192f1c2-…", "display_name": "Dev Player", "handle": "dev482917",
     "avatar_url": null, "locale": "en", "country": null, "created_at": "2026-10-04T10:00:00Z"
   },
   "is_new_user": true
@@ -135,6 +135,8 @@ Response (`SignInResponse`):
 ```
 
 Native clients also get `"refresh_token": "<opaque>"` inside `tokens`. Web clients get `Set-Cookie: ouril_refresh=…` instead.
+
+**A new account starts with a handle** made from its display name: the first word, lowercased, with Latin accents folded and anything outside `[a-z0-9]` dropped (at most 14 characters, `player` when nothing is left), then six random digits: `Alfredo Moreira` → `alfredo934728`, `Cesária Évora` → `cesaria207415`. A taken handle is skipped and another is drawn. It is made once, when the account is created, and the player can change it with `PATCH /v1/me` (`apps/server/src/handles.rs`).
 
 ### `POST /v1/auth/refresh` and `POST /v1/auth/logout`
 

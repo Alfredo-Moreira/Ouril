@@ -5,6 +5,10 @@ use time::OffsetDateTime;
 use uuid::Uuid;
 
 use super::tokens::{hash_refresh_token, new_refresh_token};
+use crate::handles;
+
+/// Handles drawn for a new account before it starts without one.
+const HANDLE_ATTEMPTS: usize = 8;
 
 /// A verified identity from a provider (`dev`, `google`, `apple`).
 #[derive(Debug, Clone)]
@@ -32,11 +36,33 @@ pub async fn find_or_create_user(db: &PgPool, id: &Identity) -> Result<(Uuid, bo
         .display_name
         .clone()
         .unwrap_or_else(|| DEFAULT_DISPLAY_NAME.to_string());
-    sqlx::query("INSERT INTO users (id, display_name) VALUES ($1, $2)")
+    // Every new account starts with a handle made from its name (`handles::generate`). A taken
+    // one is skipped (`ON CONFLICT`) and another is drawn; after a few misses, which 900,000
+    // handles per name make unlikely, the account starts without one and can pick it later.
+    let mut created = false;
+    for _ in 0..HANDLE_ATTEMPTS {
+        created = sqlx::query(
+            "INSERT INTO users (id, display_name, handle) VALUES ($1, $2, $3)
+             ON CONFLICT (lower(handle)) WHERE handle IS NOT NULL DO NOTHING
+             RETURNING id",
+        )
         .bind(user_id)
         .bind(&name)
-        .execute(&mut *tx)
-        .await?;
+        .bind(handles::generate(&name))
+        .fetch_optional(&mut *tx)
+        .await?
+        .is_some();
+        if created {
+            break;
+        }
+    }
+    if !created {
+        sqlx::query("INSERT INTO users (id, display_name) VALUES ($1, $2)")
+            .bind(user_id)
+            .bind(&name)
+            .execute(&mut *tx)
+            .await?;
+    }
     let linked = sqlx::query(
         "INSERT INTO auth_identities (id, user_id, provider, provider_subject, email, email_is_private_relay)
          VALUES ($1, $2, $3, $4, $5, $6)
