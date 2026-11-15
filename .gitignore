@@ -66,10 +66,14 @@ docker-data/
 npm-debug.log*
 pnpm-debug.log*
 
+# --- Python (the skills' check scripts) ----------------------------------------
+__pycache__/
+
 # --- Claude Code: third-party skills -----------------------------------------
 # Third-party Claude Code skills (installed with `npx skills`, no licence files).
 # Not committed: restore them from skills-lock.json with `npx skills experimental_install`.
 # Keep this list in sync with skills-lock.json.
+/.claude/skills/animation-performance/
 /.claude/skills/architecture-patterns/
 /.claude/skills/compose-animations/
 /.claude/skills/compose-component-design/
@@ -78,6 +82,8 @@ pnpm-debug.log*
 /.claude/skills/compose-state-and-effects/
 /.claude/skills/compose-ui-testing-patterns/
 /.claude/skills/find-skills/
+/.claude/skills/frontend-design/
+/.claude/skills/improve-animations/
 /.claude/skills/improve-codebase-architecture/
 /.claude/skills/kotlin-concurrency-and-flow/
 /.claude/skills/kotlin-control-flow/
@@ -92,4 +98,5 @@ pnpm-debug.log*
 /.claude/skills/swift-concurrency/
 /.claude/skills/swiftui-expert-skill/
 /.claude/skills/swiftui-pro/
+/.claude/skills/web-design-guidelines/
 /.claude/skills/emilkowalski-motion/
