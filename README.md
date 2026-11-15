@@ -6,12 +6,12 @@ This monorepo holds every part of the project:
 
 - **Core** (Rust): the rules engine and AI, shared by every app and the server
 - **Web** (TypeScript + React): play in the browser, installable and offline
-- **iOS** (SwiftUI) and **Android** (Jetpack Compose): native mobile apps (not started)
+- **Android** (Jetpack Compose) and **iOS** (SwiftUI): native mobile apps. Android plays against the computer; iOS comes after it
 - **Server** (Rust): accounts and sync, games against other players (turn by turn and live), ratings and leaderboards
 
 ## Status
 
-🚀 **Ouril is live on the web** at `ouril.vercel.app`. Play against the computer with a 3D board, four Cape Verdean rule sets, a tutorial and game music: it works offline and needs no account. Sign in to sync your games and stats, play other people turn by turn or live, and climb the world and country leaderboards ([deployment](docs/architecture/deployment.md)). iOS and Android haven't started yet ([roadmap](docs/product/roadmap.md)).
+🚀 **Ouril is live on the web** at `ouril.vercel.app`. Play against the computer with a 3D board, four Cape Verdean rule sets, a tutorial and game music: it works offline and needs no account. Sign in to sync your games and stats, play other people turn by turn or live, and climb the world and country leaderboards ([deployment](docs/architecture/deployment.md)). The Android app is next: it plays against the computer, with the tutorial and the rules, and gets accounts and online play before its release. iOS follows ([roadmap](docs/product/roadmap.md)).
 
 To run it locally you need only Docker (and optionally [`just`](https://github.com/casey/just)):
 

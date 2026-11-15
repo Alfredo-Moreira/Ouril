@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Panu (docs/architecture/web-design.md): the launcher icon and the window before Compose draws. -->
+<resources>
+    <color name="indigo">#1F2D78</color>
+    <color name="night">#0B1024</color>
+    <color name="cotton">#F5F1E8</color>
+    <color name="star">#F7D116</color>
+</resources>

@@ -162,6 +162,31 @@ services:
     working_dir: /workspace
     command: bash
 
+  # Android builds (opt-in): `just bindings-android` and the `android-*` recipes (apps/android).
+  # linux/amd64 only (the NDK and the SDK build tools are x86_64), so it runs under emulation
+  # on an arm64 Mac. Its own Cargo target (amd64 artifacts can't share the toolbox's), Gradle
+  # cache and Cargo registry. Android Studio and the emulator stay on the host.
+  android:
+    profiles: ["android"]
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: docker/android.Dockerfile
+    image: ouril-android
+    environment:
+      CARGO_TARGET_DIR: /cargo-target
+      GRADLE_USER_HOME: /gradle-home
+      OURIL_IN_ANDROID: "1"
+    volumes:
+      - .:/workspace
+      - android-cargo-registry:/usr/local/cargo/registry
+      - android-cargo-target:/cargo-target
+      - android-gradle:/gradle-home
+      # Robolectric's Android jars, for the screen tests.
+      - android-m2:/root/.m2
+    working_dir: /workspace
+    command: bash
+
 volumes:
   pgdata:
   pgadmin-data:
@@ -172,3 +197,7 @@ volumes:
   cargo-target-relay:
   node-modules:
   web-node-modules:
+  android-cargo-registry:
+  android-cargo-target:
+  android-gradle:
+  android-m2:
