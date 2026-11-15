@@ -7,8 +7,8 @@
 - A **shared Rust core** holds the rules engine, the AI and the protocol types. It is compiled into every app and into the server ([ADR 0007](../decisions/0007-rust-core-with-generated-bindings.md)).
 - **Native apps:** SwiftUI on iOS, Jetpack Compose on Android, and a TypeScript web app ([ADR 0008](../decisions/0008-native-apps-per-platform.md)).
 - The rules engine is **variant-configurable** ([ADR 0004](../decisions/0004-variant-configurable-rules-engine.md)).
-- **The MVP is the web app alone, as a static site with no server** ([ADR 0025](../decisions/0025-web-first-static-mvp.md), [deployment](deployment.md)).
-- **Accounts** use optional Google and Apple sign-in, after the MVP ([ADR 0009](../decisions/0009-oauth-accounts-google-apple.md)); the code is built and switched off.
+- **The MVP shipped as the web app alone, a static site with no server** ([ADR 0025](../decisions/0025-web-first-static-mvp.md)); the server came next, deployed with the web app ([deployment](deployment.md)).
+- **Accounts** use optional Google and Apple sign-in ([ADR 0009](../decisions/0009-oauth-accounts-google-apple.md)); Google is live, Apple waits for its keys.
 - A **server-authoritative Rust backend** handles accounts and sync (after the MVP), then real-time and async multiplayer ([ADR 0005](../decisions/0005-server-authoritative-multiplayer.md)).
 
 ## The MVP: the web app in the browser
@@ -55,7 +55,7 @@ flowchart TB
   SYNC --> PG
 ```
 
-- **Built so far:** the Rust core, `apps/server` and the web app. Sign-in and sync are switched off for the MVP, iOS and Android haven't started, and Google/Apple sign-in are placeholders ([roadmap](../product/roadmap.md#phase-1-mvp-on-the-web-ready-to-launch)).
+- **Built so far:** the Rust core, `apps/server`, the web app and the homelab services (the relay and the jobs), all in production. iOS and Android haven't started, and Apple sign-in is a placeholder ([roadmap](../product/roadmap.md)).
 - **Gameplay is entirely on-device and works offline.** The rules engine and AI run inside the app.
 - **Guests never use the network** (except opt-in telemetry, [ADR 0014](../decisions/0014-telemetry-consent.md)). Signed-in players work offline too. Changes queue locally and sync when the network is available ([data and sync](data-and-sync.md)).
 

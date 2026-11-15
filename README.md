@@ -7,11 +7,11 @@ This monorepo holds every part of the project:
 - **Core** (Rust): the rules engine and AI, shared by every app and the server
 - **Web** (TypeScript + React): play in the browser, installable and offline
 - **iOS** (SwiftUI) and **Android** (Jetpack Compose): native mobile apps (not started)
-- **Server** (Rust): accounts and sync (built, not in the MVP), then real-time and async online play
+- **Server** (Rust): accounts and sync, games against other players (turn by turn and live), ratings and leaderboards
 
 ## Status
 
-🚀 **The MVP is ready: Ouril on the web.** Play against the computer in your browser, with a 3D board, four Cape Verdean rule sets, a tutorial and game music. It works offline and needs no account. It's a static site with no server ([ADR 0025](docs/decisions/0025-web-first-static-mvp.md), [deployment](docs/architecture/deployment.md)). The server, sign-in and sync are built and switched on in a later release; iOS and Android haven't started yet ([roadmap](docs/product/roadmap.md)).
+🚀 **Ouril is live on the web** at `ouril.vercel.app`. Play against the computer with a 3D board, four Cape Verdean rule sets, a tutorial and game music: it works offline and needs no account. Sign in to sync your games and stats, play other people turn by turn or live, and climb the world and country leaderboards ([deployment](docs/architecture/deployment.md)). iOS and Android haven't started yet ([roadmap](docs/product/roadmap.md)).
 
 To run it locally you need only Docker (and optionally [`just`](https://github.com/casey/just)):
 
