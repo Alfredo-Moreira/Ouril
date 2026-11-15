@@ -1,0 +1,31 @@
+[package]
+name = "ouril-ffi"
+description = "UniFFI bindings of the Ouril core (engine, AI, sync) for the native apps (Kotlin first)."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[lib]
+# cdylib: the .so the apps load; lib: so the bindgen binary and the tests can link it.
+crate-type = ["cdylib", "lib"]
+name = "ouril_ffi"
+
+# `just bindings-android` runs this to write the Kotlin bindings from the built library.
+[[bin]]
+name = "uniffi-bindgen"
+path = "uniffi-bindgen.rs"
+required-features = ["cli"]
+
+[features]
+cli = ["uniffi/cli"]
+
+[dependencies]
+ouril-engine = { path = "../engine" }
+ouril-ai = { path = "../ai" }
+ouril-sync = { path = "../sync" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+uniffi = "0.32"

@@ -95,7 +95,7 @@ The engine ends a game as an endless cycle when **a position repeats** (same pit
 | Platform | Access | Example |
 |---|---|---|
 | iOS | Generated Swift (UniFFI) | `let result = try applyMove(variant: v, state: s, move: 2)` |
-| Android | Generated Kotlin (UniFFI) | `val result = applyMove(v, s, 2u)` |
+| Android | Generated Kotlin (UniFFI, JSON values; [core/ffi/API.md](../../core/ffi/API.md)) behind the app's typed `Core` | `val result = Core.applyMove(variant, state, 2)` |
 | Web | WASM + generated TS types | `const result = applyMove(v, s, 2)` |
 | Server | Rust crate directly | `ouril_engine::apply_move(&v, &s, 2)?` |
 

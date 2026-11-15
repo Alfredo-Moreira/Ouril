@@ -100,6 +100,11 @@ Deriving stats from games is the key choice. Counters edited offline on two devi
 - **Tokens:** the access token is kept in memory only, and the refresh token in the httpOnly cookie. A `401` triggers one refresh and a retry. If the refresh fails, the app shows the session as expired and keeps working locally.
 - **Guests:** the sync engine is never created, and a test replaces `fetch`, `XMLHttpRequest`, `WebSocket`, `EventSource` and `sendBeacon` with spies to check that a full guest session makes no requests.
 
+### Android (`apps/android`)
+- **Local database:** SQLite through Room, schema version 1, with the web's three tables: `games`, `outbox` and `kv` (settings and the game in progress per owner, the guest ID, and this device's last new-game choices). Values are the core's JSON, as on the web. Room's schema history is in `apps/android/app/schemas`.
+- **Owners:** the guest ID (`guest:<uuidv7>`) is made on first launch, and every `games` and `outbox` row carries it. A finished game, its `game_finished` mutation and clearing the game in progress happen in one transaction. Settings changes queue `settings_updated`.
+- **Not yet:** sign-in, claiming, and the sync engine. The app has no network permission, so the outbox waits for sign-in to come to Android.
+
 ## Open questions
 
 - Should a game in progress vs AI sync, so you can continue it on another device? This is post-MVP.

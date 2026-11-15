@@ -126,7 +126,7 @@ File names are kebab-case and describe the scenario. Each vector's `id` is its p
 |---|---|---|
 | Rust | `cargo test -p ouril-engine`, which loads every file and validates it against the schema | `core` |
 | iOS | XCTest suite that loads the vectors bundled as test resources | `ios` |
-| Android | JUnit suite that loads the vectors as test resources | `android` |
+| Android | JUnit suite (`CoreVectorsTest`) that reads `core/test-vectors` from the repository and runs each vector through the Kotlin bindings, as the app calls the core | `android` |
 | Web | Vitest suite using the WASM package | `web` |
 
 Each runner must report vectors that were **skipped** (for example an unknown variant version) as failures, so nothing is silently skipped.

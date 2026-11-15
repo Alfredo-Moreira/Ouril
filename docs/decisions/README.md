@@ -46,6 +46,7 @@
 | [0032](0032-small-services-on-the-homelab.md) | Small, optional services run on the developer's homelab | Proposed |
 | [0033](0033-live-games-http-moves-and-relay.md) | Live games: moves over HTTP, clocks from timestamps, a realtime relay | Proposed |
 | [0034](0034-ratings-and-leaderboards-in-postgres.md) | Ratings and leaderboards in Postgres: overall, per variant and mode, world and country | Proposed |
+| [0035](0035-android-before-ios.md) | Build the Android app before iOS | Proposed |
 
 ## Open questions
 

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The Ouril mark: ten ouri seeds in a ring, one star yellow (SeedRing, web-design.md). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <group android:rotation="0" android:pivotX="54.00" android:pivotY="34.50">
+        <path android:fillColor="#F7D116"
+            android:pathData="M48.30,34.50 a5.7,4.05 0 1,0 11.40,0 a5.7,4.05 0 1,0 -11.40,0 Z" />
+    </group>
+    <group android:rotation="36" android:pivotX="65.46" android:pivotY="38.22">
+        <path android:fillColor="#F5F1E8"
+            android:pathData="M59.76,38.22 a5.7,4.05 0 1,0 11.40,0 a5.7,4.05 0 1,0 -11.40,0 Z" />
+    </group>
+    <group android:rotation="72" android:pivotX="72.55" android:pivotY="47.97">
+        <path android:fillColor="#F5F1E8"
+            android:pathData="M66.85,47.97 a5.7,4.05 0 1,0 11.40,0 a5.7,4.05 0 1,0 -11.40,0 Z" />
+    </group>
+    <group android:rotation="108" android:pivotX="72.55" android:pivotY="60.03">
+        <path android:fillColor="#F5F1E8"
+            android:pathData="M66.85,60.03 a5.7,4.05 0 1,0 11.40,0 a5.7,4.05 0 1,0 -11.40,0 Z" />
+    </group>
+    <group android:rotation="144" android:pivotX="65.46" android:pivotY="69.78">
+        <path android:fillColor="#F5F1E8"
+            android:pathData="M59.76,69.78 a5.7,4.05 0 1,0 11.40,0 a5.7,4.05 0 1,0 -11.40,0 Z" />
+    </group>
+    <group android:rotation="180" android:pivotX="54.00" android:pivotY="73.50">
+        <path android:fillColor="#F5F1E8"
+            android:pathData="M48.30,73.50 a5.7,4.05 0 1,0 11.40,0 a5.7,4.05 0 1,0 -11.40,0 Z" />
+    </group>
+    <group android:rotation="216" android:pivotX="42.54" android:pivotY="69.78">
+        <path android:fillColor="#F5F1E8"
+            android:pathData="M36.84,69.78 a5.7,4.05 0 1,0 11.40,0 a5.7,4.05 0 1,0 -11.40,0 Z" />
+    </group>
+    <group android:rotation="252" android:pivotX="35.45" android:pivotY="60.03">
+        <path android:fillColor="#F5F1E8"
+            android:pathData="M29.75,60.03 a5.7,4.05 0 1,0 11.40,0 a5.7,4.05 0 1,0 -11.40,0 Z" />
+    </group>
+    <group android:rotation="288" android:pivotX="35.45" android:pivotY="47.97">
+        <path android:fillColor="#F5F1E8"
+            android:pathData="M29.75,47.97 a5.7,4.05 0 1,0 11.40,0 a5.7,4.05 0 1,0 -11.40,0 Z" />
+    </group>
+    <group android:rotation="324" android:pivotX="42.54" android:pivotY="38.22">
+        <path android:fillColor="#F5F1E8"
+            android:pathData="M36.84,38.22 a5.7,4.05 0 1,0 11.40,0 a5.7,4.05 0 1,0 -11.40,0 Z" />
+    </group>
+</vector>

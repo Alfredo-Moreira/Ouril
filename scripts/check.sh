@@ -65,6 +65,7 @@ homelab='^(deploy/homelab/|apps/relay/|apps/jobs/|scripts/ci/homelab-boot\.sh$|C
 deploy='((^|/)Cargo\.(toml|lock)$|^\.github/workflows/deploy-web\.yml$|^scripts/ci/assemble-api\.sh$|^apps/server/Dockerfile\.vercel$)'
 server_image='^apps/server/(Dockerfile|Cargo\.toml)$'
 vercel_json='^apps/web/vercel\.json$'
+android='^(apps/android/|core/ffi/|shared/i18n/|docker/android\.Dockerfile$)'
 
 if [ "$mode" != all ] && [ -z "$(printf '%s' "$files" | tr -d '[:space:]')" ]; then
   exit 0
@@ -159,6 +160,13 @@ if $slow && { changed "$webapp" || changed "$core"; }; then
   $web sh -c "$pnpm_install && pnpm --filter web test && pnpm --filter web build"
   step "pnpm audit (prod, high and critical)"
   $web pnpm audit --prod --audit-level high
+fi
+
+if $slow && changed "$android"; then
+  # The Rust tests already build core/ffi; this checks the Kotlin side and the app.
+  step "Android: core bindings, unit tests, debug build"
+  docker compose --profile android run --rm -T android sh -c \
+    "just bindings-android && just android-test && just android-build"
 fi
 
 if $slow && changed "$vercel_json"; then

@@ -1,6 +1,6 @@
 # Contributing to Ouril
 
-> How we work: workflow, conventions, and what "done" means. **Status:** Draft. Local setup covers the web app, the server and the Rust core. iOS and Android setup comes when those apps start.
+> How we work: workflow, conventions, and what "done" means. **Status:** Draft. Local setup covers the web app, the server, the Rust core and the Android app. iOS setup comes when that app starts.
 
 By participating you agree to the [Code of Conduct](CODE_OF_CONDUCT.md).
 
@@ -50,7 +50,7 @@ Development is **local-first and Docker-first** ([ADR 0017](docs/decisions/0017-
 |---|---|
 | Everything | `git`, **Docker** (Docker Desktop or OrbStack). [`just`](https://github.com/casey/just) is optional: the `toolbox` container includes it. |
 | iOS (later) | macOS, Xcode (latest stable). The iOS bindings and the Simulator can't run in Docker. |
-| Android (later) | Android Studio, for the Emulator and device debugging. Bindings will be built in the `toolbox` container. |
+| Android (optional) | Android Studio, for the Emulator and device debugging. The core's bindings, the app and its tests build in the `android` container ([apps/android](apps/android/README.md)). |
 
 ### First run
 
@@ -89,7 +89,9 @@ docker compose up db server web
 | `just lint` / `just fmt` | rustfmt, clippy (all features, warnings are errors), ESLint, Prettier and tsc / format Rust and web code |
 | `just hooks` | Turn on the git hooks: CI's checks before each commit and push ([below](#git-hooks)) |
 | `just ci` | Every CI check locally, as CI runs them (`scripts/check.sh all`, both image architectures included) |
-| `just bindings` | Build `core/wasm/pkg` (WASM only for now; UniFFI comes with iOS/Android) |
+| `just bindings` | Build `core/wasm/pkg`, the WASM package for the web |
+| `just bindings-android` | Build the core's Android libraries and Kotlin bindings into `core/ffi/generated/` (the `android` container) |
+| `just android-build` / `just android-test` / `just android-screenshots` | The debug APK / the Android unit tests (test vectors, database, a tour of the screens) / screenshots of every screen ([apps/android](apps/android/README.md)) |
 | `just protocol-ts` | Export the API and core TypeScript types to `apps/web/src/generated/protocol/` |
 | `just migration <name>` | Create an empty server migration in `apps/server/migrations` ([migrations](docs/architecture/backend.md#migrations)) |
 | `just pgadmin` | pgAdmin for the local database on <http://localhost:5050> (no login; the `ouril` password) |
@@ -98,11 +100,11 @@ docker compose up db server web
 | `just build-server-image` | Build the production server image (`apps/server/Dockerfile`, never with `dev-auth`) |
 | `just shell` | Open a shell in the `toolbox` container |
 
-Without `just` on the host, run any toolbox recipe as `docker compose run --rm toolbox just <recipe>` (for example `just test-core`). For `test-server`, start the database first with `docker compose up -d --wait db`. Web commands run in the `web` container: `docker compose run --rm web sh -c "pnpm install --frozen-lockfile && pnpm --filter web test"`.
+Without `just` on the host, run any toolbox recipe as `docker compose run --rm toolbox just <recipe>` (for example `just test-core`). For `test-server`, start the database first with `docker compose up -d --wait db`. Web commands run in the `web` container: `docker compose run --rm web sh -c "pnpm install --frozen-lockfile && pnpm --filter web test"`. Android recipes run in the `android` container, which includes `just`: `docker compose --profile android run --rm android just android-test`.
 
 - Never commit `.env`. Every OAuth, Sentry and JWT value in it is a local placeholder.
 - **Homelab services** (planned: the live-game relay and scheduled jobs, [ADR 0032](docs/decisions/0032-small-services-on-the-homelab.md)) aren't deployed by merging. They're built with `deploy/homelab/build-and-push.sh` from a machine on the home network and deployed by pasting `deploy/homelab/docker-compose.homelab.yml` into the NAS's Docker UI, the same way as the `home-lab` repository ([deployment](docs/architecture/deployment.md#the-homelab)). Never commit `deploy/homelab/.env`.
-- Generated files are build output, gitignored and never hand-edited: `core/wasm/pkg/`, `apps/web/src/generated/` (protocol types and i18n strings) and `core/*/bindings/`. The web strings are generated from `shared/i18n/` every time you run the web `dev`, `build`, `test` or `typecheck` scripts. `just i18n` is a stub until `tools/i18n-gen` exists ([ADR 0016](docs/decisions/0016-i18n-source-format.md)).
+- Generated files are build output, gitignored and never hand-edited: `core/wasm/pkg/`, `core/ffi/generated/` (Android libraries and Kotlin bindings), `apps/web/src/generated/` (protocol types and i18n strings) and `core/*/bindings/`. The web strings are generated from `shared/i18n/` every time you run the web `dev`, `build`, `test` or `typecheck` scripts. `just i18n` is a stub until `tools/i18n-gen` exists ([ADR 0016](docs/decisions/0016-i18n-source-format.md)).
 - Docker Desktop on macOS: give the VM at least 8 GB of memory and 60 GB of disk, and avoid running two heavy cargo builds at once.
 - Native toolchains (Rust via `rustup`, `wasm-pack`, Node LTS + pnpm) still work if you prefer them: set `OURIL_IN_TOOLBOX=1` so the `just` recipes run commands directly. Docker is the supported default.
 - VS Code users can open the repo in the Dev Container (`.devcontainer/`), which uses the same `toolbox` image.

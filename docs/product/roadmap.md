@@ -10,7 +10,7 @@ flowchart LR
   P1 --> P2[2 · Accounts<br/>and sync]
   P2 --> P3[3 · Reach<br/>and replay]
   P3 --> P4[4 · Play with<br/>friends]
-  P4 --> P5[5 · iOS and<br/>Android]
+  P4 --> P5[5 · Android<br/>and iOS]
   P5 --> P6[6 · Live<br/>games]
   P6 --> P7[7 · Leaderboards]
   ON[Ongoing: languages · variants · community] -.-> P3
@@ -59,8 +59,11 @@ Online play against real people, turn by turn. Requires sign-in.
 - ✅ Stats split games against the computer from games against players, with the opponent's name.
 - See [multiplayer.md](features/multiplayer.md).
 
-## Phase 5: iOS and Android
-Native apps (SwiftUI, then Jetpack Compose; [ADR 0008](../decisions/0008-native-apps-per-platform.md)) with the same Rust core through UniFFI. They launch with everything above: play vs AI, accounts and sync, and games with friends, with native push notifications. Until then the installable web app covers phones.
+## Phase 5: iOS and Android *(Android in progress)*
+Native apps (Jetpack Compose, then SwiftUI; [ADR 0008](../decisions/0008-native-apps-per-platform.md), [ADR 0035](../decisions/0035-android-before-ios.md), Proposed) with the same Rust core through UniFFI. They launch with everything above: play vs AI, accounts and sync, and games with friends, with native push notifications. Until then the installable web app covers phones.
+- ✅ Android, guest play: the core through `core/ffi` ([API](../../core/ffi/API.md)), play against the computer, the tutorial, the rules, settings and About, in the Panu design, offline with no network permission; every test vector runs through the Kotlin bindings in CI ([apps/android](../../apps/android/README.md)).
+- ⏳ Android: sign-in, sync, games against other players and leaderboards, then the Play Store release.
+- iOS, with Swift bindings from the same `core/ffi`.
 
 ## Phase 6: Live games
 - ✅ Live games over HTTP with server clocks computed from timestamps (3 + 2, 5 + 3, 10 + 5), a 30-second first move or the game is called off, **Play now** matchmaking near your rating, live invitations, and a Rust relay for the homelab with polling as the fallback ([ADR 0033](../decisions/0033-live-games-http-moves-and-relay.md)). ✅ Draw offers, a lobby of players waiting (join one directly), and playing the computer while you wait. ✅ The relay runs on the homelab at `ouril-live.moreiralabs.org` (since 2026-11-13), and the server uses it.
