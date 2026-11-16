@@ -10,7 +10,7 @@ import type { GameRecord, MoveEvent, MoveResult } from '../engine/types';
 import { useApp } from '../state/useApp';
 import { saveCurrentGame, saveFinishedGame, type CurrentGame } from '../storage/repo';
 import { trackEvent } from '../telemetry';
-import { buildFrames, frameDelay, type Frame } from './animation';
+import { AI_PAUSE_MS, buildFrames, frameDelay, type Frame } from './animation';
 import { forfeitGame } from './forfeit';
 import {
   aiSeedFor,
@@ -153,7 +153,7 @@ export function useGameController(initial: CurrentGame, animationSpeed: number):
     ai.move(game.variant, game.state, game.level, aiSeedFor(game))
       .then(async (pit) => {
         // A short pause so the AI's move is readable even when the search is instant.
-        const wait = Math.max(0, 350 * animationSpeed - (Date.now() - started));
+        const wait = Math.max(0, AI_PAUSE_MS * animationSpeed - (Date.now() - started));
         if (wait > 0) await sleep(wait);
         if (cancelled || !alive.current || epoch.current !== myEpoch || pit === null) return;
         await commit(game, pit, false);

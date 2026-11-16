@@ -65,7 +65,7 @@ homelab='^(deploy/homelab/|apps/relay/|apps/jobs/|scripts/ci/homelab-boot\.sh$|C
 deploy='((^|/)Cargo\.(toml|lock)$|^\.github/workflows/deploy-web\.yml$|^scripts/ci/assemble-api\.sh$|^apps/server/Dockerfile\.vercel$)'
 server_image='^apps/server/(Dockerfile|Cargo\.toml)$'
 vercel_json='^apps/web/vercel\.json$'
-android='^(apps/android/|core/ffi/|shared/i18n/|docker/android\.Dockerfile$)'
+android='^(apps/android/|core/ffi/|shared/i18n/|shared/motion/|docker/android\.Dockerfile$)'
 
 if [ "$mode" != all ] && [ -z "$(printf '%s' "$files" | tr -d '[:space:]')" ]; then
   exit 0

@@ -49,6 +49,8 @@ Hover effects apply only on fine pointers; every interactive element shows the 3
 
 The rules come from the `emil-design-eng`, `emilkowalski-motion` and `review-animations` skills. Every animation must follow them; run `/review-animations` on changes.
 
+The board's motion is the same on every platform: change it here first, then regenerate the motion vectors and bring the other platforms along ([board motion](board-motion.md), `/animation-parity`).
+
 - **Purpose first.** Animate to explain a change (seeds moving, a capture), to confirm an action (a press), or to orient (a dialog opening). Never as decoration, and no endless loops.
 - **Frequency.** The more often something happens, the less it animates.
   - Navigation between pages doesn't animate.
@@ -68,7 +70,7 @@ The rules come from the `emil-design-eng`, `emilkowalski-motion` and `review-ani
 
 ## The 3D board
 
-`components/BoardView.tsx` shows the board, and `board3d/` draws it.
+`components/BoardView.tsx` shows the board, and `board3d/` draws it. Its motion (the hand, the seeds, the camera, the rings) lives in plain modules, `board3d/choreography.ts`, `cameraRig.ts` and `rings.ts`, and is the reference for every platform: the Android board plays the same motion, checked by motion vectors ([board motion](board-motion.md)).
 
 ```mermaid
 flowchart LR
@@ -88,7 +90,7 @@ flowchart LR
 - **Seeds:**
   - All 48 seeds are one `InstancedMesh` with per-seed colour variation.
   - `board3d/seeds.ts` reconciles each display frame: it moves the fewest seeds between containers (pits, stores and the "hand").
-- **The hand** (`board3d/Sowing.tsx`) plays every move the way a person does. It's procedural (capsules and a rounded palm, a right hand with a sleeve in the mover's colour: a bright indigo for you, so it shows on the cloth, red for the opponent), so nothing is downloaded. It reaches in from the mover's side of the table: from the camera side for you, from the far side for the computer.
+- **The hand** (drawn by `board3d/Sowing.tsx`, moved by `board3d/choreography.ts`) plays every move the way a person does. It's procedural (capsules and a rounded palm, a right hand with a sleeve in the mover's colour: a bright indigo for you, so it shows on the cloth, red for the opponent), so nothing is downloaded. It reaches in from the mover's side of the table: from the camera side for you, from the far side for the computer.
   - *pickup:* it reaches into the pit, closes around the seeds and lifts them;
   - *sow:* it glides to the next pit (first half of the frame) and lets one seed fall; the seed drops with an accelerating fall and a small bounce, and the rest stay in its grip;
   - *skip:* it passes over the origin pit;
@@ -188,11 +190,11 @@ The 3D board is a separate chunk, so it isn't there on the first paint. `BoardVi
 
 - Streaming music (for example Spotify) instead of, or alongside, the bundled game tracks.
 
-- The native boards: Android draws a 2D board on the same cloth (a Compose Canvas). Does it need the 3D board (Filament), and what does iOS use (SceneKit/RealityKit, or 2D)? ([ADR 0008](../decisions/0008-native-apps-per-platform.md))
+- iOS's board: Filament, as on Android ([ADR 0036](../decisions/0036-3d-board-on-android.md)), or SceneKit/RealityKit, replaying the same motion vectors.
 - Sound design for sowing and captures (off by default, respecting a mute setting).
 - A tap to fast-forward the rest of a long move (laps of 12+ seeds take about 5 s in 3D).
 - Alternative board skins (lighter wood, stone) and seed types (other seeds, pebbles).
-- An upright board on portrait phones: turning the camera a quarter turn makes the pits 1.3 to 1.6 times bigger but the far store smaller, and the hand would cross your own row. It needs a flagged prototype, measured pit sizes on four screens and ouril players trying both orientations. The Android app's 2D board already stands upright on portrait phones (your row is the left column), so players' reactions there can inform this.
+- An upright board on portrait phones: turning the camera a quarter turn makes the pits 1.3 to 1.6 times bigger but the far store smaller, and the hand would cross your own row. It needs a flagged prototype, measured pit sizes on four screens and ouril players trying both orientations. Android's 3D board lies across, as here; only its 2D fallback (phones without OpenGL ES 3) stands upright, with your row as the left column.
 - A side rail instead of the top bar, once the signed-in links outgrow it.
 - The cloth's cost on a real low-end Android phone (frame times during a 12-seed lap, with and without it); today's guard is the 20 ms frame budget.
 - Reactions to the seed-ring mark and the cloth from Cape Verdeans on several islands and in the diaspora, before the mark is final; and a blur test (Home and the win dialog, blurred) to check the identity holds without the pattern.

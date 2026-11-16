@@ -59,11 +59,11 @@ import org.moreiralabs.ouril.game.NewGameRequest
 import org.moreiralabs.ouril.game.Outcome
 import org.moreiralabs.ouril.game.SoundEffects
 import org.moreiralabs.ouril.game.Starter
-import org.moreiralabs.ouril.game.frameDelay
 import org.moreiralabs.ouril.i18n.tr
 import org.moreiralabs.ouril.i18n.trKey
 import org.moreiralabs.ouril.ui.GameRoute
-import org.moreiralabs.ouril.ui.board.Board
+import org.moreiralabs.ouril.ui.board3d.Board3DSupport
+import org.moreiralabs.ouril.ui.board3d.GameBoard
 import org.moreiralabs.ouril.ui.components.Body
 import org.moreiralabs.ouril.ui.components.ButtonKind
 import org.moreiralabs.ouril.ui.components.FillingSeedRing
@@ -79,7 +79,8 @@ import org.moreiralabs.ouril.ui.theme.panu
 
 /**
  * The game against the computer, full screen: the opponent's nameplate above the board and
- * yours below, one status line, the board (upright on a phone held upright), and your actions.
+ * yours below, one status line, the board (3D as on the web, or 2D upright on a phone held
+ * upright where 3D can't run), and your actions.
  * The menu, the rules and the result open as sheets and dialogs.
  */
 @Composable
@@ -146,11 +147,14 @@ fun GameScreen(route: GameRoute, onExit: () -> Unit, onAllRules: (String) -> Uni
     )
     val announcement = s.announcement?.let { describe(it.events, it.byHuman) }.orEmpty()
 
+    val use3d = remember { Board3DSupport.available(context) }
     BoxWithConstraints(Modifier.fillMaxSize().background(c.bg).windowInsetsPadding(WindowInsets.safeDrawing)) {
-        val upright = maxHeight > maxWidth
+        val portrait = maxHeight > maxWidth
+        // The 3D board lies across, as on the web; the 2D one stands upright on a phone held upright.
+        val upright = portrait && !use3d
         val board: @Composable (Modifier) -> Unit = { m ->
             Box(m.clip(PanuShapes.card)) {
-                Board(
+                GameBoard(
                     pits = pits,
                     stores = stores,
                     legal = if (s.canPlay) s.legal else emptyList(),
@@ -158,8 +162,10 @@ fun GameScreen(route: GameRoute, onExit: () -> Unit, onAllRules: (String) -> Uni
                     frame = s.frame,
                     hintPit = s.hintPit,
                     upright = upright,
+                    frameSpeed = vm.speed,
+                    reducedMotion = vm.reducedMotion,
+                    finished = s.finished != null,
                     modifier = Modifier.fillMaxSize(),
-                    frameMillis = s.frame?.let { frameDelay(it.kind, 1f) } ?: 200,
                 )
             }
         }
@@ -187,7 +193,7 @@ fun GameScreen(route: GameRoute, onExit: () -> Unit, onAllRules: (String) -> Uni
             StatusPill(status, Modifier.align(Alignment.CenterHorizontally).semantics { liveRegion = LiveRegionMode.Polite })
         }
 
-        if (upright) {
+        if (portrait) {
             Column(Modifier.fillMaxSize().padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 tools()
                 Nameplate(ai, stores[1], you = false, turn = s.aiThinking)

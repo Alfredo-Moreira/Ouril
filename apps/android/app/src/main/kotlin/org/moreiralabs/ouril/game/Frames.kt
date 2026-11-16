@@ -70,18 +70,28 @@ fun buildFrames(before: GameState, pit: Int, events: List<MoveEvent>, after: Gam
     return frames
 }
 
+/** Milliseconds each frame kind shows at speed 1 (the web's `FRAME_BASE_MS`); the 3D board plays them at [PACE_3D]. */
+val FRAME_BASE_MS: Map<FrameKind, Int> = mapOf(
+    FrameKind.PICKUP to 320,
+    FrameKind.SOW to 200,
+    FrameKind.SKIP to 260,
+    // Long enough for the hand to grab the seeds and carry them to the store.
+    FrameKind.CAPTURE to 600,
+    FrameKind.GRAND_SLAM to 700,
+    FrameKind.EXTRA_TURN to 500,
+    FrameKind.COLLECT to 500,
+    FrameKind.END to 0,
+)
+
+/** How much slower move frames play on the 3D board: a seed needs time to travel in the hand (the web's `PACE_3D`). */
+const val PACE_3D = 2.2
+
+/** The game's animation speed with the system's animations turned off (the web's reduced motion). */
+const val REDUCED_MOTION_SPEED = 0.4
+
+/** The computer waits at least this long (times the speed) before its move shows. */
+const val AI_PAUSE_MS = 350
+
 /** Milliseconds to show a frame (`speed` 0 = instant, for tests). Same timings as the web. */
-fun frameDelay(kind: FrameKind, speed: Float): Long {
-    if (speed <= 0f) return 0
-    val base = when (kind) {
-        FrameKind.PICKUP -> 320
-        FrameKind.SOW -> 200
-        FrameKind.SKIP -> 260
-        FrameKind.CAPTURE -> 600
-        FrameKind.GRAND_SLAM -> 700
-        FrameKind.EXTRA_TURN -> 500
-        FrameKind.COLLECT -> 500
-        FrameKind.END -> 0
-    }
-    return (base * speed).toLong()
-}
+fun frameDelay(kind: FrameKind, speed: Double): Double =
+    if (speed <= 0) 0.0 else FRAME_BASE_MS.getValue(kind) * speed

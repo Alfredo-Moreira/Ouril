@@ -41,6 +41,7 @@ Write one when a change:
 - [ ] Accessibility checked: screen-reader labels, contrast, tap target size.
 - [ ] Works offline where applicable. Guests make no network requests without telemetry consent.
 - [ ] No secrets in code or config. Generated bindings regenerated, not hand-edited.
+- [ ] Board animation changed on the web first, the motion vectors regenerated (`just motion-vectors`), and every platform replays them ([board motion](docs/architecture/board-motion.md), `/animation-parity`).
 
 ## Local setup: Docker first
 
@@ -91,7 +92,9 @@ docker compose up db server web
 | `just ci` | Every CI check locally, as CI runs them (`scripts/check.sh all`, both image architectures included) |
 | `just bindings` | Build `core/wasm/pkg`, the WASM package for the web |
 | `just bindings-android` | Build the core's Android libraries and Kotlin bindings into `core/ffi/generated/` (the `android` container) |
-| `just android-build` / `just android-test` / `just android-screenshots` | The debug APK / the Android unit tests (test vectors, database, a tour of the screens) / screenshots of every screen ([apps/android](apps/android/README.md)) |
+| `just android-build` / `just android-test` / `just android-screenshots` | The debug APK / the Android unit tests (test vectors, motion vectors, database, a tour of the screens) / screenshots of every screen ([apps/android](apps/android/README.md)) |
+| `just android-preview` | An optimized Android build signed with the debug key, to try the real speed on a phone (it installs over a debug build) |
+| `just motion-vectors` | Re-record the motion vectors from the web's 3D board after an intended change to its motion ([board motion](docs/architecture/board-motion.md)) |
 | `just protocol-ts` | Export the API and core TypeScript types to `apps/web/src/generated/protocol/` |
 | `just migration <name>` | Create an empty server migration in `apps/server/migrations` ([migrations](docs/architecture/backend.md#migrations)) |
 | `just pgadmin` | pgAdmin for the local database on <http://localhost:5050> (no login; the `ouril` password) |
@@ -104,7 +107,7 @@ Without `just` on the host, run any toolbox recipe as `docker compose run --rm t
 
 - Never commit `.env`. Every OAuth, Sentry and JWT value in it is a local placeholder.
 - **Homelab services** (planned: the live-game relay and scheduled jobs, [ADR 0032](docs/decisions/0032-small-services-on-the-homelab.md)) aren't deployed by merging. They're built with `deploy/homelab/build-and-push.sh` from a machine on the home network and deployed by pasting `deploy/homelab/docker-compose.homelab.yml` into the NAS's Docker UI, the same way as the `home-lab` repository ([deployment](docs/architecture/deployment.md#the-homelab)). Never commit `deploy/homelab/.env`.
-- Generated files are build output, gitignored and never hand-edited: `core/wasm/pkg/`, `core/ffi/generated/` (Android libraries and Kotlin bindings), `apps/web/src/generated/` (protocol types and i18n strings) and `core/*/bindings/`. The web strings are generated from `shared/i18n/` every time you run the web `dev`, `build`, `test` or `typecheck` scripts. `just i18n` is a stub until `tools/i18n-gen` exists ([ADR 0016](docs/decisions/0016-i18n-source-format.md)).
+- Generated files are build output, gitignored and never hand-edited: `core/wasm/pkg/`, `core/ffi/generated/` (Android libraries and Kotlin bindings), `apps/web/src/generated/` (protocol types and i18n strings), `core/*/bindings/` and the Android app's compiled 3D materials. The motion vectors in `shared/motion/vectors/` are committed, but only ever written by `just motion-vectors`. The web strings are generated from `shared/i18n/` every time you run the web `dev`, `build`, `test` or `typecheck` scripts. `just i18n` is a stub until `tools/i18n-gen` exists ([ADR 0016](docs/decisions/0016-i18n-source-format.md)).
 - Docker Desktop on macOS: give the VM at least 8 GB of memory and 60 GB of disk, and avoid running two heavy cargo builds at once.
 - Native toolchains (Rust via `rustup`, `wasm-pack`, Node LTS + pnpm) still work if you prefer them: set `OURIL_IN_TOOLBOX=1` so the `just` recipes run commands directly. Docker is the supported default.
 - VS Code users can open the repo in the Dev Container (`.devcontainer/`), which uses the same `toolbox` image.

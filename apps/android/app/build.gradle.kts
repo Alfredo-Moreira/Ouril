@@ -1,4 +1,8 @@
 import groovy.json.JsonSlurper
+import org.gradle.process.ExecOperations
+import java.text.SimpleDateFormat
+import java.util.Date
+import javax.inject.Inject
 
 plugins {
     alias(libs.plugins.android.application)
@@ -18,6 +22,8 @@ val i18nSource: File = repoRoot.resolve("shared/i18n/en.json")
 android {
     namespace = "org.moreiralabs.ouril"
     compileSdk = 37
+    // The build tools in the Android image (docker/android.Dockerfile).
+    buildToolsVersion = "37.0.0"
 
     defaultConfig {
         applicationId = "org.moreiralabs.ouril"
@@ -25,13 +31,28 @@ android {
         targetSdk = 37
         versionCode = 1
         versionName = "0.1.0"
+        // The ABIs the core is built for (`just bindings-android`): the app ships no other.
+        ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64") }
     }
 
     buildTypes {
+        // Test builds say what they are in About's version line.
+        debug {
+            versionNameSuffix = "-debug"
+        }
         release {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+        }
+        // The release build signed with the debug key, to try on a phone at full speed
+        // (`just android-preview`). Never published.
+        create("preview") {
+            initWith(getByName("release"))
+            // With the build's time, so About shows which test build is installed.
+            versionNameSuffix = "-preview." + SimpleDateFormat("MMdd.HHmm").format(Date())
+            signingConfig = signingConfigs.getByName("debug")
+            matchingFallbacks += listOf("release")
         }
     }
 
@@ -87,6 +108,8 @@ dependencies {
     implementation(libs.compose.material3)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.android)
+    // The 3D board (ADR 0036).
+    implementation(libs.filament.android)
     // The core's bindings load the Rust library through JNA (UniFFI's Kotlin backend).
     implementation("${libs.jna.get()}@aar")
     debugImplementation(libs.compose.ui.tooling)
@@ -165,8 +188,58 @@ val generateStrings = tasks.register<GenerateStrings>("generateStrings") {
     source.set(i18nSource)
 }
 
+/**
+ * The 3D board's materials: each `.mat` in src/main/materials becomes a `.filamat` in the assets'
+ * materials folder, compiled by Filament's matc (in the Android image: FILAMENT_MATC). Build output,
+ * never committed (ADR 0015).
+ */
+abstract class CompileMaterials : DefaultTask() {
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val sources: ConfigurableFileCollection
+
+    @get:Input
+    abstract val filamentVersion: Property<String>
+
+    @get:OutputDirectory
+    abstract val outputDir: DirectoryProperty
+
+    @get:Inject
+    abstract val exec: ExecOperations
+
+    @TaskAction
+    fun compile() {
+        val matc = System.getenv("FILAMENT_MATC") ?: "matc"
+        val out = outputDir.get().asFile.resolve("materials")
+        out.deleteRecursively()
+        out.mkdirs()
+        for (source in sources.files.sortedBy { it.name }) {
+            val target = out.resolve(source.nameWithoutExtension + ".filamat")
+            val result = try {
+                exec.exec {
+                    commandLine(matc, "-p", "mobile", "-a", "opengl", "-o", target.path, source.path)
+                    isIgnoreExitValue = true
+                }
+            } catch (e: Exception) {
+                throw GradleException(
+                    "Filament's material compiler isn't here ($matc). Build in Docker (`just android-build`), " +
+                        "or set FILAMENT_MATC to matc from Filament ${filamentVersion.get()}.",
+                    e,
+                )
+            }
+            if (result.exitValue != 0) throw GradleException("matc couldn't compile ${source.name}")
+        }
+    }
+}
+
+val compileMaterials = tasks.register<CompileMaterials>("compileMaterials") {
+    sources.from(fileTree("src/main/materials") { include("*.mat") })
+    filamentVersion.set(libs.versions.filament.get())
+}
+
 androidComponents {
     onVariants { variant ->
         variant.sources.res?.addGeneratedSourceDirectory(generateStrings, GenerateStrings::outputDir)
+        variant.sources.assets?.addGeneratedSourceDirectory(compileMaterials, CompileMaterials::outputDir)
     }
 }

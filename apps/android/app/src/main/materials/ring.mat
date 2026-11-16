@@ -1,0 +1,21 @@
+// The glowing ring on a pit's rim: a flat colour that fades (the web's ring glow, which isn't
+// lit or tone-mapped there). Premultiplied alpha, no depth writes, so it never hides a seed.
+material {
+    name : ring,
+    shadingModel : unlit,
+    blending : transparent,
+    depthWrite : false,
+    culling : none,
+    parameters : [
+        { type : float3, name : color },
+        { type : float, name : opacity }
+    ]
+}
+
+fragment {
+    void material(inout MaterialInputs material) {
+        prepareMaterial(material);
+        float a = materialParams.opacity;
+        material.baseColor = vec4(materialParams.color * a, a);
+    }
+}

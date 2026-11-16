@@ -47,6 +47,7 @@
 | [0033](0033-live-games-http-moves-and-relay.md) | Live games: moves over HTTP, clocks from timestamps, a realtime relay | Proposed |
 | [0034](0034-ratings-and-leaderboards-in-postgres.md) | Ratings and leaderboards in Postgres: overall, per variant and mode, world and country | Proposed |
 | [0035](0035-android-before-ios.md) | Build the Android app before iOS | Proposed |
+| [0036](0036-3d-board-on-android.md) | A 3D board on Android that moves exactly as the web's (motion vectors) | Proposed |
 
 ## Open questions
 

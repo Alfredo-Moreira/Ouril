@@ -63,10 +63,12 @@ class FramesTest {
 
     @Test
     fun framesTakeTheWebsTimes() {
-        assertEquals(200, frameDelay(FrameKind.SOW, 1f))
-        assertEquals(600, frameDelay(FrameKind.CAPTURE, 1f))
-        assertEquals(80, frameDelay(FrameKind.SOW, 0.4f))
-        assertEquals(0, frameDelay(FrameKind.END, 1f))
-        assertEquals(0, frameDelay(FrameKind.CAPTURE, 0f))
+        assertEquals(200.0, frameDelay(FrameKind.SOW, 1.0), 0.0)
+        assertEquals(600.0, frameDelay(FrameKind.CAPTURE, 1.0), 0.0)
+        assertEquals(80.0, frameDelay(FrameKind.SOW, 0.4), 1e-9)
+        assertEquals(0.0, frameDelay(FrameKind.END, 1.0), 0.0)
+        assertEquals(0.0, frameDelay(FrameKind.CAPTURE, 0.0), 0.0)
+        // The 3D board's pace: a sow takes 440 ms, as on the web.
+        assertEquals(440.0, frameDelay(FrameKind.SOW, PACE_3D), 1e-9)
     }
 }

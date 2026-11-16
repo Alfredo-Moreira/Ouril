@@ -26,25 +26,38 @@ function tone(freq: number, durationMs: number, type: OscillatorType = 'sine', g
   osc.stop(ac.currentTime + durationMs / 1000);
 }
 
+/** A tone: `freq` Hz (plus up to `jitter` Hz at random), fading out over `ms`. */
+export interface Tone {
+  freq: number;
+  jitter: number;
+  ms: number;
+  wave: OscillatorType;
+  gain: number;
+}
+
+/** The sound of each frame kind, played as the frame starts. */
+export const FRAME_TONES: Partial<Record<FrameKind, Tone>> = {
+  sow: { freq: 520, jitter: 80, ms: 70, wave: 'triangle', gain: 0.08 },
+  capture: { freq: 330, jitter: 0, ms: 180, wave: 'sine', gain: 0.12 },
+  grand_slam: { freq: 660, jitter: 0, ms: 300, wave: 'square', gain: 0.06 },
+  collect: { freq: 260, jitter: 0, ms: 220, wave: 'sine', gain: 0.08 },
+};
+
+/** The sound of the game's end, for the player. */
+export const END_TONES: Record<'win' | 'loss', Tone> = {
+  win: { freq: 784, jitter: 0, ms: 400, wave: 'sine', gain: 0.1 },
+  loss: { freq: 220, jitter: 0, ms: 400, wave: 'sine', gain: 0.1 },
+};
+
+function play(t: Tone): void {
+  tone(t.freq + (t.jitter ? Math.random() * t.jitter : 0), t.ms, t.wave, t.gain);
+}
+
 export function playFrameSound(kind: FrameKind): void {
-  switch (kind) {
-    case 'sow':
-      tone(520 + Math.random() * 80, 70, 'triangle');
-      break;
-    case 'capture':
-      tone(330, 180, 'sine', 0.12);
-      break;
-    case 'grand_slam':
-      tone(660, 300, 'square', 0.06);
-      break;
-    case 'collect':
-      tone(260, 220);
-      break;
-    default:
-      break;
-  }
+  const t = FRAME_TONES[kind];
+  if (t) play(t);
 }
 
 export function playEndSound(win: boolean): void {
-  tone(win ? 784 : 220, 400, 'sine', 0.1);
+  play(END_TONES[win ? 'win' : 'loss']);
 }
