@@ -65,6 +65,11 @@ build-homelab-images:
 test-web: bindings
     {{web}} sh -c "pnpm install --frozen-lockfile && pnpm --filter web test"
 
+# Regenerate the motion vectors (shared/motion/vectors) from the web's 3D board, the reference for
+# how a move looks. Every platform's tests replay them (docs/architecture/board-motion.md).
+motion-vectors: bindings
+    {{web}} sh -c "pnpm install --frozen-lockfile && MOTION_VECTORS=write pnpm --filter web test src/board3d/motionVectors.test.ts"
+
 # Generate the bindings the web app needs (WASM). Android: `just bindings-android`.
 bindings: bindings-wasm
 
@@ -89,6 +94,11 @@ bindings-android:
 # Build the Android app (debug APK in apps/android/app/build/outputs/apk/debug)
 android-build:
     {{android}} sh -c "cd apps/android && ./gradlew --no-daemon --no-watch-fs assembleDebug"
+
+# The Android app at full speed (R8, not debuggable), signed with the debug key so it installs over a
+# debug build: for trying on a phone (apps/android/app/build/outputs/apk/preview). Never published.
+android-preview:
+    {{android}} sh -c "cd apps/android && ./gradlew --no-daemon --no-watch-fs assemblePreview"
 
 # Android unit tests on the JVM: every rule test vector through the Kotlin bindings, the game logic, the
 # strings, the database and a tour of the screens (Robolectric)

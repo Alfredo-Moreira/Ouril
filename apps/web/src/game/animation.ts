@@ -87,25 +87,33 @@ export function buildFrames(
   return frames;
 }
 
+/** Milliseconds each frame kind shows at speed 1 (the 3D board plays them at `PACE_3D`). */
+export const FRAME_BASE_MS: Record<FrameKind, number> = {
+  pickup: 320,
+  sow: 200,
+  skip: 260,
+  // Long enough for the 3D hand to grab the seeds and carry them to the store.
+  capture: 600,
+  grand_slam: 700,
+  extra_turn: 500,
+  collect: 500,
+  end: 0,
+};
+
+/** The game's animation speed with prefers-reduced-motion: shorter delays. */
+export const REDUCED_MOTION_SPEED = 0.4;
+
+/** The computer waits at least this long (times the speed) before its move shows. */
+export const AI_PAUSE_MS = 350;
+
 /** Milliseconds to show each frame kind. 0 = instant (reduced motion, tests). */
 export function frameDelay(kind: FrameKind, speed: number): number {
   if (speed <= 0) return 0;
-  const base: Record<FrameKind, number> = {
-    pickup: 320,
-    sow: 200,
-    skip: 260,
-    // Long enough for the 3D hand to grab the seeds and carry them to the store.
-    capture: 600,
-    grand_slam: 700,
-    extra_turn: 500,
-    collect: 500,
-    end: 0,
-  };
-  return base[kind] * speed;
+  return FRAME_BASE_MS[kind] * speed;
 }
 
 /** Animation speed for a game screen: 1, or shorter delays with prefers-reduced-motion. */
 export function defaultSpeed(): number {
   if (typeof window === 'undefined' || !window.matchMedia) return 1;
-  return window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0.4 : 1;
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches ? REDUCED_MOTION_SPEED : 1;
 }

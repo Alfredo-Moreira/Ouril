@@ -43,6 +43,7 @@ See [CONTRIBUTING.md](https://github.com/Alfredo-Moreira/Ouril/blob/main/CONTRIB
 - [ ] Works offline where applicable. Guests make no network requests without telemetry consent.
 - [ ] No secrets in code or config.
 - [ ] Generated bindings regenerated, not hand-edited.
+- [ ] Board animation changed on the web first, motion vectors regenerated (`just motion-vectors`), and every platform replays them.
 
 ## Screenshots
 

@@ -1,5 +1,6 @@
 package org.moreiralabs.ouril.ui.screens
 
+import android.animation.ValueAnimator
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -35,12 +36,14 @@ import org.moreiralabs.ouril.core.GameState
 import org.moreiralabs.ouril.game.Frame
 import org.moreiralabs.ouril.game.TUTORIAL_STEPS
 import org.moreiralabs.ouril.game.buildFrames
+import org.moreiralabs.ouril.game.PACE_3D
 import org.moreiralabs.ouril.game.frameDelay
 import org.moreiralabs.ouril.game.variantRef
 import org.moreiralabs.ouril.i18n.stringId
 import org.moreiralabs.ouril.i18n.tr
 import org.moreiralabs.ouril.i18n.trKey
-import org.moreiralabs.ouril.ui.board.Board
+import org.moreiralabs.ouril.ui.board3d.Board3DSupport
+import org.moreiralabs.ouril.ui.board3d.GameBoard
 import org.moreiralabs.ouril.ui.components.Body
 import org.moreiralabs.ouril.ui.components.ButtonKind
 import org.moreiralabs.ouril.ui.components.PanuButton
@@ -63,6 +66,9 @@ fun TutorialScreen(onFinish: () -> Unit) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val c = panu
+    val use3d = remember { Board3DSupport.available(context) }
+    // With the system's animations off, the 3D board's seeds snap (as the web's reduced motion).
+    val reducedMotion = remember { !ValueAnimator.areAnimatorsEnabled() }
 
     val done = moveNo >= step.moves.size
     val legal = remember(state) { Core.legalMoves(variant, state) }
@@ -79,7 +85,7 @@ fun TutorialScreen(onFinish: () -> Unit) {
         scope.launch {
             for (f in buildFrames(before, pit, result.events, result.state)) {
                 frame = f
-                val d = frameDelay(f.kind, 1f)
+                val d = frameDelay(f.kind, PACE_3D).toLong()
                 if (d > 0) delay(d)
             }
             frame = null
@@ -89,8 +95,9 @@ fun TutorialScreen(onFinish: () -> Unit) {
     }
 
     BoxWithConstraints(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars)) {
-        val upright = maxHeight > maxWidth
-        // A lesson can say where your pits are differently for the upright board (`.intro_upright`).
+        // The 3D board lies across; the 2D one stands upright on a phone held upright, and a lesson
+        // can say where your pits are differently there (`.intro_upright`).
+        val upright = maxHeight > maxWidth && !use3d
         val intro = "tutorial.${step.id}.intro"
         val text = when {
             done -> trKey("tutorial.${step.id}.done")
@@ -103,7 +110,7 @@ fun TutorialScreen(onFinish: () -> Unit) {
             Text(tr(R.string.tutorial_progress, "step" to index + 1, "total" to TUTORIAL_STEPS.size), style = PanuType.small, color = c.muted)
             Text(trKey("tutorial.${step.id}.title"), style = PanuType.section, color = c.ink, modifier = Modifier.semantics { heading() })
             Body(text, style = PanuType.bodyLarge, modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
-            Board(
+            GameBoard(
                 pits = frame?.pits ?: state.pits,
                 stores = frame?.stores ?: state.stores,
                 legal = allowed,
@@ -111,8 +118,10 @@ fun TutorialScreen(onFinish: () -> Unit) {
                 frame = frame,
                 hintPit = null,
                 upright = upright,
+                frameSpeed = PACE_3D,
+                reducedMotion = reducedMotion,
+                finished = false,
                 modifier = Modifier.weight(1f).fillMaxWidth().clip(PanuShapes.card),
-                frameMillis = frame?.let { frameDelay(it.kind, 1f) } ?: 200,
             )
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 PanuButton({ state = step.position; moveNo = 0; frame = null }) { Text(tr(R.string.tutorial_retry)) }

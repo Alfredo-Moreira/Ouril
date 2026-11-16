@@ -22,11 +22,9 @@ import { Canvas, useFrame, useThree, type ThreeEvent } from '@react-three/fiber'
 import { ContactShadows, Environment, Lightformer } from '@react-three/drei';
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import {
-  Color,
   DoubleSide,
   ExtrudeGeometry,
   LatheGeometry,
-  MathUtils,
   Path,
   Shape,
   Vector2,
@@ -37,6 +35,16 @@ import {
 } from 'three';
 
 import type { FrameKind } from '../game/animation';
+import {
+  CAMERA_FAR,
+  CAMERA_FOV,
+  CAMERA_LOOK_AT,
+  CAMERA_NEAR,
+  createCameraRig,
+  setCameraInputs,
+  stepCameraRig,
+  type CameraInputs,
+} from './cameraRig';
 import { useClockDelta } from './clock';
 import {
   BOWL_DEPTH,
@@ -52,6 +60,7 @@ import {
   TOP,
   TOTAL_SEEDS_DEFAULT,
 } from './geometry';
+import { createRings, ringTargets, stepRings } from './rings';
 import { layoutFor, type Layout } from './seeds';
 import { Sowing } from './Sowing';
 import { clothTexture, woodTexture } from './textures';
@@ -123,7 +132,7 @@ export default function Board3D(input: Board3DProps) {
         dpr={[1, 1.75]}
         frameloop="demand"
         gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
-        camera={{ fov: 30, near: 0.1, far: 100, position: [0, 9, 9] }}
+        camera={{ fov: CAMERA_FOV, near: CAMERA_NEAR, far: CAMERA_FAR, position: [0, 9, 9] }}
         aria-hidden="true"
       >
         <Scene {...props} chips={chips} cloth={cloth} onClothTooSlow={clothTooSlow} />
@@ -307,72 +316,25 @@ function ReadySignal({ onReady }: { onReady?: () => void }) {
 }
 
 /** Keeps the whole board in view at any aspect ratio; eases on captures and at game end. */
-function CameraRig({
-  finished,
-  highlightKind,
-  speed,
-}: {
-  finished: boolean;
-  highlightKind?: FrameKind;
-  speed: number;
-}) {
+function CameraRig({ finished, highlightKind, speed }: CameraInputs) {
   const camera = useThree((s) => s.camera) as PerspectiveCamera;
   const size = useThree((s) => s.size);
+  const clock = useThree((s) => s.clock);
   const invalidate = useThree((s) => s.invalidate);
-  const current = useRef({ el: 0.9, az: 0, push: 0 });
-  const target = useRef({ el: 0.9, az: 0, push: 0 });
-  const lookAt = useMemo(() => new Vector3(0, -0.2, 0.15), []);
+  const rig = useRef(createCameraRig());
 
   useEffect(() => {
-    // A small push-in on captures (feedback for the moment that matters), a calm, slightly
-    // higher angle when the game ends. Nothing on ordinary sowing.
-    if (speed > 0 && (highlightKind === 'capture' || highlightKind === 'grand_slam')) {
-      target.current.push = highlightKind === 'grand_slam' ? 0.07 : 0.035;
-      const t = setTimeout(() => {
-        target.current.push = 0;
-        invalidate();
-      }, 260);
-      invalidate();
-      return () => clearTimeout(t);
-    }
-  }, [highlightKind, speed, invalidate]);
-
-  useEffect(() => {
-    target.current.el = finished ? 1.02 : 0.9;
-    target.current.az = finished ? 0.08 : 0;
+    setCameraInputs(rig.current, { finished, highlightKind, speed }, clock.getElapsedTime());
     invalidate();
-  }, [finished, invalidate]);
+  }, [finished, highlightKind, speed, clock, invalidate]);
 
   const clockDelta = useClockDelta();
 
   useFrame((state) => {
-    const dt = clockDelta(state.clock.getElapsedTime());
-    const c = current.current;
-    const t = target.current;
-    const k = speed > 0 ? 1 - Math.exp(-dt * 6) : 1;
-    c.el = MathUtils.lerp(c.el, t.el, k);
-    c.az = MathUtils.lerp(c.az, t.az, finished ? 1 - Math.exp(-dt * 1.5) : k);
-    c.push = MathUtils.lerp(c.push, t.push, k);
-
+    const now = state.clock.getElapsedTime();
     const aspect = size.width / Math.max(1, size.height);
-    // Narrow canvases (phones): look down more steeply so the pits stay readable.
-    const narrow = MathUtils.clamp((2.1 - aspect) / 0.6, 0, 1);
-    const el = c.el + narrow * 0.22;
-    const vf = MathUtils.degToRad(camera.fov);
-    const hf = 2 * Math.atan(Math.tan(vf / 2) * aspect);
-    const fitW = (HALF_W + 0.5) / Math.tan(hf / 2);
-    const fitD = (HALF_D + 1.1) / Math.tan(vf / 2);
-    const d = Math.max(fitW, fitD) * (1 - c.push);
-    camera.position.set(
-      lookAt.x + Math.sin(c.az) * Math.cos(el) * d,
-      lookAt.y + Math.sin(el) * d,
-      lookAt.z + Math.cos(c.az) * Math.cos(el) * d,
-    );
-    camera.lookAt(lookAt);
-    const moving =
-      Math.abs(c.el - t.el) > 1e-4 ||
-      Math.abs(c.az - t.az) > 1e-4 ||
-      Math.abs(c.push - t.push) > 1e-4;
+    const moving = stepCameraRig(rig.current, now, clockDelta(now), aspect, camera.position);
+    camera.lookAt(CAMERA_LOOK_AT);
     if (moving) state.invalidate();
   });
   return null;
@@ -503,26 +465,11 @@ function PitRings({
   const hover = hoverRaw !== null && legal.includes(hoverRaw) ? hoverRaw : null;
   const invalidate = useThree((s) => s.invalidate);
   const rings = useRef<(Mesh | null)[]>([]);
-
-  // Target glow per pit: colour + strength. Star yellow means "you can play this" (and the
-  // sowing pulse); a capture flashes in the capturer's light tint (a pit on the North row is
-  // taken by South, you); focus is cotton white; the hint is sea. Every ring keeps 3:1 or more
-  // against the wood, the resting playable ring included.
-  const targets = useMemo(() => {
-    return Array.from({ length: layout.n * 2 }, (_, i) => {
-      const isLegal = legal.includes(i);
-      if (highlight?.pit === i && highlight.kind === 'capture')
-        return { color: i >= layout.n ? '#b4beff' : '#ffb4b4', a: 1 };
-      if (highlight?.pit === i && (highlight.kind === 'sow' || highlight.kind === 'pickup'))
-        return { color: '#f7d116', a: 0.85 };
-      if (highlight?.pit === i && highlight.kind === 'skip') return { color: '#4fd1dc', a: 0.8 };
-      if (focusPit === i) return { color: '#f3efe6', a: 1 };
-      if (hintPit === i) return { color: '#4fd1dc', a: 0.95 };
-      if (isLegal && hover === i) return { color: '#ffe45c', a: 1 };
-      if (isLegal) return { color: '#f7d116', a: 0.75 };
-      return { color: '#f7d116', a: 0 };
-    });
-  }, [layout.n, legal, highlight, hintPit, focusPit, hover]);
+  const states = useMemo(() => createRings(layout.n * 2), [layout.n]);
+  const targets = useMemo(
+    () => ringTargets(layout.n, { legal, highlight, hintPit, focusPit, hover }),
+    [layout.n, legal, highlight, hintPit, focusPit, hover],
+  );
 
   useEffect(() => {
     if (hover === null) return;
@@ -539,19 +486,13 @@ function PitRings({
   const clockDelta = useClockDelta();
 
   useFrame((state) => {
-    const dt = clockDelta(state.clock.getElapsedTime());
-    let active = false;
+    const active = stepRings(states, targets, clockDelta(state.clock.getElapsedTime()), speed);
     rings.current.forEach((ring, i) => {
       if (!ring) return;
       const mat = ring.material as MeshStandardMaterial;
-      const t = targets[i]!;
-      // Fast attack, slower release (asymmetric timing).
-      const rising = t.a > mat.opacity;
-      const k = speed > 0 ? 1 - Math.exp(-dt * (rising ? 22 : 9)) : 1;
-      mat.opacity = MathUtils.lerp(mat.opacity, t.a, k);
-      mat.emissive.lerp(new Color(t.color), k);
-      mat.color.copy(mat.emissive);
-      if (Math.abs(mat.opacity - t.a) > 0.004) active = true;
+      mat.opacity = states[i]!.opacity;
+      mat.emissive.copy(states[i]!.color);
+      mat.color.copy(states[i]!.color);
     });
     if (active) state.invalidate();
   });

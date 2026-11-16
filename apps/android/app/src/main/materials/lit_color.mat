@@ -1,0 +1,25 @@
+// A plain lit surface: the seeds (glossy, with a clear coat), the hand and sleeve, the board's
+// underside. The web's MeshStandardMaterial / MeshPhysicalMaterial with a colour.
+material {
+    name : lit_color,
+    shadingModel : lit,
+    // Both faces, so a mesh never disappears when its winding is wrong; normals face the viewer.
+    culling : none,
+    parameters : [
+        { type : float3, name : baseColor },
+        { type : float, name : roughness },
+        { type : float, name : clearCoat },
+        { type : float, name : clearCoatRoughness }
+    ]
+}
+
+fragment {
+    void material(inout MaterialInputs material) {
+        prepareMaterial(material);
+        material.baseColor.rgb = materialParams.baseColor;
+        material.metallic = 0.0;
+        material.roughness = materialParams.roughness;
+        material.clearCoat = materialParams.clearCoat;
+        material.clearCoatRoughness = materialParams.clearCoatRoughness;
+    }
+}

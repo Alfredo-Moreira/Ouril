@@ -70,8 +70,11 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     /** A game that just ended (by the rules or a forfeit), once, for its sound. */
     val ends: SharedFlow<Outcome> = _ends
 
-    /** Animation speed: 1, or shorter with the system's animations turned off. */
-    private val speed: Float = if (ValueAnimator.areAnimatorsEnabled()) 1f else 0.4f
+    /** The system's animations are off: frames come faster and the board's seeds snap. */
+    val reducedMotion: Boolean = !ValueAnimator.areAnimatorsEnabled()
+
+    /** The game's pace: the 3D board's (a hand carries the seeds), shorter with reduced motion. */
+    val speed: Double = (if (reducedMotion) REDUCED_MOTION_SPEED else 1.0) * PACE_3D
 
     // Incremented by every new position, so a stale search or hint is ignored.
     private var epoch = 0
@@ -193,7 +196,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                 _state.update { it.copy(error = e.code) }
                 return@launch
             }
-            val wait = (350 * speed).toLong() - (System.currentTimeMillis() - startedAt)
+            val wait = (AI_PAUSE_MS * speed).toLong() - (System.currentTimeMillis() - startedAt)
             if (wait > 0) delay(wait)
             if (epoch != myEpoch || pit == null) return@launch
             commit(game, pit, byHuman = false)
@@ -214,7 +217,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         for (f in buildFrames(before.state, pit, result.events, result.state)) {
             _state.update { it.copy(frame = f) }
             _frames.tryEmit(f.kind)
-            val d = frameDelay(f.kind, speed)
+            val d = frameDelay(f.kind, speed).toLong()
             if (d > 0) delay(d)
         }
         _state.update {

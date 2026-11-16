@@ -56,6 +56,7 @@ To research a new country or variant, run the `variant-research` skill (`/varian
 | [Backend](architecture/backend.md) | Rust server: accounts and sync (after the MVP), real-time and async multiplayer |
 | [Deployment](architecture/deployment.md) | The MVP as a static site on Vercel; what the server adds later |
 | [Web design](architecture/web-design.md) | Web design system, motion rules and the 3D board |
+| [Board motion](architecture/board-motion.md) | How a move looks on every platform: the web's board as the reference, and the motion vectors that keep the others the same |
 | [Android app](../apps/android/README.md) | The Android app: what it does, building and testing, how it's put together |
 
 ### Contracts (next to the code)

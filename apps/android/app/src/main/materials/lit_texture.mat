@@ -1,0 +1,28 @@
+// A lit, textured surface: the carved board (wood with a light clear coat) and its bowls. The
+// texture transform is the web's repeat and offset, with V flipped as three.js flips canvases.
+material {
+    name : lit_texture,
+    shadingModel : lit,
+    culling : none,
+    requires : [ uv0 ],
+    parameters : [
+        { type : sampler2d, name : baseColorMap },
+        // xy: scale, zw: offset.
+        { type : float4, name : uvTransform },
+        { type : float, name : roughness },
+        { type : float, name : clearCoat },
+        { type : float, name : clearCoatRoughness }
+    ]
+}
+
+fragment {
+    void material(inout MaterialInputs material) {
+        prepareMaterial(material);
+        vec2 uv = getUV0() * materialParams.uvTransform.xy + materialParams.uvTransform.zw;
+        material.baseColor = texture(materialParams_baseColorMap, uv);
+        material.metallic = 0.0;
+        material.roughness = materialParams.roughness;
+        material.clearCoat = materialParams.clearCoat;
+        material.clearCoatRoughness = materialParams.clearCoatRoughness;
+    }
+}

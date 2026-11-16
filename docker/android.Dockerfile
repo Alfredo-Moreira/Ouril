@@ -49,5 +49,19 @@ RUN curl -fsSL https://sh.rustup.rs | sh -s -- -y --profile minimal --default-to
  && cargo binstall -y --locked cargo-ndk@${CARGO_NDK_VERSION} just@${JUST_VERSION} \
  && rm -rf ${CARGO_HOME}/registry ${CARGO_HOME}/git
 
+# Filament's material compiler (matc), for the 3D board's materials (apps/android/app/src/main/
+# materials). The same release as the app's filament-android: FilamentVersionTest checks they agree.
+ARG FILAMENT_VERSION=1.79.0
+ARG FILAMENT_SHA256=3d0dda90685488c2bc6baacc777ab7108229fee07b989802bf7e05b1e20cb4de
+RUN curl -fsSL -o /tmp/filament.tgz \
+      "https://github.com/google/filament/releases/download/v${FILAMENT_VERSION}/filament-v${FILAMENT_VERSION}-linux.tgz" \
+ && echo "${FILAMENT_SHA256}  /tmp/filament.tgz" | sha256sum -c - \
+ && mkdir -p /tmp/filament /opt/filament/bin \
+ && tar -xzf /tmp/filament.tgz -C /tmp/filament \
+ && cp "$(find /tmp/filament -type f -name matc | head -n 1)" /opt/filament/bin/matc \
+ && rm -rf /tmp/filament /tmp/filament.tgz \
+ && /opt/filament/bin/matc --help >/dev/null
+ENV FILAMENT_MATC=/opt/filament/bin/matc
+
 WORKDIR /workspace
 CMD ["bash"]
