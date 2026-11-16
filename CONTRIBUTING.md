@@ -128,7 +128,7 @@ Run `just hooks` once per clone (or `git config core.hooksPath .githooks`). The 
 
 ### Claude Code skills
 
-Our own skills in `.claude/skills/` are committed. Third-party skills (Rust, Swift, Kotlin/Compose, Postgres, security, architecture) are listed in `skills-lock.json` but **not committed**, because they ship without licence files. Restore them with:
+Our own skills in `.claude/skills/` are committed. Third-party skills (Rust, Swift, Kotlin/Compose, Postgres, security, architecture, front-end design and motion) are listed in `skills-lock.json` but **not committed**, because most ship without licence files. Restore them with:
 
 ```bash
 npx skills experimental_install
